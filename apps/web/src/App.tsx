@@ -8,7 +8,7 @@ import { copy } from './content/copy';
 import { ctl } from './controller';
 import { isMobileViewport, prefersReducedMotion } from './design';
 import { useStore } from './state/store';
-import { keepSeen, readVisit, settleVisits } from './state/visit';
+import { keepSeen, readVisitOnce, settleVisits } from './state/visit';
 import { createSwarm } from './swarm';
 import { BuildFrame } from './ui/BuildFrame';
 import { Card } from './ui/Card';
@@ -94,7 +94,7 @@ export function App() {
     const tierParam = params.get('tier'); // QA only: ?tier=0..3 forces a quality tier (no adaptive drop)
     const tier = tierParam !== null && /^[0-3]$/.test(tierParam) ? (Number(tierParam) as 0 | 1 | 2 | 3) : undefined;
     const scene = params.get('scene') === 'light' ? 'light' : 'dark';
-    const visit = readVisit(); // before the client starts: it stamps lastSeen itself
+    const visit = readVisitOnce(); // before the client starts: it stamps lastSeen itself
     const brain = createBrain({ agentUrl: import.meta.env.VITE_AGENT_URL as string | undefined, speed });
     const sound = createSound();
     const voice = createVoice();

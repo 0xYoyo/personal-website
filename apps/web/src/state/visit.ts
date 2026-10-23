@@ -61,6 +61,15 @@ export function readVisit(now = Date.now(), s: Store | null = storage()): VisitI
   return { returning: prevVisits > 0 && gapOk, visits, newVisit };
 }
 
+let thisLoad: VisitInfo | null = null;
+/**
+ * `readVisit` once per page load: the boot effect may run twice (React StrictMode
+ * in dev), and by the second run the agent client has already stamped lastSeen.
+ */
+export function readVisitOnce(): VisitInfo {
+  return (thisLoad ??= readVisit());
+}
+
 /** Keep `lastSeen` current while the page is open. Returns a stop function. */
 export function keepSeen(s: Store | null = storage(), everyMs = 60_000): () => void {
   const stamp = () => write(s, K_LAST, new Date().toISOString());

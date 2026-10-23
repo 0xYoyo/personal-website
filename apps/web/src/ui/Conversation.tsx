@@ -92,15 +92,16 @@ export function Conversation() {
     if (el && view) fitter.fit(el, view.key, vw);
     const sec = sectionRef.current;
     const prev = prevRef.current;
+    const mobile = isMobileWidth(vw);
+    if (sec) sec.dataset.tall = 'false';
+    const overflows = () => !!sec && sec.scrollHeight > sec.clientHeight + 1;
     if (prev) {
       prev.dataset.room = 'true';
-      if (prev.getBoundingClientRect().bottom > floorY()) prev.dataset.room = 'false';
+      // the previous reply is the first thing to go when space runs out
+      if (prev.getBoundingClientRect().bottom > floorY() || (mobile && overflows())) prev.dataset.room = 'false';
     }
-    if (sec) {
-      sec.dataset.tall = 'false';
-      // mobile: a long reply at the floor size may outgrow the space between the stage and the chips
-      if (isMobileWidth(vw) && sec.scrollHeight > sec.clientHeight + 1) sec.dataset.tall = 'true';
-    }
+    // mobile: a long reply at the floor size may still outgrow the space between the stage and the chips
+    if (sec && mobile && overflows()) sec.dataset.tall = 'true';
   }); // every render: words arrive one per render while streaming; the fitter only ever steps down
 
   const hidden = overlay === 'card' || overlay === 'build' || overlay === 'contact' || overlay === 'game' || overlay === 'history';

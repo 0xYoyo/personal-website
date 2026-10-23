@@ -23,7 +23,11 @@ export const stories: Story[] = [
       beat({
         say: "Unit 636, Field Intelligence. Three years. I'd do it again.",
         // a long horizon line: the lookout
-        become: (vp) => ({ kind: 'frame', rect: { x: vp.w * 0.12, y: vp.h * 0.36, w: vp.w * 0.76, h: 2 } }),
+        become: (vp) =>
+          vp.w <= 720
+            ? { kind: 'frame', rect: { x: vp.w * 0.08, y: vp.h * 0.22, w: vp.w * 0.84, h: 2 } }
+            : // inside the stage (right ~36%), never across the words
+              { kind: 'frame', rect: { x: vp.w * 0.65, y: vp.h * 0.42, w: vp.w * 0.31, h: 2 } },
         chips: after,
       }),
     ]),

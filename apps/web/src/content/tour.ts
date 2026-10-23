@@ -11,7 +11,7 @@ const PROJECT_HOLD = 2600;
 export const tour: Step[] = seq([
   // 1. This is what I do. — conductor's wave, then one window frame (agents shipping)
   beat({ say: 'This is what I do.', become: { kind: 'glyph', id: 'wave' }, mood: 'speaking' }),
-  beat({ become: { kind: 'glyph', id: 'frame' }, mood: 'building', hold: 3000 }),
+  beat({ become: { kind: 'glyph', id: 'frame' }, hold: 3000 }),
   // 2. a keyboard, then the cursors that do the typing
   beat({ say: "I don't write most of my code anymore.", become: { kind: 'glyph', id: 'keyboard' }, mood: 'speaking' }),
   beat({ say: 'I direct the things that do.', become: { kind: 'glyph', id: 'cursor' } }),
@@ -27,5 +27,5 @@ export const tour: Step[] = seq([
   beat({ say: 'I spent 2024 on the road.', become: { kind: 'glyph', id: 'route' } }),
   // 5. a question mark, then your cursor
   beat({ say: 'Ask me anything. Or tell me what to become.', become: { kind: 'glyph', id: 'question' }, mood: 'speaking' }),
-  beat({ become: { kind: 'glyph', id: 'cursor' }, mood: 'idle', hold: 2400, chips: ['Who is Yoyo?', 'What has he built?', 'Spell my name', 'Build me something', 'Play his game'] }),
+  beat({ become: { kind: 'glyph', id: 'cursor' }, hold: 2400, chips: ['Who is Yoyo?', 'What has he built?', 'Spell my name', 'Build me something', 'Play his game'] }),
 ]);
