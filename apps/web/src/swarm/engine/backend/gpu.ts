@@ -28,7 +28,14 @@ const TEX_W = 256;
  * like the CPU simulator: ∫(1-r/R)² over a disc = πR²/6 px², and a cell is FIELD_RES² px.
  */
 const FIELD_RES = 3;
-const SPLAT_R_PX = 1.5 * FIELD_RES;
+/**
+ * Splat radius 2 cells (was 1.5): the field must not hold density waves shorter than ~2 cells, because a
+ * central difference over ±h reads a wave of wavelength λ with the sign of sin(2πh/λ) — inverted for
+ * h < λ < 2h. With 1.5-cell splats and ±1-cell differences, separation became attraction at λ ≈ 2 cells
+ * (≈ 40 px) and the flock grew horizontal stripes (QA v3 A-desktop-webgpu idle11s).
+ */
+const SPLAT_CELLS = 2;
+const SPLAT_R_PX = SPLAT_CELLS * FIELD_RES;
 const KERNEL_NORM = (FIELD_RES * FIELD_RES) / ((Math.PI * SPLAT_R_PX * SPLAT_R_PX) / 6);
 
 function flowTSL(xy: N, t: N, freq: N): N {
@@ -125,7 +132,7 @@ export class GpuEngine implements Engine {
     m.premultipliedAlpha = false;
     const P = pos.toAttribute(), V = vel.toAttribute();
     m.positionNode = vec3(P.x, P.y, 0);
-    m.scaleNode = vec2(this.uField.cell.mul(3)); // diameter 3 cells
+    m.scaleNode = vec2(this.uField.cell.mul(SPLAT_CELLS * 2)); // diameter 2 × SPLAT_CELLS cells
     const d = length(uv().sub(0.5)).mul(2);
     const k = pow(max(float(1).sub(d), 0), 2).mul(KERNEL_NORM);
     m.fragmentNode = vec4(V.xyz.mul(FIELD_VEL_SCALE).mul(k), k);
@@ -199,12 +206,14 @@ export class GpuEngine implements Engine {
       });
       // separation: density gradient over ±1 cell (local pressure); cohesion: over ±3 cells, only at the
       // flock's thin edge. Two scales stop a single-scale gradient from feeding stripe/worm patterns.
+      // separation differences over ±½ cell: sign-correct for every wavelength the 2-cell splat leaves in the field
       const ex = vec2(F.cell, 0), ey = vec2(0, F.size.y.div(FIELD_H));
+      const hx = ex.mul(0.5), hy = ey.mul(0.5);
       const dens = min(f0.w.div(F.densRef), 12);
       const sg = vec2(
-        sampleField(p.xy.add(ex)).w.sub(sampleField(p.xy.sub(ex)).w),
-        sampleField(p.xy.add(ey)).w.sub(sampleField(p.xy.sub(ey)).w),
-      ).mul(0.5).div(F.densRef);
+        sampleField(p.xy.add(hx)).w.sub(sampleField(p.xy.sub(hx)).w),
+        sampleField(p.xy.add(hy)).w.sub(sampleField(p.xy.sub(hy)).w),
+      ).div(F.densRef);
       const cg = vec2(
         sampleField(p.xy.add(ex.mul(3))).w.sub(sampleField(p.xy.sub(ex.mul(3))).w),
         sampleField(p.xy.add(ey.mul(3))).w.sub(sampleField(p.xy.sub(ey.mul(3))).w),
