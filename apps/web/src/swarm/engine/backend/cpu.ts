@@ -1,10 +1,19 @@
 import type { Engine, EngineInit, Scene } from './types';
 import { COLORS, hexToRgb01 } from './types';
 import type { SimParams } from './params';
-import { FIELD_H, FIELD_MARGIN, FIELD_W } from './params';
+import { FAR_DIM, FAR_SIZE, FAR_Z, FIELD_H, FIELD_MARGIN, FIELD_W, farOf, groupOf, keepOutForce, MAX_KEEPOUT, trailTarget, TRANSIT_DIP, BOX_TURN } from './params';
 import { flowAt, WAVE_K, WAVE_W } from './flow';
 import type { Targets } from '../shapes';
 import { makeSeeds } from '../hash';
+
+/**
+ * Dot scale for the 2D fallback (POLISH1 B6): fewer dots draw bigger and a little more opaque so 3k dots
+ * still make a solid YOYO and a visible frame border. 1 at ≥ 12k, √(12k / n) below, capped at 2.2.
+ */
+export function dotScale(count: number): { size: number; alpha: number } {
+  const size = Math.min(2.2, Math.max(1, Math.sqrt(12000 / Math.max(count, 1))));
+  return { size, alpha: 1 + 0.3 * (size - 1) };
+}
 
 /**
  * Canvas 2D fallback: same forces as the GPU kernel, in plain JS. Neighbourhood = the same splatted
@@ -23,6 +32,7 @@ export class CpuEngine implements Engine {
   private scene: Scene;
   private w = 1; private h = 1; private dpr = 1; private dprCap: number;
   private flow: [number, number, number] = [0, 0, 0];
+  private ko: [number, number] = [0, 0];
   private s0 = new Float32Array(4); private s1 = new Float32Array(4); private s2 = new Float32Array(4); private s3 = new Float32Array(4); private s4 = new Float32Array(4);
 
   constructor(o: EngineInit) {
@@ -99,6 +109,11 @@ export class CpuEngine implements Engine {
     const fl = this.flow;
     const wildMul = 1 + p.wild * 2.5;
     const wdx = Math.cos(p.time * 0.21), wdy = Math.sin(p.time * 0.21);
+    const tt: [number, number] = [0, 0];
+    const PP = p as unknown as Record<string, number>;
+    const kos: number[] = [];
+    for (let k = 0; k < MAX_KEEPOUT; k++) if (PP[`ko${k}w`]! > 0) kos.push(PP[`ko${k}x`]!, PP[`ko${k}y`]!, PP[`ko${k}w`]!, PP[`ko${k}h`]!);
+    const kof = this.ko;
     for (let i = 0; i < n; i++) {
       const o = i * 4;
       const dly = B[o + 3]! * p.spread;
@@ -110,7 +125,8 @@ export class CpuEngine implements Engine {
       const stepW = dt / p.ramp;
       w += Math.max(-stepW, Math.min(stepW, wDes - w));
       const local = Math.min(1, Math.max(0, (elapsed - dly) / p.ramp));
-      const wEff = w * (1 - p.transit * Math.sin(Math.PI * local) * 0.75);
+      // shape → shape: a shallow mid-flight dip only (paths swoop, nothing disperses; POLISH1 B4)
+      const wEff = w * (1 - p.transit * Math.sin(Math.PI * local) * TRANSIT_DIP);
       // target transform
       let tx = T[o]!, ty = T[o + 1]!, tz = T[o + 2]!;
       if (p.spinOn > 0) { const dx = tx - p.shapeCx; tx = p.shapeCx + dx * cosR - tz * sinR; tz = dx * sinR + tz * cosR; }
@@ -128,7 +144,7 @@ export class CpuEngine implements Engine {
       // flow
       flowAt(px, py, p.time, p.flowFreq, fl);
       const fa = p.flowAmp * wildMul;
-      const fs = 0.25 * (1 + p.wild * 3) * free;
+      const fs = p.flowRate * (1 + p.wild * 3) * free;
       ax += (fl[0] * fa - vx) * fs; ay += (fl[1] * fa - vy) * fs; az += (fl[2] * fa * 0.5 - vz) * fs;
       { // individual jitter: breaks the cell-scale lattice the field would otherwise imprint
         const ja = S[o]! * 6.2832 + p.time * (2.1 + S[o + 1]! * 3);
@@ -146,7 +162,7 @@ export class CpuEngine implements Engine {
       }
       // separation: density gradient over ±1 cell (local pressure); cohesion: over ±3 cells, only at the
       // flock's thin edge. Two scales stop the single-scale gradient from feeding stripe/worm patterns.
-      const dens = Math.min(s[3]! / densRef, 12);
+      const dens = Math.min(s[3]! / densRef, 24);
       this.sample(px + g.cw, py, g, sx2); this.sample(px - g.cw, py, g, sx1);
       this.sample(px, py + g.ch, g, sy2); this.sample(px, py - g.ch, g, sy1);
       const sgx = (sx2[3]! - sx1[3]!) * 0.5 / densRef, sgy = (sy2[3]! - sy1[3]!) * 0.5 / densRef;
@@ -154,19 +170,38 @@ export class CpuEngine implements Engine {
       this.sample(px, py + 3 * g.ch, g, sy2); this.sample(px, py - 3 * g.ch, g, sy1);
       const cgx = (sx2[3]! - sx1[3]!) / 6 / densRef, cgy = (sy2[3]! - sy1[3]!) / 6 / densRef;
       const edge = 1 - Math.min(Math.max((dens - 0.2) / 0.7, 0), 1);
-      const ck0 = p.coh * edge * edge * (3 - 2 * edge) * fb, sk0 = p.sep * dens * fb;
+      // density cap acts on the smooth (±3 cell) gradient: it spreads a ball without feeding a grid-scale lattice
+      const rest = Math.min(Math.max((p.densCap - dens) / p.densCap, 0), 1);
+      const ck0 = (p.coh * edge * edge * (3 - 2 * edge) + p.restK * rest - p.capK * Math.max(dens - p.densCap, 0)) * fb, sk0 = p.sep * dens * fb;
       ax += cgx * ck0 - sgx * sk0; ay += cgy * ck0 - sgy * sk0;
       // leader + bounds + slab
       { // leader = a roost the flock is steered toward only when it strays (dead zone), not a spring
-        const lx = p.leaderX - px, ly = p.leaderY - py, ll = Math.max(Math.hypot(lx, ly), 1e-3);
-        const r0 = Math.min(p.halfW, p.halfH) * 0.35;
+        let gx = p.leaderX, gy = p.leaderY;
+        if (p.snake > 0) {
+          trailTarget(p, groupOf(S[o]!), S[o + 1]!, tt);
+          gx += (tt[0] - gx) * p.snake; gy += (tt[1] - gy) * p.snake;
+        }
+        const lx = gx - px, ly = gy - py, ll = Math.max(Math.hypot(lx, ly), 1e-3);
+        const r0 = Math.min(p.halfW, p.halfH) * p.leadR;
         const t = Math.min(Math.max((ll - r0) / (r0 * 1.2), 0), 1), k = t * t * (3 - 2 * t) * p.leaderW * 260 * free;
         ax += (lx / ll) * k; ay += (ly / ll) * k;
       }
       const bx = px - p.boundCx, by = py - p.boundCy;
       const ex = Math.max(Math.abs(bx) - p.boundHw, 0) * Math.sign(bx), ey = Math.max(Math.abs(by) - p.boundHh, 0) * Math.sign(by);
       ax -= ex * 8 * free; ay -= ey * 8 * free;
-      az += (-pz * 1.2 - vz * 0.6) * free;
+      // past the box, outward velocity is turned back (a spring alone lets the flock flatten on the box)
+      ax -= Math.sign(ex) * Math.max(vx * Math.sign(ex), 0) * Math.min(Math.abs(ex) / 40, 1) * BOX_TURN * free;
+      ay -= Math.sign(ey) * Math.max(vy * Math.sign(ey), 0) * Math.min(Math.abs(ey) / 40, 1) * BOX_TURN * free;
+      const far = farOf(S[o + 2]!, p.farFrac);
+      az += (-(pz - FAR_Z * far) * 1.2 - vz * 0.6) * free;
+      // keep-outs: soft repulsion (top bar, conversation, chips, command bar); a held shape barely feels it
+      if (p.koOn > 0) {
+        const kk = p.koOn * (1 - 0.85 * wEff);
+        for (let k = 0; k < kos.length; k += 4) {
+          keepOutForce(px, py, vx, vy, kos[k]!, kos[k + 1]!, kos[k + 2]!, kos[k + 3]!, p.koMargin, kof, p.boundCx, p.boundCy);
+          ax += kof[0] * kk; ay += kof[1] * kk;
+        }
+      }
       // vortex
       if (p.vortexW > 0) {
         const rx = px - p.vortexCx, ry = py - p.vortexCy, rl = Math.max(Math.hypot(rx, ry), 1);
@@ -241,24 +276,29 @@ export class CpuEngine implements Engine {
     const P = this.pos, V = this.vel, C = this.col, S = this.seed;
     const bright = (1 + p.pulse * 0.15) * p.brightness;
     ctx.lineCap = 'round';
-    // 4 speed buckets for uncoloured particles, batched into one path each
-    const buckets: number[][] = [[], [], [], []];
+    // 4 speed buckets × 3 classes (held, free near, free far) for uncoloured particles, one path each
+    const buckets: number[][] = Array.from({ length: 12 }, () => []);
     for (let i = 0; i < this.count; i++) {
       const o = i * 4;
       if (C[o + 3]! > 0.15) continue;
       const sp = Math.hypot(V[o]!, V[o + 1]!);
       const st = Math.min(Math.max((sp - 120) / 580, 0), 1);
-      buckets[Math.min(3, Math.floor(st * 4))]!.push(i);
+      const cls = V[o + 3]! > 0.5 ? 0 : farOf(S[o + 2]!, p.farFrac) ? 2 : 1;
+      buckets[cls * 4 + Math.min(3, Math.floor(st * 4))]!.push(i);
     }
     const proj = (i: number): [number, number, number] => {
       const o = i * 4, k = D / Math.max(D - P[o + 2]!, 50);
       return [(cx + (P[o]! - p.camX) * k) * dpr, (cy - (P[o + 1]! - p.camY) * k) * dpr, k];
     };
-    for (let b = 0; b < 4; b++) {
-      const st = (b + 0.5) / 4;
+    const ds = dotScale(this.count);
+    const clsAlpha = [p.shapeExpo * (1 + 0.5 * p.frameGlow) * ds.alpha, p.freeDim * ds.alpha, p.freeDim * FAR_DIM * ds.alpha];
+    const clsSize = [(1 + 0.3 * p.frameGlow) * ds.size, ds.size, FAR_SIZE * ds.size];
+    for (let b = 0; b < 12; b++) {
+      const cls = Math.floor(b / 4), st = ((b % 4) + 0.5) / 4;
+      if (!buckets[b]!.length) continue;
       const r = base[0] + (fast[0] - base[0]) * st, g = base[1] + (fast[1] - base[1]) * st, bl = base[2] + (fast[2] - base[2]) * st;
-      ctx.strokeStyle = `rgba(${(r * 255) | 0},${(g * 255) | 0},${(bl * 255) | 0},${(dark ? 0.85 : 0.8) * Math.min(bright, 1.2)})`;
-      ctx.lineWidth = (dark ? 2.3 : 2.7) * dpr * p.sizeScale;
+      ctx.strokeStyle = `rgba(${(r * 255) | 0},${(g * 255) | 0},${(bl * 255) | 0},${Math.min(1, (dark ? 0.85 : 0.8) * Math.min(bright, 1.2) * clsAlpha[cls]!)})`;
+      ctx.lineWidth = (dark ? 2.3 : 2.7) * dpr * p.sizeScale * clsSize[cls]!;
       ctx.beginPath();
       for (const i of buckets[b]!) {
         const [x, y] = proj(i), o = i * 4;
@@ -274,8 +314,8 @@ export class CpuEngine implements Engine {
       const [x, y] = proj(i);
       const m = C[o + 3]!;
       const r = base[0] + (C[o]! - base[0]) * m, g = base[1] + (C[o + 1]! - base[1]) * m, bl = base[2] + (C[o + 2]! - base[2]) * m;
-      ctx.fillStyle = `rgba(${(r * 255) | 0},${(g * 255) | 0},${(bl * 255) | 0},${0.6 + 0.4 * S[o + 2]!})`;
-      const sz = 2.4 * dpr * p.sizeScale;
+      ctx.fillStyle = `rgba(${(r * 255) | 0},${(g * 255) | 0},${(bl * 255) | 0},${Math.min(1, (0.6 + 0.4 * S[o + 2]!) * ds.alpha)})`;
+      const sz = 2.4 * dpr * p.sizeScale * ds.size;
       ctx.fillRect(x - sz / 2, y - sz / 2, sz, sz);
     }
   }

@@ -4,7 +4,7 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import type { Engine, EngineInit, Scene } from './types';
 import { COLORS } from './types';
 import type { SimParams } from './params';
-import { defaultParams, FIELD_H, FIELD_MARGIN, FIELD_VEL_SCALE, FIELD_W } from './params';
+import { BOX_TURN, defaultParams, FAR_DIM, FAR_SIZE, FAR_Z, FIELD_H, FIELD_MARGIN, FIELD_VEL_SCALE, FIELD_W, KO_PUSH, KO_TURN, MAX_KEEPOUT, TRANSIT_DIP } from './params';
 import { FLOW_WAVES, WAVE_K, WAVE_W } from './flow';
 import type { Targets } from '../shapes';
 import { makeSeeds } from '../hash';
@@ -15,7 +15,7 @@ type N = any;
 const TSL: N = TSLTyped;
 const {
   Fn, If, instancedArray, instanceIndex, uniform, float, vec2, vec3, vec4, texture, uv, sin, cos, atan, length,
-  clamp, smoothstep, mix, max, min, select, step, exp, pow, cameraViewMatrix, pass, PI, textureLoad, ivec2,
+  clamp, smoothstep, mix, max, min, select, step, exp, pow, cameraViewMatrix, pass, PI, textureLoad, ivec2, fract, sqrt, abs, sign,
 } = TSL;
 
 /** Width of the data textures that hold read-only per-particle data for the compute kernel. */
@@ -27,6 +27,7 @@ const TEX_W = 256;
  * gradient grows a lattice of worm-like filaments (seen in QA). Values are normalised to "particles per cell"
  * like the CPU simulator: ∫(1-r/R)² over a disc = πR²/6 px², and a cell is FIELD_RES² px.
  */
+const BLOOM_STRENGTH = 0.28;
 const FIELD_RES = 3;
 /**
  * Splat radius 2 cells (was 1.5): the field must not hold density waves shorter than ~2 cells, because a
@@ -71,6 +72,7 @@ export class GpuEngine implements Engine {
   private splatCam = new THREE.OrthographicCamera(-1, 1, 1, -1, -5000, 5000);
   private fieldRT!: THREE.RenderTarget;
   private pipeline: THREE.RenderPipeline | null = null;
+  private bloomNode: N = null;
   private material!: THREE.SpriteNodeMaterial;
   private sprite!: THREE.Sprite;
   private splatSprite!: THREE.Sprite;
@@ -144,6 +146,7 @@ export class GpuEngine implements Engine {
 
   private buildSim(): void {
     const U = this.U, F = this.uField;
+    const UU = U as Record<string, N>;
     const { pos, vel, col } = this.buf;
     const X = this.tex;
     const fieldTex = this.fieldRT.texture;
@@ -170,7 +173,8 @@ export class GpuEngine implements Engine {
       const stepW = U.dt.div(U.ramp);
       w.addAssign(clamp(wDes.sub(w), stepW.negate(), stepW));
       const local = clamp(elapsed.sub(dly).div(U.ramp), 0, 1);
-      const wEff = w.mul(float(1).sub(U.transit.mul(sin(local.mul(PI))).mul(0.75))).toVar();
+      // shape → shape: a shallow mid-flight dip only (paths swoop, nothing disperses; POLISH1 B4)
+      const wEff = w.mul(float(1).sub(U.transit.mul(sin(local.mul(PI))).mul(TRANSIT_DIP))).toVar();
       // target transform: Y sway (3D), breathing scale, listening ring pulse
       If(U.spinOn.greaterThan(0), () => {
         const dx = T.x.sub(U.shapeCx).toVar();
@@ -193,7 +197,7 @@ export class GpuEngine implements Engine {
       // flow
       const fl = flowTSL(p.xy, U.time, U.flowFreq).toVar();
       const fa = U.flowAmp.mul(U.wild.mul(2.5).add(1));
-      acc.addAssign(vec3(fl.xy.mul(fa), fl.z.mul(fa).mul(0.5)).sub(v).mul(free.mul(0.25).mul(U.wild.mul(3).add(1))));
+      acc.addAssign(vec3(fl.xy.mul(fa), fl.z.mul(fa).mul(0.5)).sub(v).mul(free.mul(U.flowRate).mul(U.wild.mul(3).add(1))));
       If(U.wild.greaterThan(0), () => { // celebrate: every particle chases its own spinning heading
         const ja = S.x.mul(6.2832).add(U.time.mul(S.y.mul(4).add(1.5)));
         acc.xy.addAssign(vec2(cos(ja), sin(ja)).mul(U.wild.mul(750).mul(free)));
@@ -209,7 +213,7 @@ export class GpuEngine implements Engine {
       // separation differences over ±½ cell: sign-correct for every wavelength the 2-cell splat leaves in the field
       const ex = vec2(F.cell, 0), ey = vec2(0, F.size.y.div(FIELD_H));
       const hx = ex.mul(0.5), hy = ey.mul(0.5);
-      const dens = min(f0.w.div(F.densRef), 12);
+      const dens = min(f0.w.div(F.densRef), 24);
       const sg = vec2(
         sampleField(p.xy.add(hx)).w.sub(sampleField(p.xy.sub(hx)).w),
         sampleField(p.xy.add(hy)).w.sub(sampleField(p.xy.sub(hy)).w),
@@ -218,7 +222,9 @@ export class GpuEngine implements Engine {
         sampleField(p.xy.add(ex.mul(3))).w.sub(sampleField(p.xy.sub(ex.mul(3))).w),
         sampleField(p.xy.add(ey.mul(3))).w.sub(sampleField(p.xy.sub(ey.mul(3))).w),
       ).div(6).div(F.densRef);
-      const ck0 = U.coh.mul(float(1).sub(smoothstep(0.2, 0.9, dens))).mul(fb);
+      // edge cohesion + rest-density pull below densCap − cap push above it, all on the smooth (±3 cell) gradient
+      const rest = clamp(U.densCap.sub(dens).div(U.densCap), 0, 1);
+      const ck0 = U.coh.mul(float(1).sub(smoothstep(0.2, 0.9, dens))).add(U.restK.mul(rest)).sub(U.capK.mul(max(dens.sub(U.densCap), 0))).mul(fb);
       const sk0 = U.sep.mul(dens).mul(fb);
       acc.xy.addAssign(cg.mul(ck0).sub(sg.mul(sk0)));
       // individual jitter: breaks the cell-scale lattice the field would otherwise imprint
@@ -226,15 +232,59 @@ export class GpuEngine implements Engine {
       acc.xy.addAssign(vec2(cos(jja), sin(jja)).mul(fb.mul(140)));
       // leader, bounds, slab
       // leader = a roost the flock is steered toward only when it strays (dead zone), not a spring
-      const ld = vec2(U.leaderX, U.leaderY).sub(p.xy).toVar();
+      // idle: each sub-flock follows its leader's trail (see SimParams.snake); otherwise one point leader
+      const goalP = vec2(U.leaderX, U.leaderY).toVar();
+      If(U.snake.greaterThan(0), () => {
+        const gu = fract(S.x.mul(13.37));
+        const g1 = step(0.5, gu).sub(step(0.8, gu)), g2 = step(0.8, gu), g0 = float(1).sub(g1).sub(g2);
+        const pick = (k: string): N => UU[`g0${k}`].mul(g0).add(UU[`g1${k}`].mul(g1)).add(UU[`g2${k}`].mul(g2));
+        const gax = pick('ax'), gay = pick('ay'), gwx = pick('wx'), gwy = pick('wy'), gpx = pick('px'), gpy = pick('py');
+        const su = fract(S.y.mul(5.31)), soff = fract(S.y.mul(17.17)).mul(2).sub(1);
+        const tau = U.time.sub(su.mul(U.snakeLag));
+        const ox = gax.mul(sin(gwx.mul(tau).add(gpx))), oy = gay.mul(sin(gwy.mul(tau).add(gpy)));
+        const tg = vec2(gax.mul(gwx).mul(cos(gwx.mul(tau).add(gpx))), gay.mul(gwy).mul(cos(gwy.mul(tau).add(gpy))));
+        const tn = tg.div(max(length(tg), 1e-3));
+        const wd = U.snakeW.mul(sqrt(sin(PI.mul(min(su.mul(1.08), 1))))).mul(soff);
+        const tgt = vec2(U.snakeCx.add(pick('ox')).add(ox).sub(tn.y.mul(wd)), U.snakeCy.add(pick('oy')).add(oy).add(tn.x.mul(wd)));
+        goalP.assign(mix(goalP, tgt, U.snake));
+      });
+      const ld = goalP.sub(p.xy).toVar();
       const ll = max(length(ld), 1e-3);
-      const r0 = min(U.halfW, U.halfH).mul(0.35);
+      const r0 = min(U.halfW, U.halfH).mul(U.leadR);
       acc.xy.addAssign(ld.div(ll).mul(smoothstep(r0, r0.mul(2.2), ll).mul(U.leaderW).mul(260).mul(free)));
       const lim = vec2(U.boundHw, U.boundHh);
       const bq = p.xy.sub(vec2(U.boundCx, U.boundCy));
-      const over = max(bq.abs().sub(lim), 0).mul(bq.sign());
+      const over = max(bq.abs().sub(lim), 0).mul(bq.sign()).toVar();
       acc.xy.subAssign(over.mul(free.mul(8)));
-      acc.z.addAssign(p.z.mul(-1.2).sub(v.z.mul(0.6)).mul(free));
+      // past the box, outward velocity is turned back
+      acc.xy.subAssign(sign(over).mul(max(v.xy.mul(sign(over)), 0)).mul(min(abs(over).div(40), 1)).mul(free.mul(BOX_TURN)));
+      const far = step(fract(S.z.mul(7.77)), U.farFrac.sub(1e-4)).mul(step(1e-4, U.farFrac));
+      acc.z.addAssign(p.z.sub(far.mul(FAR_Z)).mul(-1.2).sub(v.z.mul(0.6)).mul(free));
+      // keep-outs: soft push out + inward velocity turned around; a held shape barely feels it
+      If(U.koOn.greaterThan(0), () => {
+        const kk = U.koOn.mul(float(1).sub(wEff.mul(0.85)));
+        for (let k = 0; k < MAX_KEEPOUT; k++) {
+          const hw = UU[`ko${k}w`], hh = UU[`ko${k}h`];
+          If(hw.greaterThan(0), () => {
+            const q = p.xy.sub(vec2(UU[`ko${k}x`], UU[`ko${k}y`])).toVar();
+            const dd = abs(q).sub(vec2(hw, hh)).toVar();
+            const oo = max(dd, 0);
+            const outside = length(oo);
+            const sd = outside.add(min(max(dd.x, dd.y), 0));
+            If(sd.lessThan(U.koMargin), () => {
+              const sq = step(0, q).mul(2).sub(1);
+              // inside: leave through the face that points home (box centre), see keepOutForce
+              const hm = vec2(U.boundCx, U.boundCy).sub(p.xy);
+              const hs = step(0, hm).mul(2).sub(1);
+              const nIn = select(abs(hm.x).mul(hh).greaterThan(abs(hm.y).mul(hw)), vec2(hs.x, 0), vec2(0, hs.y));
+              const n = select(outside.greaterThan(1e-3), sq.mul(oo).div(max(outside, 1e-3)), nIn).toVar();
+              const t = min(float(1).sub(sd.div(U.koMargin)), 2.5);
+              const vn = min(v.xy.dot(n), 0);
+              acc.xy.addAssign(n.mul(t.mul(t).mul(KO_PUSH).sub(vn.mul(KO_TURN).mul(t))).mul(kk));
+            });
+          });
+        }
+      });
       // vortex
       If(U.vortexW.greaterThan(0), () => {
         const rv = p.xy.sub(vec2(U.vortexCx, U.vortexCy)).toVar();
@@ -301,7 +351,10 @@ export class GpuEngine implements Engine {
     m.positionNode = P.xyz;
     const speed = length(V.xyz);
     const st = smoothstep(110, 720, speed);
-    const size = mix(1.7, 3.3, S.y).mul(U.sizeScale).mul(mix(float(1.45), float(1), L.dark)); // ink dots need more coverage on paper
+    const held = clamp(V.w, 0, 1);
+    // far particles (20 % in free flight): dimmer, smaller, set back in z — a depth cue in the flock
+    const farFree = step(fract(S.z.mul(7.77)), U.farFrac.sub(1e-4)).mul(step(1e-4, U.farFrac)).mul(float(1).sub(held));
+    const size = mix(1.7, 3.3, S.y).mul(U.sizeScale).mul(mix(float(1.45), float(1), L.dark)).mul(mix(float(1), float(FAR_SIZE), farFree)).mul(U.frameGlow.mul(0.3).mul(held).add(1)); // ink dots need more coverage on paper
     m.scaleNode = vec2(size.mul(st.mul(3.2).add(1)), size.mul(float(1).sub(st.mul(0.35))));
     const vv = cameraViewMatrix.mul(vec4(V.xyz, 0)).xy;
     m.rotationNode = atan(vv.y, vv.x.add(1e-5));
@@ -314,7 +367,9 @@ export class GpuEngine implements Engine {
     const fu = P.xy.sub(this.uField.min).div(this.uField.size);
     const fd = texture(this.fieldRT.texture, vec2(fu.x, float(1).sub(fu.y))).w.div(this.uField.densRef);
     const expo = mix(clamp(float(1.5).div(fd.add(0.4).sqrt()), 0.3, 1), float(1), clamp(V.w, 0, 1));
-    const bright = mix(0.5, 1.0, S.z).mul(U.pulse.mul(0.15).add(1)).mul(U.brightness).mul(mix(float(1), expo, this.uLook.dark));
+    // idle flies at freeDim (~65 %); held shapes at shapeExpo (dense shapes dimmed so edges stay readable) + frame glow
+    const look = mix(U.freeDim.mul(mix(float(1), float(FAR_DIM), farFree)), U.shapeExpo.mul(U.frameGlow.mul(0.6).add(1)), held);
+    const bright = mix(0.5, 1.0, S.z).mul(U.pulse.mul(0.15).add(1)).mul(U.brightness).mul(mix(float(1), expo, this.uLook.dark)).mul(look);
     // dark: additive, brightness in colour; light: ink over paper, brightness only nudges opacity
     m.fragmentNode = vec4(color.mul(mix(float(1), bright, L.dark)), disc.mul(L.alpha).mul(mix(mix(0.8, 1.0, S.z), float(1), L.dark)));
     this.material = m;
@@ -331,7 +386,8 @@ export class GpuEngine implements Engine {
     const pl = new THREE.RenderPipeline(this.renderer);
     const sp = pass(this.scene, this.camera);
     const col = sp.getTextureNode('output');
-    pl.outputNode = col.add(bloom(col, 0.28, 0.22, 0.5));
+    this.bloomNode = bloom(col, BLOOM_STRENGTH, 0.22, 0.5);
+    pl.outputNode = col.add(this.bloomNode);
     this.pipeline = pl;
   }
 
@@ -396,6 +452,7 @@ export class GpuEngine implements Engine {
 
   frame(p: SimParams, draw = true): void {
     for (const k in p) { const u = this.U[k as keyof SimParams]; if (u) u.value = p[k as keyof SimParams]; }
+    if (this.bloomNode?.strength) this.bloomNode.strength.value = BLOOM_STRENGTH * p.bloomK;
     const r = this.renderer;
     const D = this.cssH / 2 / Math.tan((this.camera.fov * Math.PI) / 360);
     this.camera.position.set(p.camX, p.camY, D);

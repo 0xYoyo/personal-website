@@ -46,7 +46,12 @@ export type Rect = { x: number; y: number; w: number; h: number };
  * Engines without it place shapes wherever they like.
  */
 export interface SwarmStage {
-  setStage(rect: Rect): void;
+  /**
+   * `keepOut` (optional): rects the flock stays out of — top bar, conversation block, chips, command bar
+   * (CSS px, viewport; up to 6 are honoured). Soft repulsion in idle and while holding shapes; shapes are
+   * fitted inside the stage minus these. Omitting it keeps the previous keep-outs.
+   */
+  setStage(rect: Rect, keepOut?: Rect[]): void;
 }
 
 /** An engine may idle its render loop on request (game modal open); state is kept. */

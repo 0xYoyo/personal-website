@@ -38,6 +38,8 @@ export interface Swarm extends SwarmApi, SwarmEntry, SwarmStage {
   pause(): void;
   /** Resume after pause() (no-op while the tab is hidden; it resumes when visible). */
   resume(): void;
+  /** `setStage` takes keep-out rects (feature flag for callers). */
+  readonly keepOut: true;
   /** The canvas currently drawn into (replaced when the context type has to change, e.g. GPU → 2D). */
   readonly canvas: HTMLCanvasElement;
   /** @internal QA hook: the active engine. */
@@ -110,6 +112,7 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
 
   let ro: ResizeObserver | null = null;
   let stage: Rect | null = null;
+  let keepOut: Rect[] = [];
   let fullFrame = false;
 
   // Build (or rebuild) the engine for a tier config; keeps behaviour state where it can.
@@ -139,7 +142,7 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     const prev = ctrl as Controller | undefined;
     ctrl = new Controller(c.count, { upload: (a, b) => engine?.setTargets(a, b) }, sched);
     ctrl.setReduced(reduced);
-    ctrl.setStage(stage);
+    ctrl.setStage(stage, keepOut);
     ctrl.setFullFrame(fullFrame);
     const { w, h } = cssSize();
     ctrl.setViewport(w, h);
@@ -203,6 +206,7 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
   const onVis = (): void => { if (document.hidden) stopLoop(); else startLoop(); };
 
   const api: Swarm = {
+    keepOut: true,
     get canvas() { return canvas; },
     /** @internal QA hook */
     get _engine() { return engine; },
@@ -219,7 +223,11 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
       switching = switching.then(() => build(next, 'scatter'));
     },
     setListeningLevel(l) { ctrl.setListeningLevel(l); },
-    setStage(rect) { stage = { ...rect }; ctrl.setStage(stage); },
+    setStage(rect, ko) {
+      stage = { ...rect };
+      if (ko) keepOut = ko.map((k) => ({ ...k }));
+      ctrl.setStage(stage, keepOut);
+    },
     async playEntry(o = {}) {
       fullFrame = true; ctrl.setFullFrame(true);
       try {
