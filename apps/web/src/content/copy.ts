@@ -58,6 +58,8 @@ export const copy = {
     resting: "the live builder is resting. here's one I made earlier — same speed, same idea.",
     /** ui: cap reached (SPEC §2.6 asks for an honest message) */
     capped: "that's five builds this hour. come back in a bit — or ask me something.",
+    /** POLISH1 A3: the caption while the code streams */
+    writing: 'writing…',
     /** ui */
     stopped: 'stopped.',
     failed: 'that one fell over. once more?',

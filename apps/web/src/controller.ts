@@ -419,16 +419,25 @@ export const ctl = {
     st.openOverlay('build');
     st.setChips([]);
     swarm()?.mood('building');
-    if (opts.announce) void speakLine(copy.build.onIt);
     let html = '';
+    // progress = bytes / expected, expected = max(8 kB, the previous build's size); ≤ 0.95 until done
+    const fallbackExpected = buildExpected(opts.previousHtml ?? brain.memory.builds()[0]?.html);
+    let said: Promise<void> = Promise.resolve();
     try {
       const res = await brain.build(
         instruction,
         {
-          onChunk(chunk, bytes, expected) {
+          onChunk(chunk, bytes, exp) {
             html += chunk;
-            const progress = expected ? Math.min(0.98, bytes / expected) : Math.min(0.95, 1 - Math.exp(-bytes / 9000));
-            S().patchBuild({ status: 'streaming', html, bytes, expected, progress });
+            const expected = exp ?? fallbackExpected;
+            S().patchBuild({ status: 'streaming', html, bytes, expected, progress: buildProgress(bytes, expected) });
+          },
+          // "on it." only once the builder has actually taken the request (POLISH1 C5)
+          onAccepted() {
+            if (buildAbort === ac) said = said.then(() => speakLine(copy.build.onIt));
+          },
+          onNotice(text) {
+            if (buildAbort === ac) said = said.then(() => speakLine(text));
           },
         },
         { signal: ac.signal, ...(opts.previousHtml ? { previousHtml: opts.previousHtml } : {}) },
@@ -447,7 +456,8 @@ export const ctl = {
           swarm()?.mood('idle');
         }
       }, 650);
-      await speakLine(copy.build.done(seconds));
+      await said;
+      await speakLine(res.line || copy.build.done(seconds));
       S().setChips(BUILD_CHIPS);
     } catch (e) {
       if (buildAbort !== ac) return;
@@ -532,6 +542,11 @@ export const ctl = {
   },
   projectById,
 };
+
+/** Bytes a build is expected to reach: the previous build's size, at least 8 kB. */
+export const buildExpected = (previousHtml?: string): number => Math.max(8192, previousHtml?.length ?? 0);
+/** Build progress while streaming: bytes / expected, held at ≤ 0.95 until the build is done. */
+export const buildProgress = (bytes: number, expected: number): number => Math.max(0, Math.min(0.95, bytes / expected));
 
 function stopBuild(silent: boolean) {
   if (!buildAbort) return;

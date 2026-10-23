@@ -25,6 +25,15 @@ const IDLE_MS = 4000;
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+// the browser eats the Esc that leaves full screen, but not always: ignore one that lands right after
+let lastFullscreenExit = -1e9;
+if (typeof document !== 'undefined') {
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) lastFullscreenExit = performance.now();
+  });
+}
+
+
 /** Where shapes should form: the right ~36% on desktop (the words take the left ~62%), the top ~34% on mobile. */
 function stageRect(): Rect {
   const w = innerWidth;
@@ -275,6 +284,8 @@ export function App() {
       const typing = typingTarget(e.target);
 
       if (e.key === 'Escape') {
+        // one Esc in full screen only leaves full screen (POLISH1 A3)
+        if (document.fullscreenElement || performance.now() - lastFullscreenExit < 400) return;
         if (s.overlay !== 'none' || ctl.runnerActive()) {
           e.preventDefault();
           ctl.closeOverlay();
