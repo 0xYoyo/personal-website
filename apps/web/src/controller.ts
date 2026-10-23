@@ -8,7 +8,7 @@ import { neighbour, projectById } from './content/projects';
 import { nextStory, stories, storyById } from './content/stories';
 import { tour } from './content/tour';
 import { applyScene, isMobileViewport } from './design';
-import { useStore, type Overlay } from './state/store';
+import { emptyBuild, useStore, type Overlay } from './state/store';
 import type { SwarmHandle } from './swarm';
 import { createRunner, type Runner, type Step } from './ui/runner/engine';
 import type { Sound } from './ui/sound';
@@ -271,7 +271,7 @@ export const ctl = {
     const st = S();
     st.touch();
     st.spendIdle();
-    const cmd = resolveChip(label, { project: st.project, name: st.visitor.name ?? rt.brain?.memory.name(), hasBuild: !!st.build.html });
+    const cmd = resolveChip(label, { project: st.project, name: st.visitor.name ?? rt.brain?.memory.name(), hasBuild: !!st.build.html, hasStoredBuild: !!rt.brain?.memory.builds().some((b) => b.html) });
     switch (cmd.kind) {
       case 'say':
         void ctl.say(cmd.text);
@@ -296,6 +296,9 @@ export const ctl = {
         break;
       case 'sound-on':
         void ctl.setSound(true);
+        break;
+      case 'open-build':
+        ctl.openStoredBuild();
         break;
       case 'become':
         S().pushVisitor(cmd.text);
@@ -478,6 +481,16 @@ export const ctl = {
     } finally {
       if (buildAbort === ac) buildAbort = null;
     }
+  },
+  /** Reopen the visitor's last build from memory (returning visitor chip, POLISH1 A6). */
+  openStoredBuild() {
+    const last = rt.brain?.memory.builds().find((b) => b.html);
+    if (!last) return;
+    closeAll('build');
+    const st = S();
+    st.patchBuild({ ...emptyBuild, status: 'locked', instruction: last.instruction, html: last.html, bytes: last.html.length, progress: 1, title: last.title });
+    st.openOverlay('build');
+    st.setChips(BUILD_CHIPS);
   },
   stopBuild: () => stopBuild(false),
   buildFrameProgress(rect: Rect, progress: number) {

@@ -9,7 +9,12 @@ export type ChipContext = 'entry' | 'who' | 'project' | 'build' | 'story' | 'idl
 export const ENTRY_CHIPS = ['Who is Yoyo?', 'What has he built?', 'Spell my name', 'Build me something', 'Play his game'];
 export const WHO_CHIPS = ['Tell me a story', "What's he bad at?", 'Why should we hire him?', 'How do I reach him?'];
 export const BUILD_CHIPS = ['Change it', 'Share it', 'Build another', 'Who made this agent?'];
-export const STORY_CHIPS = ['Next story', 'Who is Yoyo?', 'What has he built?'];
+export const STORY_CHIPS = ['Next story', 'Who is Yoyo?', 'What has he built?', 'How do I reach him?'];
+
+/** Returning visitor with a stored build (POLISH1 A6): reopen it first, then the usual moves. */
+export const openBuildChip = (title: string): string => `Open my ${title}`;
+export const returningChips = (buildTitle?: string): string[] =>
+  buildTitle ? [openBuildChip(buildTitle), 'Who is Yoyo?', 'What has he built?', 'Build me something', 'Play his game'] : ENTRY_CHIPS;
 
 export function projectChips(id: ProjectId): string[] {
   return id === 'prompt-racers'
@@ -53,12 +58,15 @@ export type ChipCommand =
   | { kind: 'share-build' }
   | { kind: 'story-next' }
   | { kind: 'sound-on' }
+  | { kind: 'open-build' }
   | { kind: 'become'; shape: ShapeSpec; text: string };
 
 export interface ChipState {
   project: ProjectId | null;
   name?: string | undefined;
   hasBuild: boolean;
+  /** a build from an earlier visit is in memory */
+  hasStoredBuild?: boolean;
 }
 
 const norm = (s: string) => s.trim().toLowerCase().replace(/[?.!]+$/, '');
@@ -66,6 +74,7 @@ const norm = (s: string) => s.trim().toLowerCase().replace(/[?.!]+$/, '');
 export function resolveChip(label: string, st: ChipState): ChipCommand {
   const l = norm(label);
   if (isEmojiOnly(label)) return { kind: 'say', text: label };
+  if (l.startsWith('open my ')) return st.hasStoredBuild ? { kind: 'open-build' } : { kind: 'say', text: 'Build me something' };
   switch (l) {
     case 'play his game':
     case 'play it':

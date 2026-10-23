@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Rect } from '@yoyo/protocol';
 import { createBrain, readSharedFromHash } from './agent';
-import { ENTRY_CHIPS } from './content/chips';
+import { ENTRY_CHIPS, returningChips } from './content/chips';
 import { copy } from './content/copy';
 import { ctl } from './controller';
 import { isMobileViewport, prefersReducedMotion } from './design';
 import { useStore } from './state/store';
+import { keepSeen, readVisit, settleVisits } from './state/visit';
 import { createSwarm } from './swarm';
 import { BuildFrame } from './ui/BuildFrame';
 import { Card } from './ui/Card';
@@ -32,7 +33,6 @@ if (typeof document !== 'undefined') {
     if (!document.fullscreenElement) lastFullscreenExit = performance.now();
   });
 }
-
 
 /** Where shapes should form: the right ~36% on desktop (the words take the left ~62%), the top ~34% on mobile. */
 function stageRect(): Rect {
@@ -94,6 +94,7 @@ export function App() {
     const tierParam = params.get('tier'); // QA only: ?tier=0..3 forces a quality tier (no adaptive drop)
     const tier = tierParam !== null && /^[0-3]$/.test(tierParam) ? (Number(tierParam) as 0 | 1 | 2 | 3) : undefined;
     const scene = params.get('scene') === 'light' ? 'light' : 'dark';
+    const visit = readVisit(); // before the client starts: it stamps lastSeen itself
     const brain = createBrain({ agentUrl: import.meta.env.VITE_AGENT_URL as string | undefined, speed });
     const sound = createSound();
     const voice = createVoice();
@@ -114,10 +115,10 @@ export function App() {
       if (reduced) swarm.mood('asleep');
 
       // memory
-      const before = brain.memory.recordVisit();
+      settleVisits(visit);
       const name = brain.memory.name();
-      const returning = before > 0;
-      st.setVisitor({ name, returning, visits: before + 1 });
+      const returning = visit.returning;
+      st.setVisitor({ name, returning, visits: visit.visits });
       if (brain.memory.voice()) st.setVoice(true);
       const soundWanted = brain.memory.sound();
 
@@ -151,18 +152,25 @@ export function App() {
       }
 
       let line: string = copy.entry.greeting;
+      let chips = ENTRY_CHIPS;
       if (returning) {
-        const last = brain.memory.builds()[0];
+        const last = brain.memory.builds().find((b) => b.html);
         line = name ? copy.entry.welcomeBack(name) : copy.entry.welcomeBackAnon;
-        if (last) line += ` ${copy.entry.lastBuild(last.title.toLowerCase())}`;
+        if (last) {
+          const title = last.title.toLowerCase();
+          line += ` ${copy.entry.lastBuild(title)}`;
+          chips = returningChips(title);
+        }
       }
-      useStore.getState().setChips(ENTRY_CHIPS);
+      useStore.getState().setChips(chips);
       await ctl.speakLine(line);
       useStore.getState().touch();
     })();
 
+    const stopSeen = keepSeen();
     return () => {
       cancelled = true;
+      stopSeen();
       swarm?.destroy();
     };
   }, []);
