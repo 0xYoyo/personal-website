@@ -16,6 +16,7 @@ export function CommandBar() {
   const barMode = useStore((s) => s.barMode);
   const build = useStore((s) => s.build);
   const lines = useStore((s) => s.lines);
+  const overlay = useStore((s) => s.overlay);
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
   const [ph, setPh] = useState(0);
@@ -30,12 +31,14 @@ export function CommandBar() {
   const history = useMemo(() => lines.filter((l) => l.role === 'visitor').map((l) => l.text), [lines]);
   const building = build.status === 'ring' || build.status === 'streaming';
 
-  // Cycling placeholder (only while empty)
+  // The placeholder cycles only while the bar is empty and nothing else is
+  // talking: never during the tour, stories or a build (POLISH1 A4).
+  const still = overlay === 'tour' || overlay === 'stories' || overlay === 'build';
   useEffect(() => {
-    if (value || barMode === 'change') return;
+    if (value || barMode === 'change' || still) return;
     const t = setInterval(() => setPh((i) => (i + 1) % copy.bar.placeholders.length), 2600);
     return () => clearInterval(t);
-  }, [value, barMode]);
+  }, [value, barMode, still]);
 
   // Mic
   useEffect(() => {
@@ -139,7 +142,7 @@ export function CommandBar() {
     else mic.current.stop(true);
   };
 
-  const placeholder = barMode === 'change' ? copy.bar.changePlaceholder : copy.bar.placeholders[ph]!;
+  const placeholder = barMode === 'change' ? copy.bar.changePlaceholder : still ? copy.bar.placeholders[0]! : copy.bar.placeholders[ph]!;
   const showPh = !value;
 
   return (

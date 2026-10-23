@@ -11,7 +11,7 @@ import { useStore } from './state/store';
 import { createSwarm } from './swarm';
 import { BuildFrame } from './ui/BuildFrame';
 import { Card } from './ui/Card';
-import { Chips, SoundChip } from './ui/Chips';
+import { Chips, SoundChip, soundChipVisible } from './ui/Chips';
 import { CommandBar } from './ui/CommandBar';
 import { Contact } from './ui/Contact';
 import { Conversation, RunnerControls } from './ui/Conversation';
@@ -79,6 +79,7 @@ export function App() {
   const bodyRef = useRef<HTMLDivElement>(null);
   const overlay = useStore((s) => s.overlay);
   const phase = useStore((s) => s.phase);
+  const sound = useStore((s) => s.sound);
   const [voiceSupported] = useState(() => typeof window !== 'undefined' && 'speechSynthesis' in window);
 
   // ---- boot: swarm, brain, sound, voice; then the entry -------------------
@@ -334,7 +335,7 @@ export function App() {
   };
 
   return (
-    <div className="y-app" data-overlay={overlay} onClick={onStageClick}>
+    <div className="y-app" data-overlay={overlay} data-soundchip={soundChipVisible(sound, phase, overlay)} onClick={onStageClick}>
       <a className="y-skip" href="#y-input" onClick={(e) => { e.preventDefault(); document.getElementById('y-input')?.focus(); }}>
         {copy.a11y.skip}
       </a>
