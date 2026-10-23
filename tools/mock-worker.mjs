@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-// Mock of the agent Worker for development and QA. Node only, no dependencies.
+// Mock of the agent Worker for development and QA. Node only; answers with the site's own
+// scripted brain (bundled on start by tools/lib/agent-bundle.mjs with esbuild, which Vite installs).
 //
 //   node tools/mock-worker.mjs            → http://localhost:8787
 //   PORT=9000 node tools/mock-worker.mjs
 //
 // Same endpoints and wire format as apps/worker (the @yoyo/protocol ChatEvent / BuildEvent framing):
-//   POST /chat  → SSE data: {"type":"token","text":"..."} … data: {"type":"done"}   (canned replies from faq.md, live-like timing)
+//   POST /chat  → SSE data: {"type":"token","text":"..."} … data: {"type":"done"}   (the scripted brain's replies, as a live model would give them; live-like timing)
 //   POST /build → SSE data: {"type":"chunk","html":"<html>"} … data: {"type":"done","bytes":N}  (6 prebuilt apps, ~15 s)
 //   POST /share → {id, url}      GET /s/:id → HTML under the sandbox CSP      GET /health
 //
@@ -23,10 +24,10 @@ import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
+import { loadAgent } from './lib/agent-bundle.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
-const faqFile = join(root, 'apps', 'web', 'src', 'content', 'faq.md');
 const examplesDir = join(root, 'apps', 'web', 'src', 'agent', 'client', 'examples');
 const PORT = Number(process.env.PORT ?? 8787);
 const SPEED = process.env.MOCK_FAST ? 10 : 1;
@@ -36,111 +37,67 @@ const CSP = "sandbox allow-scripts; default-src 'none'; style-src 'unsafe-inline
 
 // ---------------------------------------------------------------- content
 
-function loadFaq() {
-  const md = readFileSync(faqFile, 'utf8');
-  const intents = [];
-  let unknown = '';
-  let beats = [];
-  for (const sec of md.split(/^## /m).slice(1)) {
-    const [head, ...rest] = sec.split('\n');
-    const id = head.trim();
-    const body = rest.join('\n');
-    if (id.startsWith('emoji_beats')) {
-      beats = [...body.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
-      continue;
-    }
-    const reply = /^→[^`]*`([^`]+)`/m.exec(body)?.[1];
-    if (!reply) continue;
-    if (id === 'unknown') {
-      unknown = reply;
-      continue;
-    }
-    const hints = (/^hints:\s*(.+)$/m.exec(body)?.[1] ?? '').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);
-    intents.push({ id, hints, reply });
-  }
-  return { intents, unknown, beats };
-}
-
-const EXAMPLE_KEYWORDS = {
-  pomodoro: ['pomodoro', 'timer', 'focus', 'countdown', 'clock'],
-  landing: ['landing', 'homepage', 'marketing', 'startup', 'product page', 'website'],
-  todo: ['todo', 'to-do', 'to do', 'task', 'checklist', 'list'],
-  weather: ['weather', 'forecast', 'temperature', 'rain'],
-  habits: ['habit', 'tracker', 'streak', 'routine'],
-  birthday: ['birthday', 'card', 'greeting', 'party', 'anniversary'],
-};
+const EXAMPLE_IDS = ['pomodoro', 'landing', 'todo', 'weather', 'habits', 'birthday'];
 
 function loadExamples() {
-  const dir = examplesDir;
-  return Object.keys(EXAMPLE_KEYWORDS)
-    .filter((id) => existsSync(join(dir, `${id}.html`)))
-    .map((id) => ({ id, keywords: EXAMPLE_KEYWORDS[id], html: readFileSync(join(dir, `${id}.html`), 'utf8') }));
+  return EXAMPLE_IDS.filter((id) => existsSync(join(examplesDir, `${id}.html`))).map((id) => ({
+    id,
+    html: readFileSync(join(examplesDir, `${id}.html`), 'utf8'),
+  }));
 }
 
-const FAQ = loadFaq();
+// The site's own scripted brain (classifier, faq.md replies, easter eggs, example picker),
+// bundled from apps/web/src/agent/client — so the mock can't drift from it (POLISH1 C2).
+const AGENT = await loadAgent();
 const EXAMPLES = loadExamples();
 let exampleCursor = 0;
 const shares = new Map();
 
 // ---------------------------------------------------------------- replies
 
-const tokenize = (s) => (s.toLowerCase().replace(/[’']/g, '').match(/[\p{L}\p{N}&]+/gu) ?? []);
+const tagSafe = (s) => String(s).replace(/[[\]|]/g, '').trim();
 
-/** SPEC §2.8 easter eggs with no faq.md line (same lines as the scripted brain's EXTRA_INTENTS and persona.md). */
-const EASTER_EGGS = [
-  [/\bfortnite\b/, '[[become:ramp]] he could build a ramp before you could aim.'],
-  [/\b(cs2|cs ?go|counter[- ]?strike)\b/, '[[become:cursor]] rush B. don\'t stop.'],
-  [/\bpiano\b/, '[[become:piano]] he wants to learn. hasn\'t yet. ask him in a year.'],
-];
-
-/** What a live model might say: faq replies, plus the persona's build/name/emoji/spell behaviour. */
-export function mockReply(text, visitor = {}) {
-  const raw = String(text ?? '').trim();
-  const lower = raw.toLowerCase();
-  const emoji = /^\s*(\p{Extended_Pictographic}(?:‍\p{Extended_Pictographic}|️|\p{Emoji_Modifier})*)/u.exec(raw)?.[1];
-  if (emoji) return `[[become:${emoji}]] ${emoji === '🚀' ? '[[mood:excited]] ' : ''}${FAQ.beats[0] ?? 'obviously.'}`;
-  const name = /^(?:hi[,!\s]+)?(?:i'?m|i am|my name is|call me)\s+([\p{L}][\p{L}'-]{0,23})[.!]?$/iu.exec(raw)?.[1];
-  if (name && !/^(a|an|the|looking|here|just|not|interested|curious)$/i.test(name)) {
-    const n = name[0].toUpperCase() + name.slice(1);
-    return `[[become:${n}]] nice to meet you, ${n}. [[chips:Spell my name|Build me something|Who is Yoyo?]]`;
+/** The last project card the agent opened in this conversation (for "Next one"). */
+function lastShownIn(history) {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const m = history[i];
+    if (m?.role !== 'agent' || typeof m.text !== 'string') continue;
+    const all = [...m.text.matchAll(/\[\[show:([a-z-]+)\]\]/g)];
+    if (all.length) return all.at(-1)[1];
   }
-  if (/^spell my name$/i.test(raw)) {
-    return visitor.name ? `[[become:${visitor.name}]] done. [[chips:Now a rocket|Build me something|Who is Yoyo?]]` : `[[become:question]] what's your name?`;
-  }
-  const spell = /^(?:spell|write)\s+(.{1,12})$/i.exec(raw)?.[1];
-  if (spell) return `[[become:${spell.replace(/[[\]|]/g, '')}]] done. [[chips:Now a rocket|Build me something|Who is Yoyo?]]`;
-  const build = /\b(build|make|create|generate)\b\s+(me\s+)?(an?\s+)?(.+)/i.exec(raw);
-  if (build && !/\b(he|has he|did he|this site|this agent)\b/i.test(lower)) {
-    const what = build[4].replace(/[[\]|]/g, '').replace(/[?.!]+$/, '').slice(0, 280);
-    return `[[build:${what}]] on it.`;
-  }
-  const egg = EASTER_EGGS.find(([re]) => re.test(lower));
-  if (egg) return egg[1];
-  const tokens = tokenize(raw);
-  let best = null;
-  let bestScore = 0;
-  for (const it of FAQ.intents) {
-    let score = 0;
-    for (const h of it.hints) {
-      const ht = tokenize(h);
-      if (!ht.length) continue;
-      if (ht.length > 1 ? lower.includes(h) : tokens.includes(ht[0])) score += ht.length > 1 ? 3 : 2;
-    }
-    if (score > bestScore || (score === bestScore && best && score > 0 && it.hints.length < best.hints.length)) {
-      best = it;
-      bestScore = score;
-    }
-  }
-  if (!best || bestScore === 0) return FAQ.unknown;
-  // As the live model it can build for real, so the scripted "builder is resting" line doesn't apply.
-  if (best.id === 'build') return `[[build:${raw.replace(/[[\]|]/g, '').slice(0, 280)}]] on it.`;
-  if (best.id === 'story') return '[[story:next]] here it is.';
-  return best.reply;
+  return null;
 }
 
-export function pickExample(instruction) {
-  const low = String(instruction ?? '').toLowerCase();
-  const hit = EXAMPLES.find((e) => e.keywords.some((k) => low.includes(k)));
+/**
+ * What a live model would say: the scripted brain's answer for the same intent, except that the
+ * live model really builds (`[[build:<their words>]] on it.`, persona.md) instead of "the live
+ * builder is resting", and greets a new name with chips.
+ */
+export function mockReply(text, visitor = {}, history = []) {
+  const raw = String(text ?? '').trim();
+  const c = AGENT.classify(raw);
+  const name = typeof visitor.name === 'string' && visitor.name ? tagSafe(visitor.name) : null;
+  if (c.kind === 'name') {
+    const n = tagSafe(c.name);
+    return `[[become:${n}]] nice to meet you, ${n}. [[chips:Spell my name|Build me something|Who is Yoyo?]]`;
+  }
+  if (c.kind === 'emoji') {
+    return `[[become:${tagSafe(c.emoji)}]] ${c.emoji === '🚀' ? '[[mood:excited]] ' : ''}${AGENT.EMOJI_BEATS[0] ?? 'obviously.'}`;
+  }
+  if (c.kind === 'intent' && c.id === 'build') {
+    const ask = tagSafe(raw).replace(/[?.!]+$/, '').replace(/^(?:please\s+)?(?:can you\s+)?(?:build|make|create|generate)\s+(?:me\s+|us\s+)?(?:an?\s+)?/i, '');
+    return `[[build:${(ask || 'something small and useful').slice(0, 280)}]] on it.`;
+  }
+  if (c.kind === 'command' && c.id === 'another-build') return '[[build:another small app, different from the last one]] on it.';
+  const reply = AGENT.scriptedReply(raw, { name, lastShown: lastShownIn(history), random: () => 0 }).raw;
+  if (c.kind === 'spell' || (c.kind === 'spell-my-name' && name)) return `${reply} [[chips:Now a rocket|Build me something|Who is Yoyo?]]`;
+  return reply;
+}
+
+/** The example a build instruction gets: the scripted brain's keyword rules, else rotate. */
+export function pickExample(instruction, previousHtml) {
+  const id = AGENT.pickExampleId(String(instruction ?? '')) ?? (previousHtml ? EXAMPLES.find((e) => e.html === previousHtml)?.id : null);
+  const hit = id ? EXAMPLES.find((e) => e.id === id) : null;
   if (hit) return hit;
   const ex = EXAMPLES[exampleCursor % EXAMPLES.length];
   exampleCursor++;
@@ -234,7 +191,7 @@ async function handleChat(req, res, fail) {
   if (!content.trim()) return sendJson(req, res, 400, { reason: 'bad_request' });
   if ([...content].length > 600) return sendJson(req, res, 400, { reason: 'too_long' });
   if (await failMaybe(fail, req, res)) return;
-  const reply = mockReply(content, body?.visitor ?? {});
+  const reply = mockReply(content, body?.visitor ?? {}, messages.slice(0, -1));
   sseHead(req, res);
   let closed = false;
   req.on('close', () => (closed = true));
@@ -260,7 +217,7 @@ async function handleBuild(req, res, fail) {
   if (!instruction) return sendJson(req, res, 400, { reason: 'bad_request' });
   if ([...instruction].length > 400) return sendJson(req, res, 400, { reason: 'too_long' });
   if (await failMaybe(fail, req, res)) return;
-  const ex = pickExample(instruction);
+  const ex = pickExample(instruction, typeof body?.previousHtml === 'string' ? body.previousHtml : undefined);
   sseHead(req, res);
   let closed = false;
   req.on('close', () => (closed = true));
@@ -338,7 +295,7 @@ export function createMockServer() {
 if (process.argv[1] && fileURLToPath(import.meta.url) === normalize(process.argv[1])) {
   createMockServer().listen(PORT, () => {
     console.log(`mock agent worker on http://localhost:${PORT}`);
-    console.log(`faq intents: ${FAQ.intents.length}, examples: ${EXAMPLES.map((e) => e.id).join(', ')}${ENV_FAIL ? `, MOCK_FAIL=${ENV_FAIL}` : ''}`);
+    console.log(`faq intents: ${AGENT.FAQ_INTENTS.length}, examples: ${EXAMPLES.map((e) => e.id).join(', ')}${ENV_FAIL ? `, MOCK_FAIL=${ENV_FAIL}` : ''}`);
   });
 }
 

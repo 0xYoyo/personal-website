@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { EXTRA_INTENTS } from '../extras';
 import { FAQ_INTENTS } from '../faq';
 import { captureName, classify, levenshtein, rankIntents, tokenize } from '../intents';
 import { replyFor, scriptedReply, withRestingLine, RESTING_LINE } from '../scripted';
@@ -27,6 +28,8 @@ describe('intent matching', () => {
     for (const intent of FAQ_INTENTS) {
       it(intent.id, () => {
         for (const hint of intent.hints) {
+          // an easter egg (extras.ts) may claim a single word on purpose, e.g. "curls"
+          if (EXTRA_INTENTS.some((x) => x.match.test(hint))) continue;
           const got = intentOf(hint);
           const owners = listing(hint);
           if (owners.length === 1) expect(got, `"${hint}"`).toBe(intent.id);

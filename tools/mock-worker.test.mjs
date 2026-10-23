@@ -41,7 +41,18 @@ test('replies like the live model for builds, names, emoji', () => {
   assert.match(mockReply('🚀'), /^\[\[become:🚀\]\] \[\[mood:excited\]\]/);
   assert.match(mockReply('what has he built?'), /\[\[show:prompt-racers\]\]/);
   assert.equal(mockReply('do you play fortnite'), '[[become:ramp]] he could build a ramp before you could aim.');
-  assert.equal(mockReply('cs2?'), "[[become:cursor]] rush B. don't stop.");
+  assert.equal(mockReply('cs2?'), "[[become:rush B]] rush B. don't stop.");
+  assert.equal(mockReply('curls'), "[[become:curls]] yes, they're real.");
+  assert.match(mockReply('what does he look like'), /^\[\[become:curls\]\] Long curly hair/);
+});
+
+test('"How do I reach him?" is the contact reply, not "who" (POLISH1 C2)', () => {
+  assert.equal(mockReply('How do I reach him?'), '[[become:envelope-open]] yoavyoav310@gmail.com. He reads everything. Say you met the agent. [[contact]]');
+});
+
+test('"Next one" walks on from the last card in the conversation', () => {
+  const history = [{ role: 'visitor', text: 'what has he built?' }, { role: 'agent', text: '[[become:kart]] Seven things. [[show:prompt-racers]]' }];
+  assert.equal(mockReply('Next one', {}, history), '[[show:unfiltered]]');
 });
 
 test('/build streams a prebuilt app picked by keyword', async () => {
