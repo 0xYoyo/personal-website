@@ -13,6 +13,8 @@ export interface Line {
   role: 'agent' | 'visitor';
   text: string;
   streaming: boolean;
+  /** shown without the word-in animation (a runner caption that stays on screen as the last line) */
+  quiet?: boolean;
 }
 
 export type BuildStatus = 'idle' | 'ring' | 'streaming' | 'locked' | 'error';
@@ -32,7 +34,8 @@ export interface RunnerView {
   kind: 'tour' | 'stories';
   storyId?: StoryId | undefined;
   say: string;
-  sub: string;
+  /** a muted line above the caption (e.g. "Things I've shipped:") */
+  lead: string;
   beat: number;
   beats: number;
   stepMode: boolean;
@@ -79,7 +82,7 @@ export interface Actions {
   startAgent(): number;
   appendAgentWord(word: string): void;
   finishAgent(): void;
-  agentLine(text: string): number;
+  agentLine(text: string, opts?: { quiet?: boolean }): number;
   setChips(chips: string[]): void;
   openOverlay(o: Overlay): void;
   closeOverlay(): void;
@@ -158,9 +161,10 @@ export const useStore = create<State & Actions>()((set, get) => ({
       streaming: false,
     }));
   },
-  agentLine(text) {
+  agentLine(text, opts) {
     const id = nextId++;
-    set((s) => ({ lines: [...s.lines, { id, role: 'agent' as const, text, streaming: false }].slice(-MAX_LINES) }));
+    const line: Line = { id, role: 'agent', text, streaming: false, ...(opts?.quiet ? { quiet: true } : {}) };
+    set((s) => ({ lines: [...s.lines, line].slice(-MAX_LINES) }));
     return id;
   },
   setChips: (chips) => set((s) => ({ chips: clampChips(chips), chipsKey: s.chipsKey + 1 })),

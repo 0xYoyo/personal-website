@@ -122,27 +122,34 @@ function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: numb
   st.openOverlay(kind);
   st.setChips([]);
   let say = '';
-  let sub = '';
+  let lead = '';
+  let storyId: StoryId | undefined;
+  let beatNo = 0;
   const stepMode = st.reducedMotion;
+  const view = () => S().setRunner({ kind, storyId, say, lead, beat: beatNo, beats: r.beats(), stepMode });
   const r = createRunner(
     steps,
     {
+      // the shape goes first …
       onStep(step, i, beat) {
-        if (step.say !== undefined) {
-          say = step.say;
-          sub = '';
-          pulseWord();
-          if (S().voice) rt.voice?.speak(step.say, pulseWord);
-        }
-        if (step.sub !== undefined) sub = step.sub;
+        beatNo = beat;
         const shape = resolveShape(step.become);
         if (shape) swarm()?.become(shape);
         if (step.release) swarm()?.release();
         if (step.mood) swarm()?.mood(step.mood);
         if (step.chips) S().setChips(step.chips);
-        const storyId = storyOf?.(i);
+        storyId = storyOf?.(i);
         if (storyId) rt.brain?.memory.markStory(storyId);
-        S().setRunner({ kind, storyId, say, sub, beat, beats: r.beats(), stepMode });
+        view();
+      },
+      // … and the caption lands once it has knitted
+      onSay(step, _i, beat) {
+        beatNo = beat;
+        say = step.say ?? say;
+        lead = step.lead ?? '';
+        pulseWord();
+        if (S().voice) rt.voice?.speak(say, pulseWord);
+        view();
       },
       onEnd(reason) {
         if (runner !== r) return;
@@ -153,8 +160,8 @@ function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: numb
         if (s2.overlay === kind) s2.closeOverlay();
         swarm()?.release();
         swarm()?.mood('idle');
-        // the last line stays in the conversation so the screen isn't empty
-        if (lastSay && reason === 'done') s2.agentLine(lastSay);
+        // the last caption rests where it is (no re-say) and History keeps it
+        if (lastSay && reason === 'done') s2.agentLine(lastSay, { quiet: true });
         s2.setChips(kind === 'stories' ? STORY_CHIPS : ENTRY_CHIPS);
       },
     },

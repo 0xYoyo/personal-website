@@ -25,13 +25,42 @@ const IDLE_MS = 4000;
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-/** Where shapes should form: right of the words on desktop, above them on mobile. */
+/** Where shapes should form: the right ~36% on desktop (the words take the left ~62%), the top ~34% on mobile. */
 function stageRect(): Rect {
   const w = innerWidth;
   const h = innerHeight;
-  if (isMobileViewport()) return { x: 16, y: 64, w: w - 32, h: Math.max(180, h * 0.36) };
-  const x = w * 0.6;
-  return { x, y: 72, w: w - x - 40, h: h - 72 - 200 };
+  if (isMobileViewport()) return { x: 16, y: 60, w: w - 32, h: Math.max(180, Math.round(h * 0.34)) };
+  const x = Math.round(w * 0.64);
+  return { x, y: 72, w: w - x - 32, h: h - 72 - 190 };
+}
+
+const boxOf = (sel: string): Rect | null => {
+  const el = document.querySelector(sel);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (!r.width || !r.height) return null;
+  return { x: r.left, y: r.top, w: r.width, h: r.height };
+};
+
+/** What the flock should stay off: the top bar, the words, the chips and the bar (POLISH1 B3). */
+function keepOutRects(): Rect[] {
+  return ['.y-top', '.y-convo[data-hidden="false"] .y-agent', '.y-convo[data-hidden="false"] .y-echo', '.y-chips[data-hidden="false"] .y-chips-row', '.y-bar-wrap[data-ready="true"] .y-bar']
+    .map(boxOf)
+    .filter((r): r is Rect => !!r);
+}
+
+type StageFn = (rect: Rect, keepOut?: Rect[]) => void;
+/**
+ * Tell the engine where to draw. Keep-out rects go along only when the engine's
+ * `setStage` takes a second argument (or flags `keepOut` support), so this works
+ * against engines with and without it.
+ */
+function pushStage() {
+  const sw = ctl.swarm as (typeof ctl.swarm & { keepOut?: boolean }) | null;
+  const fn = sw?.setStage as StageFn | undefined;
+  if (!sw || !fn) return;
+  if (fn.length >= 2 || sw.keepOut === true) fn.call(sw, stageRect(), keepOutRects());
+  else fn.call(sw, stageRect());
 }
 
 const typingTarget = (t: EventTarget | null) =>
@@ -71,7 +100,7 @@ export function App() {
       // QA hook (dev server, or ?qa=1 on a build): tools/shots.mjs and tools/og.mjs drive the page through it
       if (import.meta.env.DEV || params.has('qa')) Object.assign(window, { __yoyo: { ctl, swarm, brain, store: useStore } });
       ctl.setScene(scene);
-      swarm.setStage?.(stageRect());
+      pushStage();
       if (reduced) swarm.mood('asleep');
 
       // memory
@@ -129,10 +158,28 @@ export function App() {
   }, []);
 
   // ---- stage layout --------------------------------------------------------
+  // the stage, plus keep-outs that follow the words, chips and bar as they change size
   useEffect(() => {
-    const onResize = () => ctl.swarm?.setStage?.(stageRect());
-    addEventListener('resize', onResize);
-    return () => removeEventListener('resize', onResize);
+    let raf = 0;
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(pushStage);
+    };
+    addEventListener('resize', schedule);
+    const ro = new ResizeObserver(schedule);
+    for (const sel of ['.y-convo', '.y-chips', '.y-bar-wrap']) {
+      const el = document.querySelector(sel);
+      if (el) ro.observe(el);
+    }
+    const unsub = useStore.subscribe((s, p) => {
+      if (s.overlay !== p.overlay || s.phase !== p.phase || s.chipsKey !== p.chipsKey) schedule();
+    });
+    return () => {
+      removeEventListener('resize', schedule);
+      ro.disconnect();
+      unsub();
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   // ---- pointer → swarm (and sound energy) ----------------------------------
@@ -237,6 +284,11 @@ export function App() {
       // Runner: ←/→ navigate, any other key skips the tour
       if (ctl.runnerActive()) {
         if (e.key === 'ArrowRight') return ctl.runnerNext();
+        // step mode (reduced motion): Enter steps too, unless it is sending a message
+        if (e.key === 'Enter' && s.runner?.stepMode && !typing && !(e.target instanceof HTMLButtonElement)) {
+          e.preventDefault();
+          return ctl.runnerNext();
+        }
         if (e.key === 'ArrowLeft') return ctl.runnerPrev();
         if (s.overlay === 'tour' && !['Shift', 'Control', 'Alt', 'Meta', 'Tab'].includes(e.key)) {
           ctl.runnerSkip();

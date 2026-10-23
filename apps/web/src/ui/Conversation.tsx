@@ -1,36 +1,55 @@
-// The agent's words: large type, streamed word by word, split into ≤ 2-line
-// beats that replace each other (click to advance). The visitor's line echoes
-// in mono beneath. The previous exchange stays faintly above.
+// The agent's words (SPEC §2.3, POLISH1 A1). A reply is shown whole: one block
+// of large type that streams in word by word, never retracts a word and never
+// replaces itself mid-reply. The block starts at the viewport's max size and
+// steps down as the text grows so the reply fits in ≤ 3 lines (≤ 4 on mobile);
+// the fit measures the real DOM (ui/fit.ts). The finished reply rests until the
+// next one. The visitor's line echoes in mono beneath; the previous reply fades
+// to muted under that only when there is room (History always has it).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { copy } from '../content/copy';
 import { ctl } from '../controller';
-import { DISPLAY_FONT_FAMILY } from '../design';
 import { useStore, visibleExchange } from '../state/store';
-import { beatHold, canvasMeasure, packBeats, type Measure } from './beats';
+import { createFitter, isMobileWidth, toWords } from './fit';
 
-interface Metrics {
-  measure: Measure;
-  width: number;
+/** ms between words when a whole line lands at once (a runner caption, a notice) */
+const STAGGER_MS = 45;
+
+interface View {
+  key: string;
+  text: string;
+  streaming: boolean;
+  quiet: boolean;
+  lead: string;
 }
 
-function useMetrics(ref: React.RefObject<HTMLElement>): Metrics | null {
-  const [m, setM] = useState<Metrics | null>(null);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const update = () => {
-      const cs = getComputedStyle(el);
-      const px = parseFloat(cs.fontSize) || 56;
-      const width = el.clientWidth * 0.985;
-      setM({ measure: canvasMeasure(px, DISPLAY_FONT_FAMILY, 600, -0.025), width });
+function useViewport(): number {
+  const [vw, setVw] = useState(() => (typeof innerWidth === 'number' ? innerWidth : 1440));
+  useEffect(() => {
+    const on = () => setVw(innerWidth);
+    addEventListener('resize', on);
+    return () => removeEventListener('resize', on);
+  }, []);
+  return vw;
+}
+
+function useFontsReady(): number {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    let live = true;
+    void document.fonts?.ready.then(() => live && setN((x) => x + 1));
+    return () => {
+      live = false;
     };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    void document.fonts?.ready.then(update);
-    return () => ro.disconnect();
-  }, [ref]);
-  return m;
+  }, []);
+  return n;
+}
+
+/** Where the words must end: above the chips (or the bar when there are none). */
+function floorY(): number {
+  const chips = document.querySelector('.y-chips[data-hidden="false"] .y-chips-row');
+  const bar = document.querySelector('.y-bar');
+  const r = (chips ?? bar)?.getBoundingClientRect();
+  return r && r.height ? r.top - 20 : innerHeight - 160;
 }
 
 export function Conversation() {
@@ -39,32 +58,50 @@ export function Conversation() {
   const overlay = useStore((s) => s.overlay);
   const phase = useStore((s) => s.phase);
   const entryName = useStore((s) => s.entryName);
+  useStore((s) => s.chipsKey); // re-check the room beneath when the chips change
   const { prevAgent, agent, visitor } = visibleExchange(lines);
-  const textRef = useRef<HTMLDivElement>(null);
-  const metrics = useMetrics(textRef);
+  const vw = useViewport();
+  useFontsReady(); // re-fit once the display font has loaded
+  const sectionRef = useRef<HTMLElement>(null);
+  const lineRef = useRef<HTMLParagraphElement>(null);
+  const prevRef = useRef<HTMLParagraphElement>(null);
+  const fitter = useMemo(() => createFitter(), []);
 
-  const agentText = runner ? runner.say : agent?.text ?? '';
-  const agentKey = runner ? `r-${runner.kind}-${runner.say}` : `a-${agent?.id ?? 0}`;
-  const beats = useMemo(() => {
-    const words = agentText.split(/\s+/).filter(Boolean);
-    if (!words.length) return [''];
-    return metrics ? packBeats(words, metrics.measure, metrics.width, 2) : [agentText];
-  }, [agentText, metrics]);
+  // A runner caption and the line it leaves behind share a key (`t:` + text), so
+  // the last caption rests in place when the runner ends instead of re-appearing.
+  const view: View | null = runner
+    ? runner.say
+      ? { key: `t:${runner.say}`, text: runner.say, streaming: false, quiet: false, lead: runner.lead }
+      : null
+    : agent
+      ? { key: agent.quiet ? `t:${agent.text}` : `a:${agent.id}`, text: agent.text, streaming: agent.streaming, quiet: !!agent.quiet, lead: '' }
+      : null;
 
-  const [beatState, setBeatState] = useState({ key: agentKey, i: 0 });
-  const beatIdx = beatState.key === agentKey ? Math.min(beatState.i, beats.length - 1) : 0;
-  const complete = beatIdx < beats.length - 1; // the shown beat is full; a later one exists
-  const shown = beats[beatIdx] ?? '';
+  const words = useMemo(() => toWords(view?.text ?? ''), [view?.text]);
+  // words already there when a reply mounts arrive staggered; streamed ones as they come
+  const stagger = useMemo(
+    () => (view && !view.streaming && !view.quiet ? words.length : 0),
+    // only when a new reply mounts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [view?.key],
+  );
 
-  useEffect(() => {
-    if (!complete) return;
-    const t = setTimeout(() => setBeatState({ key: agentKey, i: beatIdx + 1 }), beatHold(shown));
-    return () => clearTimeout(t);
-  }, [complete, beatIdx, agentKey, shown]);
-
-  const advance = () => {
-    if (complete) setBeatState({ key: agentKey, i: beatIdx + 1 });
-  };
+  // Fit, then decide whether the previous reply has room beneath.
+  useLayoutEffect(() => {
+    const el = lineRef.current;
+    if (el && view) fitter.fit(el, view.key, vw);
+    const sec = sectionRef.current;
+    const prev = prevRef.current;
+    if (prev) {
+      prev.dataset.room = 'true';
+      if (prev.getBoundingClientRect().bottom > floorY()) prev.dataset.room = 'false';
+    }
+    if (sec) {
+      sec.dataset.tall = 'false';
+      // mobile: a long reply at the floor size may outgrow the space between the stage and the chips
+      if (isMobileWidth(vw) && sec.scrollHeight > sec.clientHeight + 1) sec.dataset.tall = 'true';
+    }
+  }); // every render: words arrive one per render while streaming; the fitter only ever steps down
 
   const hidden = overlay === 'card' || overlay === 'build' || overlay === 'contact' || overlay === 'game' || overlay === 'history';
   const waiting = !runner && lines[lines.length - 1]?.role === 'visitor';
@@ -74,35 +111,41 @@ export function Conversation() {
     <>
       {/* outside .y-convo: its transform would make this fixed line relative to it */}
       {entryName && <p className="y-entry-name y-mono" aria-hidden="true">{entryName}</p>}
-      <section className="y-convo" data-hidden={hidden} data-phase={phase}>
-      {prevAgent && !runner && (
-        <p className="y-prev" key={`p-${prevAgent.id}`} aria-hidden="true">
-          {prevAgent.text}
-        </p>
-      )}
-      <div className="y-agent" ref={textRef} data-waiting={waiting} onClick={advance} aria-hidden="true">
-        {shown && (
-          <p className="y-agent-line" key={`${agentKey}-${beatIdx}`}>
-            {shown}
-            {complete && <span className="y-beat-more" aria-hidden="true" />}
+      <section ref={sectionRef} className="y-convo" data-hidden={hidden} data-phase={phase} data-runner={!!runner}>
+        <div className="y-agent" data-waiting={waiting} aria-hidden="true">
+          {view?.lead && (
+            <p className="y-lead" key={`l-${view.lead}`}>
+              {view.lead}
+            </p>
+          )}
+          {view && (
+            <p className="y-agent-line" key={view.key} ref={lineRef} data-quiet={view.quiet}>
+              {words.map((w, i) => (
+                <span key={i}>
+                  {i > 0 && ' '}
+                  <span className="y-w" data-nowrap={w.nowrap || undefined} style={i < stagger ? { animationDelay: `${i * STAGGER_MS}ms` } : undefined}>
+                    {w.text}
+                  </span>
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+        {echo && (
+          <p className="y-echo y-mono" key={`e-${echo.id}`} aria-hidden="true">
+            {echo.text}
           </p>
         )}
-      </div>
-      {runner?.sub && (
-        <p className="y-sub y-mono" key={`s-${runner.sub}`} aria-hidden="true">
-          {runner.sub}
-        </p>
-      )}
-      {echo && (
-        <p className="y-echo y-mono" key={`e-${echo.id}`} aria-hidden="true">
-          {echo.text}
-        </p>
-      )}
-      {!runner && lines.length > 2 && (
-        <button className="y-textbtn y-history-toggle" onClick={() => ctl.history()} tabIndex={hidden ? -1 : 0}>
-          {copy.history.open}
-        </button>
-      )}
+        {prevAgent && !runner && !waiting && (
+          <p className="y-prev" key={`p-${prevAgent.id}`} ref={prevRef} aria-hidden="true">
+            {prevAgent.text}
+          </p>
+        )}
+        {!runner && lines.length > 2 && (
+          <button className="y-textbtn y-history-toggle" onClick={() => ctl.history()} tabIndex={hidden ? -1 : 0}>
+            {copy.history.open}
+          </button>
+        )}
       </section>
     </>
   );
@@ -115,7 +158,7 @@ export function RunnerControls() {
   return (
     <div className="y-runner" role="group" aria-label={runner.kind === 'tour' ? 'Tour' : 'Stories'}>
       {runner.stepMode && <span className="y-runner-hint y-mono">{copy.runner.stepHint}</span>}
-      <button className="y-textbtn" onClick={(e) => { e.stopPropagation(); ctl.runnerPrev(); }} disabled={runner.beat <= 0}>
+      <button className="y-textbtn" onClick={(e) => { e.stopPropagation(); ctl.runnerPrev(); }} disabled={runner.beat <= 0 && !runner.stepMode}>
         {copy.runner.prev}
       </button>
       <button className="y-textbtn" onClick={(e) => { e.stopPropagation(); ctl.runnerNext(); }}>

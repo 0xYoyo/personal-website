@@ -3,6 +3,17 @@
 .y-app {
   position: fixed;
   inset: 0;
+  /* the command bar's distance from the bottom; everything above it stacks on this */
+  --bar-bottom: calc(28px + env(safe-area-inset-bottom));
+}
+@media (max-width: 720px) {
+  .y-app {
+    --bar-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  /* "sound on" sits under the bar on mobile: lift the bar to make room */
+  .y-app[data-soundchip='true'] {
+    --bar-bottom: calc(46px + env(safe-area-inset-bottom));
+  }
 }
 
 .y-canvas {
@@ -69,10 +80,10 @@
 .y-convo {
   position: absolute;
   left: var(--gutter);
-  top: 50%;
-  transform: translateY(-56%);
-  /* stays left of the swarm's stage (x ≥ 60vw, App.tsx stageRect) */
-  width: min(calc(60vw - var(--gutter) - 48px), 900px);
+  /* anchored at the top: a streaming reply grows downward and never moves what is already there */
+  top: max(calc(var(--top-h) + 40px), 29vh);
+  /* the text column takes ~62% of the viewport; the swarm's stage is the right ~36% (App.tsx stageRect) */
+  width: calc(62vw - var(--gutter));
   transition: opacity var(--dur-2) var(--ease);
 }
 .y-convo[data-hidden='true'] {
@@ -81,15 +92,12 @@
 }
 
 .y-agent {
+  position: relative;
   font-family: var(--font-display);
-  font-size: var(--t-agent);
   line-height: var(--t-agent-lh);
   letter-spacing: var(--t-agent-track);
   font-weight: 600;
   font-variation-settings: 'wdth' 92;
-  min-height: calc(var(--t-agent) * var(--t-agent-lh) * 2);
-  display: flex;
-  align-items: flex-end;
   pointer-events: auto;
   cursor: default;
   transition: opacity var(--dur-2) var(--ease);
@@ -97,19 +105,32 @@
 .y-agent[data-waiting='true'] {
   opacity: 0.28;
 }
+/* font-size is set by the fitter (ui/fit.ts); this is only the first frame's size */
 .y-agent-line {
   margin: 0;
-  text-wrap: pretty;
-  animation: y-line-in var(--dur-3) var(--ease-out) both;
+  font-size: var(--t-agent);
+  line-height: var(--t-agent-lh);
+  overflow-wrap: break-word;
 }
-.y-beat-more {
-  display: inline-block;
-  width: 0.18em;
-  height: 0.18em;
-  margin-left: 0.18em;
-  border-radius: 50%;
-  background: var(--muted);
-  vertical-align: 0.1em;
+.y-w {
+  display: inline;
+  animation: y-word-in 280ms var(--ease-out) both;
+}
+.y-w[data-nowrap] {
+  white-space: nowrap;
+}
+.y-agent-line[data-quiet='true'] .y-w {
+  animation: none;
+}
+@keyframes y-word-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .y-w {
+    animation: none;
+  }
 }
 
 @keyframes y-line-in {
@@ -123,23 +144,41 @@
   }
 }
 
+/* a muted line above a runner caption ("Things I've shipped:"); absolutely placed so the caption never moves */
+.y-lead {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin: 0 0 14px;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--muted);
+  white-space: nowrap;
+  animation: y-fade-in var(--dur-3) var(--ease) both;
+}
+
+/* the previous reply, muted, beneath the current exchange — only when there is room (Conversation.tsx) */
 .y-prev {
-  margin: 0 0 22px;
+  margin: 26px 0 0;
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 19px;
   line-height: 1.3;
   font-weight: 500;
   color: var(--faint);
-  max-width: 40ch;
+  max-width: 52ch;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  animation: y-line-in var(--dur-3) var(--ease-out) both;
+  animation: y-fade-in var(--dur-3) var(--ease) both;
+}
+.y-prev[data-room='false'] {
+  display: none;
 }
 
-.y-echo,
-.y-sub {
+.y-echo {
   margin: 22px 0 0;
   color: var(--muted);
   font-size: var(--t-mono);
@@ -159,13 +198,9 @@
   height: 1px;
   background: var(--muted);
 }
-.y-sub {
-  padding-left: 0;
-  color: var(--ink);
-  font-size: 17px;
-}
 
 .y-history-toggle {
+  display: block;
   margin-top: 14px;
   pointer-events: auto;
   font-size: var(--t-mono-xs);
@@ -896,9 +931,12 @@
     left: 16px;
     right: 16px;
     width: auto;
-    top: auto;
-    bottom: calc(16px + var(--bar-h) + 70px);
-    transform: none;
+    top: calc(60px + 34vh + 12px);
+    bottom: calc(var(--bar-bottom) + var(--bar-h) + 12px + 40px + 16px);
+    display: flex;
+    flex-direction: column;
+    justify-content: safe center;
+    align-items: center;
     text-align: center;
   }
   .y-agent {
@@ -922,7 +960,13 @@
   .y-runner {
     left: 0;
     right: 0;
-    justify-content: center;
+    width: 100%;
+  }
+  .y-lead {
+    left: 0;
+    right: 0;
+    font-size: 19px;
+    white-space: normal;
     bottom: auto;
     top: calc(var(--top-h) + 4px);
   }
@@ -945,7 +989,8 @@
     display: none;
   }
   .y-chip-sound {
-    display: none;
+    font-size: 16px;
+    margin-top: 18px;
   }
   .y-chip-sound-inline {
     display: inline-block;
@@ -966,6 +1011,7 @@
     place-items: stretch;
   }
   .y-card {
+  /* between the stage (top ~34%) and the chips, vertically centered */
     width: 100vw;
     max-width: none;
     height: auto;
@@ -975,6 +1021,11 @@
     flex-direction: column;
     overflow-y: auto;
     padding: 16px 16px 0;
+  /* a long reply at the floor size: let it rise over the stage instead of under the chips */
+  .y-convo[data-tall='true'] {
+    top: calc(var(--top-h) + 8px);
+    justify-content: flex-end;
+  }
     gap: 0;
     background: var(--scene);
     overscroll-behavior: contain;

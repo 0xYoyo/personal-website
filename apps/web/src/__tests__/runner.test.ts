@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { beatStarts, createRunner, duration, seq, type Clock, type Step } from '../ui/runner/engine';
+import { CAPTION_DELAY, CAPTION_TAIL, READ_MIN, beat, beatStarts, createRunner, duration, readMs, seq, type Clock, type Step } from '../ui/runner/engine';
 import { tour } from '../content/tour';
 import { stories } from '../content/stories';
 
@@ -18,7 +18,7 @@ function fakeClock() {
   const advance = (ms: number) => {
     const end = now + ms;
     for (;;) {
-      const next = [...timers.entries()].sort((a, b) => a[1].at - b[1].at)[0];
+      const next = [...timers.entries()].sort((a, b) => a[1].at - b[1].at || a[0] - b[0])[0];
       if (!next || next[1].at > end) break;
       now = next[1].at;
       timers.delete(next[0]);
@@ -26,65 +26,117 @@ function fakeClock() {
     }
     now = end;
   };
-  return { clock, advance };
+  return { clock, advance, now: () => now };
 }
 
-const steps: Step[] = seq([
-  { say: 'one', hold: 1000 },
-  { sub: 'one-b', hold: 500 },
-  { say: 'two', hold: 1000 },
-  { say: 'three', hold: 1000 },
-]);
+const glyph = (id: 'wave' | 'frame' | 'kart' | 'btc') => ({ kind: 'glyph', id }) as const;
 
-describe('runner', () => {
-  it('computes beats and duration', () => {
-    expect(beatStarts(steps)).toEqual([0, 2, 3]);
-    expect(duration(steps)).toBe(3500);
+/** Records "shape:<id>" at step start and "say:<text>" when a caption lands, with times. */
+function recorder(now: () => number) {
+  const log: string[] = [];
+  return {
+    log,
+    handlers: {
+      onStep: (s: Step) => {
+        const b = s.become;
+        if (b && typeof b !== 'function' && b.kind === 'glyph') log.push(`${now()} shape:${b.id}`);
+      },
+      onSay: (s: Step) => log.push(`${now()} say:${s.say}`),
+    },
+  };
+}
+
+describe('beat timing (POLISH1 A2)', () => {
+  it('reads ~300 ms a word with a 2.4 s floor', () => {
+    expect(readMs('This is what I do.')).toBe(READ_MIN);
+    expect(readMs('one two three four five six seven eight nine ten')).toBe(3000);
   });
 
-  it('fires steps on time and ends', () => {
-    const { clock, advance } = fakeClock();
-    const fired: string[] = [];
+  it('puts the shape first and the caption 900 ms later, then read time + 600 ms', () => {
+    const b = beat({ say: 'This is what I do.', become: glyph('wave') });
+    expect(b.sayAt).toBe(CAPTION_DELAY);
+    expect(b.hold).toBe(CAPTION_DELAY + READ_MIN + CAPTION_TAIL);
+  });
+
+  it('a caption with no shape lands at once; captionHold overrides the read time', () => {
+    expect(beat({ say: 'hi' }).sayAt).toBe(0);
+    expect(beat({ say: 'Prompt Racers', become: glyph('kart'), captionHold: 2600 }).hold).toBe(CAPTION_DELAY + 2600);
+  });
+});
+
+describe('runner', () => {
+  const steps = seq([
+    beat({ say: 'one', become: glyph('wave') }), // 0 .. 3900, caption at 900
+    beat({ become: glyph('frame'), hold: 1000 }), // 3900 .. 4900, shape only
+    beat({ say: 'two', become: glyph('kart'), captionHold: 2600 }), // 4900 .. 8400, caption at 5800
+    beat({ say: 'three' }), // 8400 .. 11400, caption at once
+  ]);
+
+  it('computes beats and duration', () => {
+    expect(beatStarts(steps)).toEqual([0, 2, 3]);
+    expect(duration(steps)).toBe(3900 + 1000 + 3500 + 3000);
+  });
+
+  it('forms each shape before its caption and ends after the last hold', () => {
+    const c = fakeClock();
+    const rec = recorder(c.now);
     let ended = '';
-    const r = createRunner(steps, { onStep: (s) => fired.push(s.say ?? s.sub ?? ''), onEnd: (why) => (ended = why) }, { clock });
+    const r = createRunner(steps, { ...rec.handlers, onEnd: (why) => (ended = why) }, { clock: c.clock });
     r.start();
-    expect(fired).toEqual(['one']);
-    advance(999);
-    expect(fired).toEqual(['one']);
-    advance(1);
-    expect(fired).toEqual(['one', 'one-b']);
-    advance(500);
-    expect(r.beat()).toBe(1);
-    advance(2000);
-    expect(fired).toEqual(['one', 'one-b', 'two', 'three']);
+    expect(rec.log).toEqual(['0 shape:wave']);
+    c.advance(899);
+    expect(rec.log).toHaveLength(1);
+    c.advance(1);
+    expect(rec.log.at(-1)).toBe('900 say:one');
+    c.advance(3000);
+    expect(rec.log.at(-1)).toBe('3900 shape:frame');
+    c.advance(1000);
+    expect(rec.log.at(-1)).toBe('4900 shape:kart');
+    c.advance(900);
+    expect(rec.log.at(-1)).toBe('5800 say:two');
+    c.advance(2600);
+    expect(rec.log.at(-1)).toBe('8400 say:three');
+    expect(r.running()).toBe(true);
+    c.advance(3000);
     expect(ended).toBe('done');
     expect(r.running()).toBe(false);
   });
 
-  it('next/prev jump between beats and reschedule', () => {
-    const { clock, advance } = fakeClock();
-    const fired: string[] = [];
-    const r = createRunner(steps, { onStep: (s) => fired.push(s.say ?? s.sub ?? ''), onEnd: () => {} }, { clock });
+  it('next/prev jump between beats and reschedule from there', () => {
+    const c = fakeClock();
+    const rec = recorder(c.now);
+    const r = createRunner(steps, { ...rec.handlers, onEnd: () => {} }, { clock: c.clock });
     r.start();
     r.next();
-    expect(fired.at(-1)).toBe('two');
+    expect(rec.log.at(-1)).toBe('0 shape:kart');
+    expect(r.beat()).toBe(1);
+    c.advance(900);
+    expect(rec.log.at(-1)).toBe('900 say:two');
     r.prev();
-    expect(fired.at(-1)).toBe('one');
-    advance(1000);
-    expect(fired.at(-1)).toBe('one-b');
+    expect(rec.log.at(-1)).toBe('900 shape:wave');
+    c.advance(900);
+    expect(rec.log.at(-1)).toBe('1800 say:one');
   });
 
-  it('step mode never advances on its own and applies whole beats', () => {
-    const { clock, advance } = fakeClock();
-    const fired: string[] = [];
+  it('step mode applies every step (shape and caption together) and never advances on its own', () => {
+    const c = fakeClock();
+    const rec = recorder(c.now);
     let ended = false;
-    const r = createRunner(steps, { onStep: (s) => fired.push(s.say ?? s.sub ?? ''), onEnd: () => (ended = true) }, { clock, stepMode: true });
+    const r = createRunner(steps, { ...rec.handlers, onEnd: () => (ended = true) }, { clock: c.clock, stepMode: true });
     r.start();
-    expect(fired).toEqual(['one', 'one-b']);
-    advance(60_000);
-    expect(fired).toHaveLength(2);
+    expect(rec.log).toEqual(['0 shape:wave', '0 say:one']);
+    c.advance(60_000);
+    expect(rec.log).toHaveLength(2);
+    r.next(); // the shape-only step gets its own click
+    expect(rec.log.at(-1)).toBe('60000 shape:frame');
+    r.next();
+    expect(rec.log.slice(-2)).toEqual(['60000 shape:kart', '60000 say:two']);
+    r.prev();
+    expect(rec.log.at(-1)).toBe('60000 shape:frame');
     r.next();
     r.next();
+    expect(rec.log.at(-1)).toBe('60000 say:three');
+    expect(ended).toBe(false);
     r.next();
     expect(ended).toBe(true);
   });
@@ -96,14 +148,44 @@ describe('runner', () => {
     r.skip();
     expect(why).toBe('skip');
   });
+});
 
-  it('the tour runs about 45 s and stories about 15 s each', () => {
+describe('the tour and the stories', () => {
+  it('every captioned beat forms its shape 900 ms before the caption and holds it ≥ 2.4 s + 600 ms', () => {
+    for (const steps of [tour, ...stories.map((s) => s.steps)]) {
+      for (const s of steps) {
+        if (s.say === undefined) continue;
+        if (s.become) expect(s.sayAt).toBe(CAPTION_DELAY);
+        expect(s.hold - (s.sayAt ?? 0)).toBeGreaterThanOrEqual(Math.min(2600, READ_MIN + CAPTION_TAIL));
+      }
+    }
+  });
+
+  it('shapes morph straight into each other: no release between tour beats', () => {
+    expect(tour.some((s) => s.release)).toBe(false);
+  });
+
+  it('the project names hold 2.6 s each under one lead', () => {
+    const names = tour.filter((s) => s.lead === "Things I've shipped:");
+    expect(names.map((s) => s.say)).toEqual(['Prompt Racers', 'Unfiltered', 'yoyo-loop', 'Reichman Courses connector', 'Availability Monitor']);
+    for (const s of names) expect(s.hold - (s.sayAt ?? 0)).toBe(2600);
+  });
+
+  it('"8 streams" is one window frame; the tour ends on the cursor with chips', () => {
+    expect(tour.filter((s) => s.become && typeof s.become !== 'function' && s.become.kind === 'glyph' && s.become.id === 'frame')).toHaveLength(1);
+    const last = tour[tour.length - 1]!;
+    expect(last.become).toEqual({ kind: 'glyph', id: 'cursor' });
+    expect(last.chips?.length).toBeGreaterThanOrEqual(3);
+    expect(last.say).toBeUndefined(); // the last caption ("Ask me anything …") rests; nothing is re-said
+  });
+
+  it('the tour runs under a minute; stories have two lines each and end with reach-him chips', () => {
     expect(duration(tour)).toBeGreaterThan(40_000);
-    expect(duration(tour)).toBeLessThan(50_000);
+    expect(duration(tour)).toBeLessThan(60_000);
     for (const s of stories) {
-      expect(duration(s.steps)).toBeGreaterThanOrEqual(14_000);
-      expect(duration(s.steps)).toBeLessThanOrEqual(16_000);
       expect(s.steps.filter((x) => x.say).length).toBe(2);
+      expect(duration(s.steps)).toBeLessThanOrEqual(16_000);
+      expect(s.steps.at(-1)?.chips).toContain('How do I reach him?');
     }
   });
 });

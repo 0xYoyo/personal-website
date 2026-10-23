@@ -50,8 +50,7 @@ export function LiveRegion() {
           {l.text}
         </p>
       ))}
-      {runner?.say && <p key={`r-${runner.say}`}>{runner.say}</p>}
-      {runner?.sub && <p key={`rs-${runner.sub}`}>{runner.sub}</p>}
+      {runner?.say && <p key={`r-${runner.say}`}>{runner.lead ? `${runner.lead} ` : ''}{runner.say}</p>}
     </div>
   );
 }

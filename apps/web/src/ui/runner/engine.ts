@@ -1,8 +1,12 @@
-// A tiny timeline engine for the tour and the stories (SPEC §3.3).
-// Steps fire at `at` ms from the start and last `hold` ms. A step with `say`
-// opens a beat; following steps without `say` belong to it (shape changes,
-// captions). next/prev jump between beats. In step mode (reduced motion) the
-// timeline never advances on its own: each next() applies one whole beat.
+// A tiny timeline engine for the tour and the stories (SPEC §3.3, POLISH1 A2).
+//
+// A step lasts `hold` ms from `at`. At its start the step's shape, mood,
+// release and chips apply (`onStep`); its caption (`say`, plus an optional
+// muted `lead` above it) follows `sayAt` ms later (`onSay`), so the shape is
+// already knitted when the words land. A step with `say` opens a beat; steps
+// without one (shape-only) belong to the beat before. next/prev jump between
+// beats. In step mode (reduced motion) nothing advances on its own: every
+// next() applies exactly one step, shape and caption at once.
 import type { Mood, ShapeSpec } from '@yoyo/protocol';
 
 export type Viewport = { w: number; h: number };
@@ -10,16 +14,49 @@ export type ShapeRef = ShapeSpec | ((vp: Viewport) => ShapeSpec);
 
 export interface Step {
   at: number;
+  /** total length of the step, ms */
   hold: number;
   /** The agent line (large type). Opens a beat. */
   say?: string;
-  /** A small mono caption under the line (e.g. a project name) */
-  sub?: string;
+  /** ms after the step starts at which `say` appears (the shape goes first) */
+  sayAt?: number;
+  /** A muted line above the caption (e.g. "Things I've shipped:"); cleared by a step with `say` and no `lead` */
+  lead?: string;
   become?: ShapeRef;
   /** Release the swarm to idle */
   release?: boolean;
   mood?: Mood;
   chips?: string[];
+}
+
+/** The shape goes first; the caption lands this long after it (the knit takes ~800 ms). */
+export const CAPTION_DELAY = 900;
+/** Extra time a caption stays after it has been read. */
+export const CAPTION_TAIL = 600;
+/** Floor for a caption's read time. */
+export const READ_MIN = 2400;
+
+/** How long a caption takes to read: ~300 ms a word, never under 2.4 s. */
+export const readMs = (text: string): number => Math.max(READ_MIN, text.split(/\s+/).filter(Boolean).length * 300);
+
+export type BeatSpec = Omit<Step, 'at' | 'hold' | 'sayAt'> & {
+  /** override the computed length (ms the caption stays, read time + tail by default) */
+  captionHold?: number;
+  /** a shape-only step's length */
+  hold?: number;
+};
+
+/**
+ * One authored beat → a Step with the A2 timing: `become` first, the caption
+ * CAPTION_DELAY later (immediately when there is no shape), then the caption's
+ * read time + CAPTION_TAIL (or `captionHold`).
+ */
+export function beat(b: BeatSpec): Omit<Step, 'at'> {
+  const { captionHold, hold, ...rest } = b;
+  if (rest.say === undefined) return { ...rest, hold: hold ?? READ_MIN };
+  const sayAt = rest.become ? CAPTION_DELAY : 0;
+  const stay = captionHold ?? readMs(rest.say) + CAPTION_TAIL;
+  return { ...rest, sayAt, hold: sayAt + stay };
 }
 
 /** Author steps by duration; `at` is computed cumulatively. */
@@ -56,7 +93,10 @@ export const realClock: Clock = {
 };
 
 export interface RunnerHandlers {
+  /** the step starts: shape, mood, release, chips */
   onStep(step: Step, index: number, beat: number): void;
+  /** the step's caption lands (only steps with `say`) */
+  onSay?(step: Step, index: number, beat: number): void;
   onEnd(reason: 'done' | 'skip'): void;
 }
 
@@ -68,6 +108,8 @@ export interface Runner {
   /** Index of the current beat (0-based), -1 before start */
   beat(): number;
   beats(): number;
+  /** Index of the current step, -1 before start */
+  step(): number;
   readonly stepMode: boolean;
   running(): boolean;
 }
@@ -95,6 +137,9 @@ export function createRunner(steps: Step[], h: RunnerHandlers, opts: { stepMode?
     cur = i;
     h.onStep(steps[i]!, i, beatOf(i));
   };
+  const caption = (i: number) => {
+    if (steps[i]!.say !== undefined) h.onSay?.(steps[i]!, i, beatOf(i));
+  };
 
   const end = (reason: 'done' | 'skip') => {
     if (!active) return;
@@ -108,25 +153,35 @@ export function createRunner(steps: Step[], h: RunnerHandlers, opts: { stepMode?
     clear();
     const origin = steps[i]!.at;
     for (let k = i; k < steps.length; k++) {
-      const delay = steps[k]!.at - origin;
+      const s = steps[k]!;
+      const delay = s.at - origin;
+      const sayDelay = delay + (s.sayAt ?? 0);
       if (k === i) fire(k);
       else timers.push(clock.setTimeout(() => fire(k), delay));
+      if (s.say !== undefined) {
+        if (sayDelay <= 0) caption(k);
+        else timers.push(clock.setTimeout(() => caption(k), sayDelay));
+      }
     }
     timers.push(clock.setTimeout(() => end('done'), duration(steps) - origin));
   };
 
-  /** Step mode: apply every step of beat b at once (instant shape changes). */
-  const applyBeat = (b: number) => {
-    const from = starts[b]!;
-    const to = b + 1 < starts.length ? starts[b + 1]! : steps.length;
-    for (let k = from; k < to; k++) fire(k);
+  /** Step mode: one whole step, shape and caption together. */
+  const applyStep = (i: number) => {
+    fire(i);
+    caption(i);
   };
 
   const goBeat = (b: number) => {
     if (b < 0) b = 0;
     if (b >= starts.length) return end('done');
-    if (stepMode) applyBeat(b);
-    else playFrom(starts[b]!);
+    playFrom(starts[b]!);
+  };
+
+  const goStep = (i: number) => {
+    if (i < 0) i = 0;
+    if (i >= steps.length) return end('done');
+    applyStep(i);
   };
 
   return {
@@ -134,21 +189,25 @@ export function createRunner(steps: Step[], h: RunnerHandlers, opts: { stepMode?
     start() {
       if (!steps.length) return;
       active = true;
-      goBeat(0);
+      if (stepMode) goStep(0);
+      else goBeat(0);
     },
     next() {
       if (!active) return;
-      goBeat(beatOf(Math.max(cur, 0)) + 1);
+      if (stepMode) goStep(cur + 1);
+      else goBeat(beatOf(Math.max(cur, 0)) + 1);
     },
     prev() {
       if (!active) return;
-      goBeat(beatOf(Math.max(cur, 0)) - 1);
+      if (stepMode) goStep(cur - 1);
+      else goBeat(beatOf(Math.max(cur, 0)) - 1);
     },
     skip() {
       end('skip');
     },
     beat: () => (cur < 0 ? -1 : beatOf(cur)),
     beats: () => starts.length,
+    step: () => cur,
     running: () => active,
   };
 }
