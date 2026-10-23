@@ -312,9 +312,15 @@ export class Controller {
     // the roost eases toward the stage centre (≈ 99 % there after 4 s), and its sweep shrinks to the stage
     const L = this.layout();
     const rc = stageCentre(L);
-    const re = 1 - Math.exp(-dt / 0.9);
+    const re = 1 - Math.exp(-dt / 0.6);
     this.roostX += (rc.x - this.roostX) * re; this.roostY += (rc.y - this.roostY) * re;
     const ax = L.stage ? Math.min(p.halfW, L.stage.w * 0.6) : p.halfW, ay = L.stage ? Math.min(p.halfH, L.stage.h * 0.6) : p.halfH;
+    // free flight stays in a soft box: the viewport (inset), or around the stage when there is one
+    // (a UI frame being built takes the whole viewport: its construction vortex sits on the frame)
+    const boxed = !!L.stage && !this.frame;
+    const bw = boxed ? Math.min(p.halfW * 0.72, L.stage!.w * 0.5) : p.halfW * 0.72, bh = boxed ? Math.min(p.halfH * 0.7, L.stage!.h * 0.5) : p.halfH * 0.7;
+    p.boundCx += ((boxed ? this.roostX : 0) - p.boundCx) * re; p.boundCy += ((boxed ? this.roostY : 0) - p.boundCy) * re;
+    p.boundHw += (bw - p.boundHw) * re; p.boundHh += (bh - p.boundHh) * re;
     p.leaderX = this.roostX + Math.sin(t * 0.47) * ax * 0.3 + Math.sin(t * 0.83 + 2) * ax * 0.08;
     p.leaderY = this.roostY + Math.sin(t * 0.61 + 1) * ay * 0.32 + Math.cos(t * 1.07) * ay * 0.06;
     if (this.mood === 'celebrate') { p.leaderX = this.roostX + (p.leaderX - this.roostX) * 0.3; p.leaderY = this.roostY + (p.leaderY - this.roostY) * 0.3; }

@@ -229,7 +229,8 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
           await api.wait(1600);
           api.release();
         } else {
-          await runEntry(api, o.name ? { name: o.name } : {});
+          // the stage applies again from the release, so the flock already heads there as the greeting lands
+          await runEntry(api, { ...(o.name ? { name: o.name } : {}), onBeat: (b) => { if (b === 'release') { fullFrame = false; ctrl.setFullFrame(false); } } });
         }
       } finally {
         fullFrame = false; ctrl.setFullFrame(false);

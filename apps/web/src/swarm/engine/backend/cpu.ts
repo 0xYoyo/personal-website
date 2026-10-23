@@ -163,7 +163,8 @@ export class CpuEngine implements Engine {
         const t = Math.min(Math.max((ll - r0) / (r0 * 1.2), 0), 1), k = t * t * (3 - 2 * t) * p.leaderW * 260 * free;
         ax += (lx / ll) * k; ay += (ly / ll) * k;
       }
-      const ex = Math.max(Math.abs(px) - p.halfW * 0.72, 0) * Math.sign(px), ey = Math.max(Math.abs(py) - p.halfH * 0.7, 0) * Math.sign(py);
+      const bx = px - p.boundCx, by = py - p.boundCy;
+      const ex = Math.max(Math.abs(bx) - p.boundHw, 0) * Math.sign(bx), ey = Math.max(Math.abs(by) - p.boundHh, 0) * Math.sign(by);
       ax -= ex * 8 * free; ay -= ey * 8 * free;
       az += (-pz * 1.2 - vz * 0.6) * free;
       // vortex

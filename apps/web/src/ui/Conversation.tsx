@@ -71,8 +71,10 @@ export function Conversation() {
   const echo = runner ? null : visitor;
 
   return (
-    <section className="y-convo" data-hidden={hidden} data-phase={phase}>
+    <>
+      {/* outside .y-convo: its transform would make this fixed line relative to it */}
       {entryName && <p className="y-entry-name y-mono" aria-hidden="true">{entryName}</p>}
+      <section className="y-convo" data-hidden={hidden} data-phase={phase}>
       {prevAgent && !runner && (
         <p className="y-prev" key={`p-${prevAgent.id}`} aria-hidden="true">
           {prevAgent.text}
@@ -101,7 +103,8 @@ export function Conversation() {
           {copy.history.open}
         </button>
       )}
-    </section>
+      </section>
+    </>
   );
 }
 

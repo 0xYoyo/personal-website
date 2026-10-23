@@ -7,7 +7,7 @@ import { copy } from './content/copy';
 import { neighbour, projectById } from './content/projects';
 import { nextStory, stories, storyById } from './content/stories';
 import { tour } from './content/tour';
-import { applyScene } from './design';
+import { applyScene, isMobileViewport } from './design';
 import { useStore, type Overlay } from './state/store';
 import type { SwarmHandle } from './swarm';
 import { createRunner, type Runner, type Step } from './ui/runner/engine';
@@ -230,7 +230,8 @@ export const ctl = {
       S().setMood('idle');
       // The words are shown in ≤ 2-line beats that outlast the stream (ui/beats.ts holds each
       // beat ~170 ms per word): keep the shape until the last beat has been read, then let go.
-      const readMs = Math.max(0, startedAt + reply.text.split(/\s+/).length * 170 - performance.now()) + 1200;
+      // Short replies ("done.") still leave the shape up long enough to be seen: ≥ 4 s after the stream ends.
+      const readMs = Math.max(4000, startedAt + reply.text.split(/\s+/).length * 170 - performance.now() + 1800);
       const seq = ++settleSeq;
       setTimeout(() => {
         if (seq !== settleSeq || turn || S().overlay !== 'none' || runner?.running()) return;
@@ -432,7 +433,9 @@ export const ctl = {
       swarm()?.pulse(1);
       brain.memory.addBuild({ title: res.title, instruction, html: res.html });
       setTimeout(() => {
-        if (S().build.status === 'locked') {
+        // on a phone the frame fills the stage, so a released flock would roost over the
+        // frame's header and the top bar: keep the locked outline there instead
+        if (S().build.status === 'locked' && !isMobileViewport()) {
           swarm()?.release();
           swarm()?.mood('idle');
         }

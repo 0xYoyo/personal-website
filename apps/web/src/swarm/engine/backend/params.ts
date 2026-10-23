@@ -15,6 +15,8 @@ export interface SimParams {
   pointerX: number; pointerY: number; pointerVx: number; pointerVy: number; pointerR: number; pointerOn: number;
   burst: number; burstX: number; burstY: number;
   halfW: number; halfH: number;
+  /** soft box free flight is kept in (world px): centre + half size */
+  boundCx: number; boundCy: number; boundHw: number; boundHh: number;
   freeze: number; snap: number;
   // look
   pulse: number; brightness: number; camX: number; camY: number; sizeScale: number;
@@ -32,6 +34,7 @@ export function defaultParams(): SimParams {
     pointerX: 1e5, pointerY: 1e5, pointerVx: 0, pointerVy: 0, pointerR: 90, pointerOn: 0,
     burst: 0, burstX: 0, burstY: 0,
     halfW: 640, halfH: 360,
+    boundCx: 0, boundCy: 0, boundHw: 460, boundHh: 252,
     freeze: 0, snap: 0,
     pulse: 0, brightness: 1, camX: 0, camY: 0, sizeScale: 1,
   };

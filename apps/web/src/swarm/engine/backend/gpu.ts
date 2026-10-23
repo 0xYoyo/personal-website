@@ -221,8 +221,9 @@ export class GpuEngine implements Engine {
       const ll = max(length(ld), 1e-3);
       const r0 = min(U.halfW, U.halfH).mul(0.35);
       acc.xy.addAssign(ld.div(ll).mul(smoothstep(r0, r0.mul(2.2), ll).mul(U.leaderW).mul(260).mul(free)));
-      const lim = vec2(U.halfW.mul(0.72), U.halfH.mul(0.7));
-      const over = max(p.xy.abs().sub(lim), 0).mul(p.xy.sign());
+      const lim = vec2(U.boundHw, U.boundHh);
+      const bq = p.xy.sub(vec2(U.boundCx, U.boundCy));
+      const over = max(bq.abs().sub(lim), 0).mul(bq.sign());
       acc.xy.subAssign(over.mul(free.mul(8)));
       acc.z.addAssign(p.z.mul(-1.2).sub(v.z.mul(0.6)).mul(free));
       // vortex
