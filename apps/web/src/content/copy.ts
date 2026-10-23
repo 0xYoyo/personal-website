@@ -57,10 +57,10 @@ export const copy = {
     /** SPEC §2.6 / faq.md build (scripted) */
     resting: "the live builder is resting. here's one I made earlier — same speed, same idea.",
     /** ui: cap reached (SPEC §2.6 asks for an honest message) */
-    capped: "that's five builds this hour — the cap keeps this free for everyone. back in a bit, or ask me anything meanwhile.",
+    capped: "that's five builds this hour. come back in a bit — or ask me something.",
     /** ui */
     stopped: 'stopped.',
-    failed: 'that one fell over. try again, or ask me something else.',
+    failed: 'that one fell over. once more?',
     controls: {
       fullscreen: 'Open full screen',
       copy: 'Copy HTML',
@@ -110,7 +110,7 @@ export const copy = {
     swarm: 'A swarm of particles that becomes whatever the agent is saying.',
   },
   /** ui: the "Spell my name" chip when no name is known yet */
-  askName: "type your name. I'll spell it.",
+  askName: "type your name. I'll become it.",
   /** SPEC §2.8 */
   konami: 'nice.',
   /** SPEC §7 */

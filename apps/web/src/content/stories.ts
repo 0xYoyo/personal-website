@@ -56,7 +56,7 @@ export const stories: Story[] = [
     id: 'this',
     title: 'This',
     steps: seq([
-      { say: "I spec'd this site. One model planned it. Thirteen agents built it. I merged.", become: { kind: 'glyph', id: 'wave' }, mood: 'speaking', hold: 7600 },
+      { say: "I spec'd this site. One model planned it. A swarm of agents built it. I merged.", become: { kind: 'glyph', id: 'wave' }, mood: 'speaking', hold: 7600 },
       { say: "That's how I work now — and it's getting faster.", become: { kind: 'yoyo3d' }, hold: 7400, chips: ['Build me something', 'What has he built?', 'How do I reach him?'] },
     ]),
   },
