@@ -22,6 +22,8 @@ export interface LiveRequest {
   /** max silence between chunks once streaming */
   idleMs: number;
   onText(text: string): void;
+  /** the Worker accepted the request (200 with a body); called at most once, before any text */
+  onOpen?(): void;
   now?: () => number;
 }
 
@@ -31,6 +33,7 @@ export async function streamLive(req: LiveRequest): Promise<LiveOutcome> {
   const now = req.now ?? Date.now;
   const deadline = now() + req.firstTokenMs;
   let lastReason: LiveFailure = 'network';
+  let opened = false;
 
   for (let attempt = 0; attempt <= req.retries; attempt++) {
     if (req.signal.aborted) return fail('aborted');
@@ -83,6 +86,10 @@ export async function streamLive(req: LiveRequest): Promise<LiveOutcome> {
       if (!res.ok || !res.body) {
         lastReason = 'upstream';
         continue;
+      }
+      if (!opened) {
+        opened = true;
+        req.onOpen?.();
       }
       for await (const data of readSse(res.body, ctrl.signal)) {
         const ev = parseWire(data);

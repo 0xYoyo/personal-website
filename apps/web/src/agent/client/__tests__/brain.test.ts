@@ -222,11 +222,8 @@ describe('build', () => {
     await brain.build('make me a habit tracker please');
     const done = rec.events.at(-1);
     expect(done).toMatchObject({ type: 'buildDone', mode: 'scripted', example: 'habits' });
-    // a live attempt announces itself; the fallback announces again with the example it chose
-    expect(rec.events.filter((e) => e.type === 'buildStart')).toEqual([
-      { type: 'buildStart', mode: 'live' },
-      { type: 'buildStart', mode: 'scripted', example: 'habits' },
-    ]);
+    // the live attempt was never accepted, so only the example announces itself
+    expect(rec.events.filter((e) => e.type === 'buildStart')).toEqual([{ type: 'buildStart', mode: 'scripted', example: 'habits' }]);
     const chunks = rec.events.filter((e) => e.type === 'buildChunk');
     expect(chunks.length).toBeGreaterThan(5);
     const last = chunks.at(-1) as { html: string; progress: number };

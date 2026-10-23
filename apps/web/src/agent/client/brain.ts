@@ -8,6 +8,8 @@ import type { Action, BuildRequest, ChatMessage, ChatRequest, GlyphId, ProjectId
 import { scriptedReply, withRestingLine, wordPieces } from './scripted';
 import { shareHtml, type ShareResult } from './share';
 import { createTagStream } from './tags';
+import { CHANGE_RESTING_LINE, EXAMPLE_DONE_LINE, liveDoneLine } from './lines';
+import { pickExampleId } from './pick-example';
 import { AbortedError, DEFAULT_TIMING, jittered, sleep, tokensIn, type Timing } from './timing';
 
 export type BrainMode = 'live' | 'scripted';
@@ -17,11 +19,20 @@ export type BrainEvent =
   | { type: 'token'; text: string }
   | { type: 'action'; action: Action }
   | { type: 'end'; mode: BrainMode }
-  /** additive: emitted once when a build begins, so the UI can say which builder answered */
-  | { type: 'buildStart'; mode: BrainMode; example?: string }
-  /** `html` is everything received so far; `chunk` the new bytes; `progress` 0..1 (estimated when live) */
-  | { type: 'buildChunk'; html: string; chunk: string; progress: number }
-  | { type: 'buildDone'; html: string; ms: number; mode: BrainMode; example?: string }
+  /**
+   * Emitted once when a build is accepted: live → the Worker answered 200 (so a 429 never
+   * gets an "on it." first); scripted → the example starts. `notice` is a line to say first
+   * (scripted "Change it": the live builder can't change this one).
+   */
+  | { type: 'buildStart'; mode: BrainMode; example?: string; notice?: string }
+  /**
+   * `html` is everything received so far; `chunk` the new bytes; `expected` the byte total the
+   * progress is measured against (exact for examples; live: max(8 kB, the previous build's size));
+   * `progress` = bytes / expected, clamped to 0.95 until done when live.
+   */
+  | { type: 'buildChunk'; html: string; chunk: string; progress: number; expected: number }
+  /** `line` is what the agent says at the end (examples never claim seconds; live reports the real time). */
+  | { type: 'buildDone'; html: string; ms: number; mode: BrainMode; example?: string; line: string }
   | { type: 'error'; reason: BrainErrorReason };
 
 export type BrainErrorReason = 'rate' | 'aborted' | 'too_long' | 'build_failed';
@@ -70,7 +81,8 @@ export interface Brain {
 }
 
 export const LIMITS = { messageChars: 600, historyMessages: 12, buildInstructionChars: 400 } as const;
-const EXPECTED_BUILD_BYTES = 14_000;
+/** floor for the live progress estimate (POLISH1 A3) */
+export const MIN_EXPECTED_BUILD_BYTES = 8_000;
 const MAX_LIVE_FAILURES = 2;
 
 export function createBrain(opts: BrainOptions): Brain {
@@ -95,6 +107,8 @@ export function createBrain(opts: BrainOptions): Brain {
   let sessionScripted = false;
   let restingShown = false;
   let lastShown: ProjectId | null = null;
+  /** build instructions the scripted brain handed off: it said "the live builder is resting", so they get an example */
+  const scriptedHandoffs = new Set<string>();
   type Turn = { ctrl: AbortController; mode: BrainMode };
   let chatTurn: Turn | null = null;
   let buildTurn: Turn | null = null;
@@ -143,11 +157,12 @@ export function createBrain(opts: BrainOptions): Brain {
   }
 
   /** Feeds raw model text through the tag parser and emits token/action events. */
-  function makeSink(emit: (e: BrainEvent) => void) {
+  function makeSink(emit: (e: BrainEvent) => void, scripted = false) {
     const parser = createTagStream({ glyphs: opts.swarmGlyphs });
     const out = (r: { text: string; actions: Action[] }) => {
       for (const a of r.actions) {
         if (a.type === 'show') lastShown = a.project;
+        if (a.type === 'build' && scripted) scriptedHandoffs.add(a.instruction);
         emit({ type: 'action', action: a });
       }
       if (r.text) emit({ type: 'token', text: r.text });
@@ -159,7 +174,7 @@ export function createBrain(opts: BrainOptions): Brain {
   }
 
   async function streamScripted(raw: string, signal: AbortSignal, temit: (e: BrainEvent) => void) {
-    const sink = makeSink(temit);
+    const sink = makeSink(temit, true);
     const pieces = wordPieces(raw);
     await sleep(jittered(timing.firstTokenMs, timing.jitter, random), signal);
     for (let i = 0; i < pieces.length; i++) {
@@ -268,10 +283,11 @@ export function createBrain(opts: BrainOptions): Brain {
       buildTurn = null;
       return;
     }
+    const handedOff = scriptedHandoffs.delete(instruction);
     try {
-      if (instruction !== 'example' && turn.mode === 'live') {
-        emit({ type: 'buildStart', mode: 'live' });
+      if (instruction !== 'example' && !handedOff && turn.mode === 'live') {
         let html = '';
+        const expected = Math.max(MIN_EXPECTED_BUILD_BYTES, memory.builds[0]?.bytes ?? 0);
         const outcome = await streamLive({
           url: `${agentUrl}/build`,
           body: (previousHtml ? { instruction, previousHtml } : { instruction }) satisfies BuildRequest,
@@ -280,9 +296,10 @@ export function createBrain(opts: BrainOptions): Brain {
           firstTokenMs: opts.buildFirstChunkTimeoutMs ?? 20_000,
           retries: 1,
           idleMs: 20_000,
+          onOpen: () => emit({ type: 'buildStart', mode: 'live' }),
           onText: (chunk) => {
             html += chunk;
-            emit({ type: 'buildChunk', html, chunk, progress: Math.min(0.95, html.length / EXPECTED_BUILD_BYTES) });
+            emit({ type: 'buildChunk', html, chunk, expected, progress: Math.min(0.95, html.length / expected) });
           },
           now,
         });
@@ -290,7 +307,7 @@ export function createBrain(opts: BrainOptions): Brain {
           const final = cleanHtml(outcome.raw);
           const ms = now() - t0;
           memory.addBuild({ instruction, at: t0, ms, bytes: final.length, mode: 'live', html: final });
-          emit({ type: 'buildDone', html: final, ms, mode: 'live' });
+          emit({ type: 'buildDone', html: final, ms, mode: 'live', line: liveDoneLine(ms) });
           return;
         }
         if (!outcome.ok && outcome.reason === 'aborted') {
@@ -308,7 +325,7 @@ export function createBrain(opts: BrainOptions): Brain {
         noteFailure(outcome.ok ? 'empty' : outcome.reason);
       }
       turn.mode = 'scripted';
-      await scriptedBuild(instruction, t0, ctrl.signal, emit);
+      await scriptedBuild(instruction, t0, ctrl.signal, emit, previousHtml);
     } catch (e) {
       if (!(e instanceof AbortedError)) {
         console.error('brain: build failed', e);
@@ -319,12 +336,27 @@ export function createBrain(opts: BrainOptions): Brain {
     }
   }
 
-  async function scriptedBuild(instruction: string, t0: number, signal: AbortSignal, emit: (e: BrainEvent) => void) {
+  async function scriptedBuild(
+    instruction: string,
+    t0: number,
+    signal: AbortSignal,
+    emit: (e: BrainEvent) => void,
+    previousHtml?: string,
+  ) {
     const { EXAMPLES } = await import('./examples');
-    const low = instruction.toLowerCase();
-    let ex = instruction === 'example' ? undefined : EXAMPLES.find((e) => e.keywords.some((k) => low.includes(k)));
+    // The instruction decides (POLISH1 C1). A change request with no keyword of its own
+    // stays with the app it is changing (the same example, else its <title>), else rotate.
+    const prevId = (): string | null => {
+      if (!previousHtml) return null;
+      const same = EXAMPLES.find((e) => e.html === previousHtml);
+      if (same) return same.id;
+      const title = /<title>([^<]{1,80})<\/title>/i.exec(previousHtml)?.[1];
+      return title ? pickExampleId(title) : null;
+    };
+    const id = instruction === 'example' ? null : pickExampleId(instruction) ?? prevId();
+    let ex = id ? EXAMPLES.find((e) => e.id === id) : undefined;
     ex ??= EXAMPLES[state.nextExampleIndex(EXAMPLES.length)]!;
-    emit({ type: 'buildStart', mode: 'scripted', example: ex.id });
+    emit({ type: 'buildStart', mode: 'scripted', example: ex.id, ...(previousHtml ? { notice: CHANGE_RESTING_LINE } : {}) });
     const html = ex.html;
     await sleep(jittered(timing.buildFirstChunkMs, timing.jitter, random), signal);
     const ticks = Math.max(1, Math.round((timing.buildTotalMs - timing.buildFirstChunkMs) / Math.max(1, timing.buildTickMs)));
@@ -335,12 +367,12 @@ export function createBrain(opts: BrainOptions): Brain {
       const n = Math.max(1, Math.round(size * (0.5 + random())));
       const chunk = html.slice(sent, sent + n);
       sent += chunk.length;
-      emit({ type: 'buildChunk', html: html.slice(0, sent), chunk, progress: sent / html.length });
+      emit({ type: 'buildChunk', html: html.slice(0, sent), chunk, expected: html.length, progress: sent / html.length });
       if (sent < html.length) await sleep(timing.buildTickMs, signal);
     }
     const ms = now() - t0;
     memory.addBuild({ instruction, at: t0, ms, bytes: html.length, mode: 'scripted', example: ex.id });
-    emit({ type: 'buildDone', html, ms, mode: 'scripted', example: ex.id });
+    emit({ type: 'buildDone', html, ms, mode: 'scripted', example: ex.id, line: EXAMPLE_DONE_LINE });
   }
 
   function siteUrl(): string {

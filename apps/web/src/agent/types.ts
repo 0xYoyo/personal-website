@@ -20,8 +20,18 @@ export interface Reply {
 }
 
 export interface BuildHandlers {
-  /** Called per HTML chunk; `bytes` is the running total; `expected` is known only for examples. */
+  /**
+   * Called per HTML chunk; `bytes` is the running total; `expected` the total to measure progress
+   * against: exact for examples; live = max(8 kB, the previous build's size), so clamp at 0.95.
+   */
   onChunk?(chunk: string, bytes: number, expected?: number): void;
+  /**
+   * The build was accepted: live → the Worker answered 200 (a `429 rate` never gets here; it
+   * rejects with `cap`), example → it starts streaming. Say `on it.` here, not before.
+   */
+  onAccepted?(source: 'live' | 'example'): void;
+  /** A line to say before the build streams (scripted "Change it": the live builder can't change this one). */
+  onNotice?(text: string): void;
 }
 
 export interface BuildResult {
@@ -30,6 +40,11 @@ export interface BuildResult {
   ms: number;
   title: string;
   source: 'live' | 'example';
+  /**
+   * What the agent says when the build locks. Examples: `made earlier. the live builder does this
+   * in about 15 seconds.` (never claims seconds); live: the real elapsed time, `14 seconds. Want changes?`.
+   */
+  line: string;
 }
 
 export type BrainErrorReason = 'cap' | 'aborted' | 'failed';

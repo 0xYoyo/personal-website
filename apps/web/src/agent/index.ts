@@ -8,12 +8,14 @@ import { GLYPH_IDS, LIMITS, type Action } from '@yoyo/protocol';
 import { createBrain as createClient, DEFAULT_TIMING, decodeShareHash, type BrainEvent, type Timing } from './client';
 import { EXAMPLE_TITLES } from './client/examples-meta';
 import { createMemory as createLocalPrefs } from './memory';
-import { BrainError, type Brain, type BrainErrorReason, type BrainOptions, type BuildResult, type Memory, type Reply, type ReplyHandlers, type StoredBuild } from './types';
+import { BrainError, type Brain, type BrainErrorReason, type BrainOptions, type BuildHandlers, type BuildResult, type Memory, type Reply, type ReplyHandlers, type StoredBuild } from './types';
 
 export { BrainError } from './types';
 export type { Brain, BrainOptions, BuildHandlers, BuildResult, Memory, Reply, ReplyHandlers, StoredBuild } from './types';
 
 const HOUR = 3_600_000;
+/** the build hand-off line, alone after a [[build:…]] tag */
+const ON_IT = /^\s*on it[.!]*\s*$/i;
 
 /** `<title>` of a build, else a short form of the instruction. */
 export const titleOf = (html: string, fallback = 'build'): string =>
@@ -52,9 +54,11 @@ export function createBrain(opts: BrainOptions = {}): Brain {
     actions: Action[];
     h: ReplyHandlers;
     mode: 'live' | 'scripted';
+    /** words after a [[build:…]] tag, held until the reply ends (see ON_IT) */
+    held: string[] | null;
   }
   interface BuildTurn {
-    onChunk: ((chunk: string, bytes: number, expected?: number) => void) | undefined;
+    h: BuildHandlers;
     instruction: string;
     resolve(r: BuildResult): void;
     reject(e: BrainError): void;
@@ -72,6 +76,7 @@ export function createBrain(opts: BrainOptions = {}): Brain {
         break;
       case 'action':
         if (chat?.started) {
+          if (e.action.type === 'build') chat.held ??= [];
           chat.actions.push(e.action);
           chat.h.onAction?.(e.action);
         }
@@ -81,10 +86,11 @@ export function createBrain(opts: BrainOptions = {}): Brain {
         if (chat?.started) chat.mode = e.mode;
         break;
       case 'buildStart':
+        if (e.notice) build?.h.onNotice?.(e.notice);
+        build?.h.onAccepted?.(e.mode === 'live' ? 'live' : 'example');
         break;
       case 'buildChunk':
-        // the client's progress is exact for examples and estimated live; hand the shell the implied total
-        build?.onChunk?.(e.chunk, e.html.length, e.progress > 0 ? Math.round(e.html.length / e.progress) : undefined);
+        build?.h.onChunk?.(e.chunk, e.html.length, e.expected);
         break;
       case 'buildDone':
         build?.resolve({
@@ -93,6 +99,7 @@ export function createBrain(opts: BrainOptions = {}): Brain {
           ms: e.ms,
           title: titleOf(e.html, build.instruction),
           source: e.mode === 'live' ? 'live' : 'example',
+          line: e.line,
         });
         build = null;
         break;
@@ -155,7 +162,19 @@ export function createBrain(opts: BrainOptions = {}): Brain {
 
     async send(text, h = {}, signal): Promise<Reply> {
       if (signal?.aborted) throw new BrainError('aborted');
-      const turn: ChatTurn = { started: false, words: createWordSplitter((w) => h.onWord?.(w)), actions: [], h, mode: client.mode() };
+      const shown: string[] = [];
+      const show = (w: string) => {
+        shown.push(w);
+        h.onWord?.(w);
+      };
+      const turn: ChatTurn = {
+        started: false,
+        words: createWordSplitter((w) => (turn.held ? turn.held.push(w) : show(w))),
+        actions: [],
+        h,
+        mode: client.mode(),
+        held: null,
+      };
       chat = turn;
       const onAbort = () => {
         if (chat === turn) client.abortChat();
@@ -169,7 +188,10 @@ export function createBrain(opts: BrainOptions = {}): Brain {
       }
       if (signal?.aborted) throw new BrainError('aborted');
       turn.words.flush();
-      return { text: turn.words.text(), actions: turn.actions, source: turn.mode };
+      // A reply that hands off a build ends with "on it." (persona.md). Drop it here: the
+      // shell says it from onAccepted, once the Worker has actually taken the build (POLISH1 C5).
+      if (turn.held && !ON_IT.test(turn.held.join(' '))) turn.held.forEach(show);
+      return { text: shown.join(' '), actions: turn.actions, source: turn.mode };
     },
 
     build(instruction, h = {}, o = {}): Promise<BuildResult> {
@@ -183,7 +205,7 @@ export function createBrain(opts: BrainOptions = {}): Brain {
       prev?.reject(new BrainError('aborted'));
       return new Promise<BuildResult>((resolve, reject) => {
         void client.build(instruction, o.previousHtml);
-        const turn: BuildTurn = { onChunk: h.onChunk, instruction, resolve, reject };
+        const turn: BuildTurn = { h, instruction, resolve, reject };
         build = turn;
         o.signal?.addEventListener(
           'abort',

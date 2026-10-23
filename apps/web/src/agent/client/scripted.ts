@@ -42,7 +42,15 @@ const tagSafe = (s: string) => s.replace(/[[\]|]/g, '').trim();
 
 export function scriptedReply(text: string, ctx: ScriptedContext): ScriptedReply {
   const c = classify(text);
-  return { raw: replyFor(c, ctx), classification: c };
+  let raw = replyFor(c, ctx);
+  // faq.md's build line hands off `[[build:example]]`; carry the visitor's own words instead,
+  // so the example picked matches what they asked for (POLISH1 C1). Chip follow-ups
+  // ("Another example") keep `example` and rotate.
+  if (c.kind === 'intent' && c.id === 'build') {
+    const ask = tagSafe(text).slice(0, 280);
+    if (ask) raw = raw.replace('[[build:example]]', `[[build:${ask}]]`);
+  }
+  return { raw, classification: c };
 }
 
 export function replyFor(c: Classification, ctx: ScriptedContext): string {
