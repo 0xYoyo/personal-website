@@ -59,7 +59,7 @@ describe('pickExampleId', () => {
 
 describe('scripted builds', () => {
   it('pick the example by the instruction, and the done line never claims seconds', async () => {
-    const { brain, rec } = make(json(502, {}), { agentUrl: '' });
+    const { brain, rec } = make(() => json(502, {}), { agentUrl: '' });
     for (const [ask, id] of [['a todo app', 'todo'], ['a card for my mom', 'birthday'], ['startup landing page', 'landing'], ['focus timer', 'pomodoro'], ['weather', 'weather'], ['habit tracker', 'habits']] as const) {
       rec.clear();
       await brain.build(ask);
@@ -89,13 +89,13 @@ describe('scripted builds', () => {
   });
 
   it('"Another example" still rotates', async () => {
-    const { brain, rec } = make(json(502, {}), { agentUrl: '' });
+    const { brain, rec } = make(() => json(502, {}), { agentUrl: '' });
     await brain.send('Another example');
     expect(rec.actions().find((a) => a.type === 'build')).toEqual({ type: 'build', instruction: 'example' });
   });
 
   it('"Change it" in scripted mode says so first, and keeps the app being changed when the change names none', async () => {
-    const { brain, rec } = make(json(502, {}), { agentUrl: '' });
+    const { brain, rec } = make(() => json(502, {}), { agentUrl: '' });
     await brain.build('a habit tracker');
     const prev = last(rec.events, 'buildDone')!.html;
     rec.clear();
