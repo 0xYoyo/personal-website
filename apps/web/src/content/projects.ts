@@ -1,0 +1,261 @@
+// The seven carded projects (SPEC §2.4, §3.5). Facts are ported from v2's
+// projects.ts (verified against the baked GitHub data, 2026-10-23); commit and
+// PR counts are baked literals computed from data/commits.json and prs.json so
+// the site doesn't ship 300 kB of JSON. Status words are his: be honest.
+// `voiceLine` comes from the scripted-brain replies in faq.md.
+import type { GlyphId, ProjectId } from '@yoyo/protocol';
+
+export type ProjectStatus = 'active' | 'shipped' | 'paused' | 'stopped' | 'archived';
+/** Showcase component ids (one per project; the showcases part delivers them). */
+export type ShowcaseId = ProjectId;
+
+export interface ProjectLink {
+  kind: 'repo' | 'live' | 'npm';
+  label: string;
+  href: string;
+}
+
+export interface Project {
+  id: ProjectId;
+  name: string;
+  /** Hebrew title, rendered with Heebo */
+  nameHe?: string;
+  status: ProjectStatus;
+  /** The honest reason, shown with the status */
+  statusNote?: string;
+  /** "Jul 2026 – present" */
+  period: string;
+  /** One sentence in his voice (the card's line) */
+  voiceLine: string;
+  /** One plain sentence of what it is (screen readers, history, OG) */
+  oneLiner: string;
+  /** The three tiny mono facts on the card */
+  cardFacts: [string, string, string];
+  /** All verified facts (the agent may quote these) */
+  facts: string[];
+  stack: string[];
+  links: ProjectLink[];
+  /** Prompt Racers: the card gets a Play button that opens the game */
+  play?: boolean;
+  glyph: GlyphId;
+  showcase: ShowcaseId;
+  /** Public commits on the default branch, from commits.json */
+  commits: number;
+  /** First and last commit dates (YYYY-MM-DD), from commits.json */
+  commitSpan: [string, string];
+  /** Merged PRs, from prs.json (0 when the repo has no PRs) */
+  mergedPRs: number;
+}
+
+const gh = (repo: string): ProjectLink => ({ kind: 'repo', label: 'GitHub', href: `https://github.com/0xYoyo/${repo}` });
+
+/** The eight Claude Code skills of yoyo-loop */
+export const loopSkills = [
+  '/yoyo-init', '/yoyo-spec', '/yoyo-build', '/yoyo-review', '/yoyo-status', '/yoyo-watchdog', '/yoyo-diagnose', '/yoyo-design',
+] as const;
+
+/** The Unfiltered example search, then the refinement that follows it */
+export const unfilteredQueries = ['elegant summer wedding dress, not black, under ₪400', 'same but cheaper'] as const;
+
+/** Densest 96 hours on Unfiltered (summary.md): 2026-10-03 15:53Z → 10-07 15:24Z */
+export const burst = { prs: 44, issues: 18, start: '2026-10-03', end: '2026-10-07' } as const;
+
+// Order per SPEC §3.5.
+export const projects: Project[] = [
+  {
+    id: 'prompt-racers',
+    name: 'Prompt Racers',
+    nameHe: 'מרוץ הפרומפטים',
+    status: 'shipped',
+    period: 'Aug 2026',
+    voiceLine: 'A 3D kart racer that teaches kids prompt engineering, in one HTML file with zero network calls.',
+    oneLiner:
+      'A 3D kart racer that teaches Israeli kids aged 8–15 prompt engineering. Built for the Base44 "Hour of Vibe Code" 2026 contest.',
+    cardFacts: [
+      'One HTML file, zero network calls, no asset files.',
+      "Seven AI opponents share the player's physics.",
+      '17 test suites and a gate that fails on any network request.',
+    ],
+    facts: [
+      'One HTML file, zero network calls, no asset files. Graphics are procedural; audio is synthesized.',
+      'Hebrew-first with full RTL and an English toggle.',
+      "Seven AI opponents share the player's physics. Drift boosts, item boxes, prompt-building progression.",
+      'Three quality tiers to hold 60 fps.',
+      '17 test suites, plus a verify gate that intercepts every network request and fails on any.',
+    ],
+    stack: ['JavaScript', 'Three.js', 'Web Audio API', 'procedural generation', 'Puppeteer'],
+    links: [gh('prompt-racers')],
+    play: true,
+    glyph: 'kart',
+    showcase: 'prompt-racers',
+    commits: 59,
+    commitSpan: ['2026-08-06', '2026-08-25'],
+    mergedPRs: 3,
+  },
+  {
+    id: 'unfiltered',
+    name: 'Unfiltered',
+    status: 'paused',
+    statusNote: "no paying merchants, and the engine hadn't cleared his own bar",
+    period: 'Jul – Oct 2026',
+    voiceLine: 'Type "elegant summer wedding dress, not black, under ₪400" in any language and get ranked products.',
+    oneLiner: 'A natural-language product search engine. Platform-independent, first distributed as a Shopify app.',
+    cardFacts: [
+      'p95 latency down ~70% on warm bilingual benchmarks.',
+      'Bilingual evaluation suite with 98 regression cases.',
+      '245 PRs merged, mostly through yoyo-loop.',
+    ],
+    facts: [
+      'Turns a request in any language into ranked products; a follow-up like "same but cheaper" modifies the search.',
+      'Schema-validated LLM intent extraction, hybrid vector and keyword retrieval, SQL constraints, model fallbacks, cost metering.',
+      'Bilingual evaluation suite with 98 regression cases.',
+      'p95 latency down ~70% on warm bilingual benchmarks (200 requests a run), by overlapping pipeline stages and hedging slow model calls.',
+      'Engine v2 (Oct 2026) rebuilt around a decision model, the "judge".',
+      'A boundary test fails if the engine ever imports Shopify. 245 PRs merged, mostly through yoyo-loop.',
+    ],
+    stack: ['TypeScript', 'Node.js', 'React Router', 'PostgreSQL', 'Prisma', 'Gemini API', 'Docker', 'GitHub Actions', 'Vitest', 'Playwright'],
+    links: [gh('unfiltered')],
+    glyph: 'magnifier',
+    showcase: 'unfiltered',
+    commits: 621,
+    commitSpan: ['2026-07-31', '2026-10-18'],
+    mergedPRs: 245,
+  },
+  {
+    id: 'yoyo-loop',
+    name: 'yoyo-loop',
+    status: 'active',
+    period: 'Jul 2026 – present',
+    voiceLine: 'He writes the spec, agents build in isolated worktrees and open PRs, another agent reviews, and only he merges.',
+    oneLiner: 'An autonomous, human-gated software factory: eight Claude Code skills over Linear, GitHub and Slack.',
+    cardFacts: [
+      '44 PRs across 18 issues in 96 hours on Unfiltered.',
+      'Eight Claude Code skills over Linear, GitHub and Slack.',
+      'Agent review tied to the exact commit and CI. A human merges.',
+    ],
+    facts: [
+      '/yoyo-spec interviews him and files a Linear issue with AC-N acceptance criteria and NG-N non-goals.',
+      '/yoyo-build claims an agent-ready issue, implements it in an isolated git worktree and opens a PR.',
+      '/yoyo-review posts a three-group verdict tied to the exact commit and CI results. A human merges.',
+      'Command guards, bounded repair cycles, stall detection, Slack alerts, sensitive-path escalation.',
+      '44 PRs merged across 18 issues in 4 days on Unfiltered (3 Oct – 7 Oct 2026).',
+      '55 PRs merged in its own repo. Started as an adaptation of Finn-loop; now his own.',
+    ],
+    stack: ['Claude Code skills', 'Linear', 'GitHub', 'Slack', 'git worktrees'],
+    links: [gh('yoyo-loop')],
+    glyph: 'loop',
+    showcase: 'yoyo-loop',
+    commits: 122,
+    commitSpan: ['2026-07-29', '2026-10-16'],
+    mergedPRs: 55,
+  },
+  {
+    id: 'runi-connector',
+    name: 'Reichman Courses connector',
+    status: 'shipped',
+    period: 'Oct 2026',
+    voiceLine:
+      'An MCP connector so students can ask Claude or ChatGPT "what\'s due this week?" and get a real answer from Moodle, the grade system, lecture recordings and Piazza.',
+    oneLiner:
+      'An unofficial MCP connector so Reichman students can ask Claude, ChatGPT or Claude Code about their own courses in plain language.',
+    cardFacts: [
+      'Published on npm; installs by double-click.',
+      'Submits or posts only after explicit confirmation.',
+      'Never retries a wrong password, so it cannot lock an account.',
+    ],
+    facts: [
+      'Reads Moodle, syllabi, the Student Info Station, Panopto lecture transcripts and Piazza.',
+      'Submits assignments or posts to forums only after explicit confirmation.',
+      'Published on npm; installs by double-clicking a .mcpb, or with one npx command.',
+      'Credentials stay in the OS secure storage. It never retries a wrong password, so it cannot lock an account.',
+      "First built on Cloudflare Workers. The university's bot protection blocks cloud servers, so it ships as a local connector.",
+    ],
+    stack: ['TypeScript', 'MCP', 'Node.js'],
+    links: [gh('runi-connector'), { kind: 'npm', label: 'npm', href: 'https://www.npmjs.com/package/reichman-courses-connector' }],
+    glyph: 'cap',
+    showcase: 'runi-connector',
+    commits: 42,
+    commitSpan: ['2026-10-14', '2026-10-19'],
+    mergedPRs: 0,
+  },
+  {
+    id: 'availability-monitor',
+    name: 'Availability Monitor',
+    status: 'shipped',
+    period: 'Mar – Apr 2026',
+    voiceLine:
+      'He wanted a room at a sold-out desert hotel for Passover, so he wrote a monitor that pings Telegram the second one opens.',
+    oneLiner: 'Telegram alerts when a room opens up at the Metzoke Dragot hotel.',
+    cardFacts: [
+      'Flexible date windows, stay length and guest count.',
+      'Runs locally or on GitHub Actions.',
+      'Found a last-minute Passover stay.',
+    ],
+    facts: ['Flexible date windows, stay length and guest count.', 'Runs locally or on GitHub Actions.', 'Found a last-minute Passover stay.'],
+    stack: ['TypeScript', 'Node 22', 'GitHub Actions', 'Telegram Bot API'],
+    links: [gh('availability-monitor')],
+    glyph: 'tent',
+    showcase: 'availability-monitor',
+    commits: 7,
+    commitSpan: ['2026-03-31', '2026-04-01'],
+    mergedPRs: 0,
+  },
+  {
+    id: 'pnl-bot',
+    name: 'Discord PnL bot',
+    status: 'shipped',
+    period: 'Sep 2023',
+    voiceLine:
+      'A Discord bot he hand-wrote in 2023, before AI tools: realized and unrealized P&L for a community from wallet activity across EVM chains, Solana and Bitcoin.',
+    oneLiner: 'Realized and unrealized P&L reports for a community, from wallet-level buys, sells, fees and holdings.',
+    cardFacts: ['Tokens and NFTs across EVM chains, Solana and Bitcoin.', 'Hand-written, before AI.', 'A community of ~100–200 members.'],
+    facts: ['Tokens and NFTs across EVM chains, Solana and Bitcoin.', 'Hand-written, before AI.', 'Built for a community of ~100–200 members.'],
+    stack: ['JavaScript'],
+    links: [gh('discord-PnL-bot-0xYoyo')],
+    glyph: 'chart',
+    showcase: 'pnl-bot',
+    commits: 57,
+    commitSpan: ['2023-09-04', '2024-01-29'],
+    mergedPRs: 0,
+  },
+  {
+    id: 'polybot',
+    name: 'Polybot',
+    status: 'stopped',
+    statusNote: "the edge wasn't strong enough",
+    period: 'Mar 2026',
+    voiceLine:
+      "Polybot watched Polymarket sports prices against a sharp bookmaker's; he stopped it when the edge wasn't strong enough and big firms had the latency.",
+    oneLiner: 'Polymarket sports prices, observed against Pinnacle-derived reference prices.',
+    cardFacts: [
+      'Immutable time-series snapshots, as a hard rule.',
+      'Allowlists, dry-run, budget caps and a kill switch.',
+      '11 leagues, including 3-way soccer markets.',
+    ],
+    facts: [
+      'Immutable time-series snapshots, as a hard rule.',
+      'Request broker with allowlists, dry-run, budget caps and a kill switch.',
+      '11 leagues, including 3-way soccer markets.',
+      "Stopped in Oct 2026: the evidence of an edge wasn't strong enough, and big firms have the latency.",
+    ],
+    stack: ['TypeScript', 'Next.js', 'Prisma', 'PostgreSQL'],
+    links: [gh('polybot')],
+    glyph: 'diverge',
+    showcase: 'polybot',
+    commits: 5,
+    commitSpan: ['2026-03-10', '2026-03-12'],
+    mergedPRs: 0,
+  },
+];
+
+export const projectById = (id: ProjectId): Project => {
+  const p = projects.find((x) => x.id === id);
+  if (!p) throw new Error(`unknown project ${id}`);
+  return p;
+};
+
+export function neighbour(id: ProjectId, dir: 1 | -1): Project {
+  const i = projects.findIndex((p) => p.id === id);
+  const n = projects.length;
+  return projects[(((i + dir) % n) + n) % n]!;
+}

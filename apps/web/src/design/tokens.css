@@ -1,0 +1,107 @@
+/* YOYO v3 design tokens (SPEC §5). One scene color, one ink, one muted,
+   one accent (cobalt) used only for interactive hairlines, focus and links.
+   No gradients, no shadows, no glass. */
+
+@font-face {
+  font-family: 'Commit Mono';
+  src: url('../assets/fonts/CommitMono-VF.woff2') format('woff2-variations'),
+       url('../assets/fonts/CommitMono-VF.woff2') format('woff2');
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root,
+html[data-scene='dark'] {
+  color-scheme: dark;
+  --scene: #0b0a09;
+  --ink: #f4efe6;
+  --muted: #8e877d;
+  --faint: rgba(244, 239, 230, 0.36);
+  --hairline: rgba(244, 239, 230, 0.14);
+  --hairline-strong: rgba(244, 239, 230, 0.32);
+  --panel: rgba(11, 10, 9, 0.92);
+  --wash: rgba(244, 239, 230, 0.05);
+  --accent: #2b4bff;
+  --accent-ink: #8ea0ff; /* cobalt lifted for text-sized focus marks on the dark scene */
+  --particle: #f4efe6;
+  --particle-fast: #9db4ff;
+}
+
+html[data-scene='light'] {
+  color-scheme: light;
+  --scene: #edeae3;
+  --ink: #171411;
+  --muted: #6b645b;
+  --faint: rgba(23, 20, 17, 0.4);
+  --hairline: rgba(23, 20, 17, 0.14);
+  --hairline-strong: rgba(23, 20, 17, 0.32);
+  --panel: rgba(237, 234, 227, 0.92);
+  --wash: rgba(23, 20, 17, 0.04);
+  --accent: #2b4bff;
+  --accent-ink: #2b4bff;
+  --particle: #171411;
+  --particle-fast: #2b4bff;
+}
+
+:root {
+  /* type */
+  --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', 'Heebo', system-ui, sans-serif;
+  --font-mono: 'Commit Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --font-hebrew: 'Heebo', 'Bricolage Grotesque Variable', system-ui, sans-serif;
+
+  --t-agent: clamp(40px, 3.2vw + 14px, 72px);
+  --t-agent-lh: 1.04;
+  --t-agent-track: -0.025em;
+  --t-title: clamp(32px, 2.4vw + 10px, 48px);
+  --t-lead: clamp(18px, 0.6vw + 13px, 22px);
+  --t-body: 16px;
+  --t-mono: 15px;
+  --t-mono-s: 14px;
+  --t-mono-xs: 13px;
+
+  /* space */
+  --gutter: clamp(16px, 4vw, 56px);
+  --bar-max: 720px;
+  --bar-h: 56px;
+  --top-h: 56px;
+  --radius: 14px;
+  --radius-s: 10px;
+  --radius-pill: 999px;
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 140ms;
+  --dur-2: 260ms;
+  --dur-3: 420ms;
+  --slide: 12px;
+
+  /* layers */
+  --z-canvas: 0;
+  --z-convo: 10;
+  --z-bar: 20;
+  --z-overlay: 30;
+  --z-top: 40;
+  --z-modal: 50;
+  --z-skip: 60;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --t-agent: clamp(32px, 6.4vw + 8px, 40px);
+    --t-agent-lh: 1.08;
+    --t-mono: 14px;
+    --top-h: 52px;
+    --bar-h: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0ms;
+    --dur-2: 0ms;
+    --dur-3: 0ms;
+    --slide: 0px;
+  }
+}

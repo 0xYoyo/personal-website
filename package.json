@@ -1,0 +1,33 @@
+{
+  "name": "yoyo-v3",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @yoyo/web",
+    "build": "npm run build -w @yoyo/protocol && npm run build -w @yoyo/web",
+    "preview": "npm run preview -w @yoyo/web",
+    "typecheck": "npm run typecheck -w @yoyo/protocol && npm run typecheck -w @yoyo/web",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "shots": "node tools/shots.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^17.13.0",
+    "jsdom": "^25.0.1",
+    "playwright": "^1.58.2",
+    "typescript": "5.6",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^2.1.9"
+  }
+}
