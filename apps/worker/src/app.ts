@@ -13,7 +13,8 @@
 
 import { corsHeaders, isAllowedOrigin, parseAllowlist } from './cors';
 import { createFenceStripper } from './fence';
-import { streamGemini, type GeminiContent } from './gemini';
+import type { GeminiContent } from './gemini';
+import { apiKey, modelName, provider, streamModel as callModel } from './provider';
 import { BUCKETS, DailyCounter, clientIp, ipKey, takeToken, type LimitKind } from './limits';
 import {
   BUILD_SYSTEM_PROMPT,
@@ -30,8 +31,14 @@ import { SSE_HEADERS, sseStream } from './sse';
 export interface Env {
   SHARES: KVNamespace;
   LIMITS: KVNamespace;
+  /** `gemini` (default) or `anthropic` */
+  PROVIDER?: string;
+  /** model id for the selected provider; default gemini-2.5-flash / claude-sonnet-4-5 */
+  MODEL?: string;
   GEMINI_API_KEY?: string;
+  /** legacy alias of MODEL for Gemini */
   GEMINI_MODEL?: string;
+  ANTHROPIC_API_KEY?: string;
   GEMINI_THINKING_BUDGET?: string;
   ALLOWED_ORIGINS?: string;
   DAILY_CHAT_CAP?: string;
@@ -77,7 +84,7 @@ export function createApp(deps: Partial<Deps> = {}) {
     }
 
     if (req.method === 'GET' && url.pathname === '/health') {
-      return json(200, { ok: true, live: !!env.GEMINI_API_KEY, model: model(env), time: new Date(now()).toISOString() });
+      return json(200, { ok: true, live: !!apiKey(env), provider: provider(env), model: modelName(env), time: new Date(now()).toISOString() });
     }
 
     const shareMatch = /^\/s\/([A-Za-z0-9]{6,32})$/.exec(url.pathname);
@@ -124,7 +131,7 @@ export function createApp(deps: Partial<Deps> = {}) {
     if (route === '/chat') {
       const parsed = parseChatBody(body);
       if (!parsed.ok) return json(parsed.status, { reason: parsed.reason });
-      if (!env.GEMINI_API_KEY) return json(503, { reason: 'offline' });
+      if (!apiKey(env)) return json(503, { reason: 'offline' });
       const stop = await gate('chat', cap(env.DAILY_CHAT_CAP, 2000));
       if (stop) return stop;
       return streamModel({
@@ -140,7 +147,7 @@ export function createApp(deps: Partial<Deps> = {}) {
     if (route === '/build') {
       const parsed = parseBuildBody(body);
       if (!parsed.ok) return json(parsed.status, { reason: parsed.reason });
-      if (!env.GEMINI_API_KEY) return json(503, { reason: 'offline' });
+      if (!apiKey(env)) return json(503, { reason: 'offline' });
       const stop = await gate('build', cap(env.DAILY_BUILD_CAP, 300));
       if (stop) return stop;
       return streamModel({
@@ -176,20 +183,17 @@ export function createApp(deps: Partial<Deps> = {}) {
       maxOutputTokens: number;
       build: boolean;
     }): Promise<Response> {
-      const result = await streamGemini({
-        apiKey: o.env.GEMINI_API_KEY ?? '',
-        model: model(o.env),
+      const result = await callModel(o.env, {
         system: o.system,
         contents: o.contents,
         temperature: o.temperature,
         maxOutputTokens: o.maxOutputTokens,
-        thinkingBudget: thinking(o.env),
         fetchImpl,
         signal: req.signal,
       }).catch(() => ({ ok: false as const, status: 0, kind: 'upstream' as const, detail: 'network' }));
 
       if (!result.ok) {
-        console.warn('gemini failed', result.status, result.detail.slice(0, 300));
+        console.warn(`${provider(o.env)} failed`, result.status, result.detail.slice(0, 300));
         if (result.kind === 'quota') return json(429, { reason: 'quota' });
         if (result.kind === 'rate') return json(429, { reason: 'rate', retryAfter: 30 }, { 'retry-after': '30' });
         return json(502, { reason: 'upstream' });
@@ -237,14 +241,6 @@ async function readJson(req: Request): Promise<unknown> {
   }
 }
 
-const model = (env: Env) => env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash';
-
-function thinking(env: Env): number | null {
-  const raw = env.GEMINI_THINKING_BUDGET?.trim();
-  if (raw === 'off' || raw === 'none') return null;
-  const n = raw ? Number(raw) : 0;
-  return Number.isFinite(n) ? n : 0;
-}
 
 function cap(raw: string | undefined, fallback: number): number {
   const n = Number(raw);

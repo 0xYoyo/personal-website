@@ -1,6 +1,7 @@
 // Gemini (Generative Language API) streaming client.
 // POST https://generativelanguage.googleapis.com/v1beta/models/<model>:streamGenerateContent?alt=sse
 
+import type { ModelFailure, ModelResult } from './provider';
 import { readSseData } from './sse';
 
 export type GeminiContent = { role: 'user' | 'model'; parts: { text: string }[] };
@@ -18,8 +19,8 @@ export interface GeminiRequest {
   signal?: AbortSignal;
 }
 
-export type GeminiFailure = { ok: false; status: number; kind: 'quota' | 'rate' | 'upstream'; detail: string };
-export type GeminiResult = { ok: true; stream: AsyncGenerator<string> } | GeminiFailure;
+export type GeminiFailure = ModelFailure;
+export type GeminiResult = ModelResult;
 
 export const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 

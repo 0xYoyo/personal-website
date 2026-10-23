@@ -1,6 +1,6 @@
 # yoyo-agent Worker
 
-The mind behind the site: a Cloudflare Worker that streams Gemini 2.5 Flash replies in Yoyo's agent's voice, builds small HTML apps on request, and stores shared builds.
+The mind behind the site: a Cloudflare Worker that streams model replies in Yoyo's agent's voice (Gemini 2.5 Flash by default, or Claude via `PROVIDER=anthropic`; see [Switching the model](#switching-the-model)), builds small HTML apps on request, and stores shared builds.
 
 | Route | What it does |
 |---|---|
@@ -8,7 +8,7 @@ The mind behind the site: a Cloudflare Worker that streams Gemini 2.5 Flash repl
 | `POST /build` | body `BuildRequest` `{instruction, previousHtml?}` → SSE of raw HTML chunks `data: {"type":"chunk","html":"<html…"}` … `data: {"type":"done","bytes":N}` |
 | `POST /share` | body `{html}` (≤ 60 kB) → `{id, url}`; stored in KV `SHARES` for 30 days |
 | `GET /s/:id` | the shared HTML, under `Content-Security-Policy: sandbox allow-scripts; default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:` |
-| `GET /health` | `{ok, live, model, time}`; `live` is false until the API key is set |
+| `GET /health` | `{ok, live, provider, model, time}`; `live` is false until the selected provider's API key is set |
 
 Errors are JSON with a `reason`: `400 bad_request|too_long`, `403 origin`, `413 too_long`, `429 rate|quota` (with `retryAfter` and a `Retry-After` header for `rate`), `502 upstream`, `503 offline` (no API key yet). A stream that fails half way ends with `data: {"type":"error","reason":"upstream"}`. All request and event shapes are the `@yoyo/protocol` types (`packages/protocol`).
 
@@ -96,7 +96,32 @@ You need Node 22+, a Cloudflare account (the free plan works) and a Google AI St
 
 11. **Watch it** (optional): `npx wrangler tail` streams live logs, including `gemini failed …` and `limits: kv … failed` warnings.
 
-To change a limit later, edit `[vars]` in `wrangler.toml` and run `npm run deploy`. To use a different model, set `GEMINI_MODEL` (default `gemini-2.5-flash`). `GEMINI_THINKING_BUDGET` defaults to `0` (thinking off, for faster first tokens); set it to `off` to omit `thinkingConfig` entirely.
+To change a limit later, edit `[vars]` in `wrangler.toml` and run `npm run deploy`. To use a different model or provider, see [Switching the model](#switching-the-model). `GEMINI_THINKING_BUDGET` defaults to `0` (thinking off, for faster first tokens); set it to `off` to omit `thinkingConfig` entirely.
+
+## Switching the model
+
+Two variables pick the model. Everything else (the SSE the site receives, the prompts, the caps, the per-IP and daily limits, the fence stripping for builds) is the same for both providers.
+
+| Variable | Values | Default |
+|---|---|---|
+| `PROVIDER` | `gemini` or `anthropic` | `gemini` |
+| `MODEL` | any model id of that provider | `gemini-2.5-flash` for Gemini, `claude-sonnet-4-5` for Anthropic |
+
+To switch to Claude:
+
+```sh
+npx wrangler secret put ANTHROPIC_API_KEY     # from https://console.anthropic.com/settings/keys
+```
+
+then in `wrangler.toml` set `PROVIDER = "anthropic"` (and optionally `MODEL = "claude-haiku-4-5"`), and run `npm run deploy`. `GET /health` shows `"provider":"anthropic","model":"claude-sonnet-4-5"` and `live: true` once the key is set. To switch back, set `PROVIDER = "gemini"` and deploy again. (`GEMINI_MODEL` still works as the Gemini model name when `MODEL` is unset.)
+
+How each is called:
+
+- **Gemini**: `POST https://generativelanguage.googleapis.com/v1beta/models/<MODEL>:streamGenerateContent?alt=sse`, key in `x-goog-api-key`, system prompt in `systemInstruction`, thinking off by default (`GEMINI_THINKING_BUDGET`).
+- **Anthropic**: `POST https://api.anthropic.com/v1/messages` with `stream: true`, headers `x-api-key` and `anthropic-version: 2023-06-01`, the system prompt in `system`, the conversation in `messages`; `content_block_delta` text deltas are forwarded as the same `token` / `chunk` events. Chat uses temperature 0.8 and `max_tokens` 512; builds 0.4 and 16,384.
+- Upstream `429` → `429 {reason:'rate'}`. Gemini's per-day quota, or Anthropic's "credit balance is too low", → `429 {reason:'quota'}` (the site goes scripted for the day). Anthropic `529 overloaded` and other errors → `502 upstream`.
+
+**Rough cost.** Gemini 2.5 Flash on the free tier costs nothing until its per-day request limit (check AI Studio). Claude has no free tier; Claude Sonnet 4.5 is $3 per million input tokens and $15 per million output tokens (Claude Haiku 4.5: $1 / $5; current prices at https://platform.claude.com/docs/en/about-claude/pricing). The chat system prompt (persona + facts + rules) is about 4–5k tokens, so a chat turn on Sonnet 4.5 is roughly 5k in + 100 out ≈ $0.017, and a build (≈ 1k in + 5–8k out, more with `previousHtml`) roughly $0.08–0.12. At the default daily caps (2,000 chats, 300 builds) the worst case is about $34 + $36 ≈ $70 a day, so lower `DAILY_CHAT_CAP` / `DAILY_BUILD_CAP` to match your budget; at a realistic 200 chats and 20 builds a day it is about $6. Haiku 4.5 is a third of that.
 
 ## Local development
 

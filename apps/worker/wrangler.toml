@@ -12,6 +12,9 @@ workers_dev = true
 # Comma-separated list of site origins allowed to call /chat, /build and /share.
 # A `*` matches any run of characters except "/" (so "http://localhost:*" covers every local port).
 ALLOWED_ORIGINS = "http://localhost:*,http://127.0.0.1:*"
+# Which model answers (README "Switching the model"): "gemini" (default) or "anthropic".
+PROVIDER = "gemini"
+# MODEL = "claude-sonnet-4-5"   # optional; default gemini-2.5-flash, or claude-sonnet-4-5 with PROVIDER = "anthropic"
 GEMINI_MODEL = "gemini-2.5-flash"
 DAILY_CHAT_CAP = "2000"
 DAILY_BUILD_CAP = "300"
@@ -29,5 +32,6 @@ binding = "LIMITS"
 id = "REPLACE_WITH_LIMITS_NAMESPACE_ID"
 
 # Secrets (never in this file):
-#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put GEMINI_API_KEY      (PROVIDER = "gemini")
+#   npx wrangler secret put ANTHROPIC_API_KEY   (PROVIDER = "anthropic")
 #   npx wrangler secret put IP_SALT        (optional; any random string)
