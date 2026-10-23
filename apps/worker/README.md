@@ -86,7 +86,7 @@ You need Node 22+, a Cloudflare account (the free plan works) and a Google AI St
    ```
    Use an origin from step 6. You should see `data: {"type":"token","text":"..."}` lines, then `data: {"type":"done"}`. If `live` is false, the secret from step 5 is missing.
 
-9. **Optional: your own domain.** In `wrangler.toml`, uncomment `routes = [{ pattern = "agent.example.com", custom_domain = true }]`, put in a hostname on a zone you have in Cloudflare, and run `npm run deploy` again.
+9. **Optional: your own domain.** Either give the Worker its own hostname (in `wrangler.toml`, uncomment `routes = [{ pattern = "agent.example.com", custom_domain = true }]`, put in a hostname on a zone you have in Cloudflare, and run `npm run deploy` again), or, better for share links, put it under the site's domain at `/api/*`: see [Share links on your domain](#share-links-on-your-domain).
 
 10. **Point the site at the Worker.** In the site's build environment (for example `apps/web/.env.production`, or the Cloudflare Pages project under Settings > Environment variables), set:
     ```sh
@@ -97,6 +97,26 @@ You need Node 22+, a Cloudflare account (the free plan works) and a Google AI St
 11. **Watch it** (optional): `npx wrangler tail` streams live logs, including `gemini failed …` and `limits: kv … failed` warnings.
 
 To change a limit later, edit `[vars]` in `wrangler.toml` and run `npm run deploy`. To use a different model or provider, see [Switching the model](#switching-the-model). `GEMINI_THINKING_BUDGET` defaults to `0` (thinking off, for faster first tokens); set it to `off` to omit `thinkingConfig` entirely.
+
+## Share links on your domain
+
+`POST /share` stores the build and the link is `GET /s/:id`, **served by the Worker**, so it lives on whatever origin the Worker answers on. On `*.workers.dev` a shared build looks like `https://yoyo-agent.<you>.workers.dev/s/Ab3dE6gh9k`. The client always builds the link as `VITE_AGENT_URL + /s/<id>`, so to make share links first-party, serve the Worker under the site's own domain:
+
+1. The site's domain must be a zone in your Cloudflare account (the site itself can be on Pages, Vercel or anywhere that zone points to).
+2. In `wrangler.toml`, add a route for the `/api/` path of that domain:
+   ```toml
+   routes = [{ pattern = "yoyo.dev/api/*", zone_name = "yoyo.dev" }]
+   ```
+   (add a second entry for `www.yoyo.dev/api/*` if the site answers on `www` too), then `npm run deploy`.
+3. The Worker strips a leading `/api` before routing, so `https://yoyo.dev/api/health`, `/api/chat`, `/api/build`, `/api/share` and `/api/s/:id` all work, and `/share` returns `https://yoyo.dev/api/s/<id>`. The bare paths keep working on `workers.dev`.
+4. Keep `https://yoyo.dev` in `ALLOWED_ORIGINS` (browsers still send an `Origin` header on these POSTs).
+5. Set `VITE_AGENT_URL=https://yoyo.dev/api` for the site build and redeploy it. Share links are now `https://yoyo.dev/api/s/<id>`.
+
+A shared page is always served with `Content-Security-Policy: sandbox allow-scripts; default-src 'none'; …`, so even on the site's own domain it runs in an opaque origin: it can't read the site's cookies or storage, and it can't make network requests. Small builds (under 8 kB), and any share while the Worker is unreachable, use a `#b=<lz-string>` link on the site itself instead, which needs no Worker at all.
+
+## Build cap
+
+The build cap the visitor sees is enforced by the Worker: **5 builds per IP per hour** (token bucket in KV `LIMITS`), plus the global `DAILY_BUILD_CAP`. The client also counts builds in `localStorage` and stops at 5 per hour as a courtesy (so it doesn't send a request it knows will be refused), but that count is per browser and easy to clear; the Worker's limit is the real one. When the Worker answers `429 {reason:'rate'}` to `/build`, the client reports it as the cap (the honest "that's five builds this hour" line) and never says `on it.` first: the shell's `on it.` is said only once the Worker has accepted the request (`BuildHandlers.onAccepted`, after a `200`). `429 {reason:'quota'}` (the daily cap) switches the site to the prebuilt examples for the rest of the day instead.
 
 ## Switching the model
 

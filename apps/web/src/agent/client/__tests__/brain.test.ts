@@ -254,8 +254,8 @@ describe('share', () => {
     expect(decodeShareHash(new URL(r.url).hash)).toBe(html);
   });
 
-  it('large HTML in live mode → KV permalink', async () => {
-    const { brain, calls } = make(() => json(200, { id: 'AbCdEf1234', url: `${AGENT}/s/AbCdEf1234` }));
+  it('large HTML in live mode → KV permalink, always under VITE_AGENT_URL', async () => {
+    const { brain, calls } = make(() => json(200, { id: 'AbCdEf1234', url: 'https://somewhere-else.example/s/AbCdEf1234' }));
     const r = await brain.share(`<html>${'x'.repeat(9000)}</html>`);
     expect(calls[0]?.url).toBe(`${AGENT}/share`);
     expect(r).toEqual({ url: `${AGENT}/s/AbCdEf1234`, kind: 'kv', id: 'AbCdEf1234' });

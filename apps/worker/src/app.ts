@@ -68,6 +68,11 @@ export function createApp(deps: Partial<Deps> = {}) {
 
   return async function handle(req: Request, env: Env, ctx: Ctx): Promise<Response> {
     const url = new URL(req.url);
+    // Served on a route under the site's own domain (site.com/api/*, README "Share links on
+    // your domain"), every path arrives with the /api prefix: route on the rest, and hand
+    // share links back under the same prefix so they stay first-party.
+    const prefix = /^\/api(?=\/)/.test(url.pathname) ? '/api' : '';
+    const path = url.pathname.slice(prefix.length);
     const origin = req.headers.get('origin');
     const allow = parseAllowlist(env.ALLOWED_ORIGINS);
     const cors = isAllowedOrigin(origin, allow) ? corsHeaders(origin) : {};
@@ -83,11 +88,11 @@ export function createApp(deps: Partial<Deps> = {}) {
       return isAllowedOrigin(origin, allow) ? new Response(null, { status: 204, headers: cors }) : new Response(null, { status: 403 });
     }
 
-    if (req.method === 'GET' && url.pathname === '/health') {
+    if (req.method === 'GET' && path === '/health') {
       return json(200, { ok: true, live: !!apiKey(env), provider: provider(env), model: modelName(env), time: new Date(now()).toISOString() });
     }
 
-    const shareMatch = /^\/s\/([A-Za-z0-9]{6,32})$/.exec(url.pathname);
+    const shareMatch = /^\/s\/([A-Za-z0-9]{6,32})$/.exec(path);
     if (req.method === 'GET' && shareMatch) {
       const html = await env.SHARES.get(`s:${shareMatch[1]}`, 'text').catch(() => null);
       if (!html) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
@@ -103,7 +108,7 @@ export function createApp(deps: Partial<Deps> = {}) {
       });
     }
 
-    const route = req.method === 'POST' ? url.pathname : null;
+    const route = req.method === 'POST' ? path : null;
     if (route !== '/chat' && route !== '/build' && route !== '/share') {
       return json(404, { reason: 'not_found' });
     }
@@ -173,7 +178,7 @@ export function createApp(deps: Partial<Deps> = {}) {
       console.warn('share: kv put failed', e);
       return json(503, { reason: 'offline' });
     }
-    return json(200, { id, url: `${url.origin}/s/${id}` });
+    return json(200, { id, url: `${url.origin}${prefix}/s/${id}` });
 
     async function streamModel(o: {
       env: Env;

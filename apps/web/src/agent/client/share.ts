@@ -52,9 +52,12 @@ export async function shareHtml(opts: {
         signal: ctrl.signal,
       });
       if (res.ok) {
-        const j = (await res.json()) as { id?: string; url?: string };
+        const j = (await res.json()) as { id?: string };
         if (j.id && /^[A-Za-z0-9]+$/.test(j.id)) {
-          return { url: j.url ?? `${opts.agentUrl}/s/${j.id}`, kind: 'kv', id: j.id };
+          // Always under VITE_AGENT_URL (POLISH1 C4): with the Worker on a route under the
+          // site's domain (https://site.com/api) the link is first-party; on workers.dev it
+          // is the Worker's own origin. The Worker's `url` field is ignored on purpose.
+          return { url: `${opts.agentUrl}/s/${j.id}`, kind: 'kv', id: j.id };
         }
       }
     } catch {
