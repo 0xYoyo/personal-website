@@ -1,0 +1,279 @@
+.section--hero {
+  --hero-top: clamp(48px, 9vh, 112px);
+  padding-top: calc(var(--topbar-h) + var(--hero-top));
+}
+
+.hero {
+  min-height: calc(88vh - var(--topbar-h));
+  display: flex;
+  flex-direction: column;
+}
+
+/* The name is the typographic object: Bricolage at its heaviest weight,
+   widest width (the axis tops out at 100) and display optical size, tracked
+   as tight as the letterforms allow without touching. Larger than the shared
+   token below 1000px so it fills a phone's width. */
+.hero-name {
+  font-size: clamp(56px, 17.5vw, 168px);
+  font-weight: 800;
+  font-stretch: 100%;
+  font-variation-settings: 'opsz' 96;
+  line-height: 0.92;
+  letter-spacing: -0.034em;
+  margin-left: -0.045em;
+  padding-right: 0.05em;
+}
+
+.hero-ids {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  color: var(--muted);
+}
+
+.hero-he {
+  font-size: 15px;
+}
+
+/* Phone and tablet: one column; the hint sits under the supporting lines, the cloud below. */
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'copy' 'hint' 'cloud';
+  margin-top: 18px;
+}
+
+.hero-copy {
+  grid-area: copy;
+}
+
+.hero-cloud {
+  grid-area: cloud;
+  min-width: 0;
+  margin-top: 40px;
+}
+
+.hero-hint {
+  grid-area: hint;
+}
+
+/*
+ * Desktop: the hero is capped near 76vh so the first PR's slot shows above the
+ * fold (POLISH_WAVE A); the cloud's canvas takes whatever height is left.
+ */
+@media (min-width: 900px) {
+  .section--hero {
+    --hero-top: clamp(32px, 7vh, 96px);
+  }
+
+  .hero {
+    min-height: calc(76vh - var(--topbar-h) - var(--hero-top));
+  }
+
+  .hero-grid {
+    flex: 1 0 auto;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-rows: 1fr auto;
+    grid-template-areas: 'copy cloud' 'hint hint';
+    column-gap: var(--col-gap);
+  }
+
+  .hero-cloud {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0;
+  }
+}
+
+/*
+ * While the show plays, the control room is expanded bottom-right on wide
+ * screens (360 x ~490 px). Keep everything informational out of the 400 px
+ * next to the viewport's right edge by ending the grid there; where the
+ * content column already ends further left (very wide screens) this is 0.
+ */
+@media (min-width: 1024px) {
+  .hero--live .hero-grid {
+    --control-room-reserve: 400px;
+    margin-right: max(
+      0px,
+      min(
+        calc(var(--control-room-reserve) - var(--gutter)),
+        calc(var(--control-room-reserve) + var(--content-max) / 2 - 50vw)
+      )
+    );
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .hero--live .hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.hero-oneliner {
+  margin-top: clamp(20px, 3vh, 32px);
+  font-size: var(--text-lede);
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.hero-support {
+  margin-top: 14px;
+  max-width: 46ch;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* ---------- Hint (fresh visits) ---------- */
+
+.hero-hint {
+  margin-top: 20px;
+  min-height: calc(2 * 1.5em);
+  font-size: var(--text-mono-sm);
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 500ms var(--ease-out),
+    visibility 0s linear 500ms;
+}
+
+.hero-hint.is-shown {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 600ms var(--ease-out),
+    visibility 0s;
+}
+
+@media (min-width: 900px) {
+  .hero-hint {
+    margin-top: 16px;
+    min-height: 1.5em;
+  }
+}
+
+/* ---------- Commit cloud ---------- */
+
+.hero-caption {
+  margin: 0 var(--hero-pad, 8px) 10px;
+  font-size: var(--text-mono-sm);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.hero-cloud-plot {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.hero-cloud-canvas {
+  position: relative;
+  height: 320px;
+  border-radius: var(--radius-sm);
+  touch-action: pan-y;
+  cursor: crosshair;
+  outline: none;
+}
+
+@media (min-width: 900px) {
+  .hero-cloud-canvas {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 200px;
+    max-height: 420px;
+  }
+}
+
+.hero-cloud-canvas:focus-visible {
+  box-shadow: 0 0 0 1px var(--agent-text);
+}
+
+.hero-cloud-canvas canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Probes: the canvas reads its colors from these, so it follows the tokens. */
+.hero-probe {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.hero-probe--dot {
+  /* Cobalt pulled 18% toward the page foreground: lifted on ink, deepened on paper. */
+  color: color-mix(in oklab, var(--agent), var(--fg) 18%);
+}
+
+.hero-probe--halo {
+  color: var(--agent);
+}
+
+.hero-probe--fg {
+  color: var(--fg);
+}
+
+.hero-tip {
+  position: absolute;
+  z-index: 2;
+  width: max-content;
+  max-width: min(400px, 100%);
+  padding: 6px 10px 7px;
+  font-size: var(--text-mono-sm);
+  line-height: 1.45;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  text-wrap: pretty;
+}
+
+.hero-tip-meta {
+  color: var(--muted);
+}
+
+.hero-ticks {
+  position: relative;
+  flex: none;
+  height: 22px;
+  margin: 2px var(--hero-pad) 0;
+  font-size: var(--text-mono-sm);
+  color: var(--muted);
+}
+
+.hero-ticks li {
+  position: absolute;
+  top: 0;
+  padding-top: 7px;
+  line-height: 1;
+}
+
+.hero-ticks li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 5px;
+  background: var(--line-strong);
+}
+
+/* Positioned and sized by flights.ts to the paths in the air; hidden otherwise. */
+.hero-flights {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 44;
+  pointer-events: none;
+}

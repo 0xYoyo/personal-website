@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yoav Zrihan — I write the spec. Agents build. I merge.</title>
+    <meta
+      name="description"
+      content="Yoav (Yoyo) Zrihan, 0xYoyo: self-taught builder since 2022 and CS student at Reichman University. Open to a student software role, 2–3 days a week."
+    />
+    <meta name="author" content="Yoav Zrihan" />
+    <!-- Absolute URLs below come from VITE_SITE_URL (.env, or the host env), which ends in "/". -->
+    <link rel="canonical" href="%VITE_SITE_URL%" />
+    <!-- The page opens in warm ink in either scheme; the light comes up as it is built. -->
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#15120E" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#15120E" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <meta property="og:type" content="profile" />
+    <meta property="og:site_name" content="0xYoyo" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="%VITE_SITE_URL%" />
+    <meta property="og:title" content="Yoav Zrihan — I write the spec. Agents build. I merge." />
+    <meta
+      property="og:description"
+      content="A portfolio that builds itself in front of you. Agents open the pull requests; you merge them."
+    />
+    <meta property="og:image" content="%VITE_SITE_URL%og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Yoav Zrihan. I write the spec. Agents build. I merge. A ribbon of 1,405 commits from 2022 to 2026."
+    />
+    <meta property="profile:first_name" content="Yoav" />
+    <meta property="profile:last_name" content="Zrihan" />
+    <meta property="profile:username" content="0xYoyo" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Yoav Zrihan — I write the spec. Agents build. I merge." />
+    <meta
+      name="twitter:description"
+      content="A portfolio that builds itself in front of you. Agents open the pull requests; you merge them."
+    />
+    <meta name="twitter:image" content="%VITE_SITE_URL%og.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Yoav Zrihan. I write the spec. Agents build. I merge. A ribbon of 1,405 commits from 2022 to 2026."
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Yoav Zrihan",
+        "alternateName": ["0xYoyo", "Yoyo", "יואב זריהן"],
+        "url": "%VITE_SITE_URL%",
+        "image": "%VITE_SITE_URL%og-square.png",
+        "sameAs": ["https://github.com/0xYoyo", "https://www.linkedin.com/in/yoavzrihan"],
+        "affiliation": {
+          "@type": "CollegeOrUniversity",
+          "name": "Reichman University",
+          "address": { "@type": "PostalAddress", "addressLocality": "Herzliya", "addressCountry": "IL" }
+        },
+        "address": { "@type": "PostalAddress", "addressCountry": "IL" },
+        "knowsAbout": ["TypeScript", "Node.js", "React", "PostgreSQL", "LLM APIs", "MCP", "Agent orchestration"]
+      }
+    </script>
+    <style>
+      /* First paint before CSS loads: warm ink, no white flash */
+      html { background: #15120e; color: #f1ece2; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <p style="padding: 24px; font-family: system-ui">
+        Yoav Zrihan (0xYoyo). Email yoavyoav310@gmail.com, github.com/0xYoyo, linkedin.com/in/yoavzrihan.
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

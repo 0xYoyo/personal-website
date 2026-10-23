@@ -1,0 +1,66 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # Base path and public URL. Defaults:
+      #   repo "<owner>.github.io"  -> user site,    base "/",       https://<owner>.github.io/
+      #   any other repo            -> project site, base "/<repo>/", https://<owner>.github.io/<repo>/
+      # For a custom domain set repository variables (Settings > Secrets and variables >
+      # Actions > Variables): VITE_BASE = /  and  VITE_SITE_URL = https://your.domain/
+      - name: Resolve base and site URL
+        env:
+          VAR_BASE: ${{ vars.VITE_BASE }}
+          VAR_SITE_URL: ${{ vars.VITE_SITE_URL }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          owner="${OWNER,,}"
+          if [ "${REPO,,}" = "${owner}.github.io" ]; then default_base="/"; else default_base="/${REPO}/"; fi
+          base="${VAR_BASE:-$default_base}"
+          site="${VAR_SITE_URL:-https://${owner}.github.io${base}}"
+          echo "VITE_BASE=${base}" >> "$GITHUB_ENV"
+          echo "VITE_SITE_URL=${site}" >> "$GITHUB_ENV"
+          echo "base=${base} site=${site}"
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

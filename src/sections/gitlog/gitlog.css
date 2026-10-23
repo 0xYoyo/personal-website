@@ -1,0 +1,305 @@
+.gitlog {
+  --gitlog-line: 22px;
+  --gitlog-panel: 0px;
+}
+
+.gitlog--wide {
+  --gitlog-panel: 300px;
+}
+
+.gitlog-canvas {
+  position: relative;
+  margin-top: clamp(32px, 4vw, 56px);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-variant-ligatures: none;
+}
+
+.gitlog-svg {
+  position: absolute;
+  top: 0;
+  overflow: visible;
+}
+
+/* Edges: thin, round, opaque colours (see refs.ts) */
+.gitlog-edge {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.gitlog-dot {
+  fill: currentColor;
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.gitlog-node.is-merge .gitlog-dot {
+  fill: var(--bg);
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.gitlog-node.is-head .gitlog-dot {
+  fill: currentColor;
+  stroke: var(--bg);
+  stroke-width: 2.5;
+}
+
+.gitlog-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0;
+  transition: opacity 140ms var(--ease-out);
+}
+
+.gitlog-node.is-head .gitlog-ring {
+  opacity: 0.4;
+}
+
+.gitlog-node.is-active .gitlog-ring {
+  opacity: 1;
+}
+
+.gitlog-node {
+  cursor: default;
+}
+
+/* Fork labels, desktop: a right-aligned branch column like GitKraken's */
+.gitlog-label {
+  position: absolute;
+  left: 0;
+  padding-block: 5px;
+  line-height: var(--gitlog-line);
+  text-align: right;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.gitlog-gap {
+  position: absolute;
+  right: 0;
+  line-height: var(--gitlog-line);
+  padding-inline: 10px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* git show, desktop: sticks beside the log while you read down it */
+.gitlog-show {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: calc(var(--gitlog-panel) - 40px);
+}
+
+.gitlog-show-inner {
+  position: sticky;
+  top: calc(var(--topbar-h) + 32px);
+  padding: 18px 20px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  line-height: 1.6;
+}
+
+.gitlog-show-head {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.gitlog-show-meta {
+  display: grid;
+  grid-template-columns: 8ch minmax(0, 1fr);
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.gitlog-show-meta dd {
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.gitlog-show-msg {
+  margin: 14px 0 0 4ch;
+  color: var(--fg);
+}
+
+.gitlog-show-real {
+  margin: 4px 0 14px 4ch;
+  color: var(--muted);
+}
+
+.gitlog-show a {
+  margin-left: 4ch;
+}
+
+/* The log */
+.gitlog-rows {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.gitlog-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 7ch 11ch minmax(0, 1fr) auto;
+  grid-template-areas: 'sha date msg fork';
+  column-gap: 2ch;
+  align-items: baseline;
+  padding: 5px 10px;
+  line-height: var(--gitlog-line);
+  border-radius: var(--radius-sm);
+  outline-offset: 0;
+  transition: background-color 140ms var(--ease-out);
+}
+
+.gitlog-row.is-active {
+  background: var(--wash);
+}
+
+.gitlog-sha {
+  grid-area: sha;
+  color: var(--muted);
+}
+
+.gitlog-sha.is-real {
+  color: color-mix(in srgb, var(--fg) 72%, var(--bg));
+}
+
+.gitlog-msg {
+  grid-area: msg;
+  color: var(--fg);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gitlog-refs {
+  margin-right: 1ch;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.gitlog-refs b {
+  font-weight: 700;
+}
+
+.gitlog-refs.is-agent {
+  color: var(--agent-text);
+}
+
+.gitlog-tag {
+  font-weight: 600;
+}
+
+.gitlog-fork {
+  grid-area: fork;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.gitlog-date {
+  grid-area: date;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Tablet and phone: no branch column; the fork shows as `checkout -b` */
+.gitlog--compact .gitlog-canvas {
+  font-size: var(--text-mono-sm);
+}
+
+.gitlog--compact .gitlog-row {
+  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    'sha date fork'
+    'msg msg msg';
+  column-gap: 1.5ch;
+  padding: 5px 6px;
+  margin-right: -6px;
+}
+
+.gitlog--compact .gitlog-sha {
+  grid-area: sha;
+}
+
+.gitlog--compact .gitlog-fork {
+  grid-area: fork;
+  justify-self: end;
+}
+
+.gitlog--compact .gitlog-msg {
+  grid-area: msg;
+  line-height: 1.45;
+}
+
+.gitlog--compact .gitlog-gap {
+  white-space: normal;
+  padding-inline: 6px;
+}
+
+.gitlog-note {
+  margin-top: 24px;
+  max-width: 68ch;
+  font-size: var(--text-small);
+}
+
+/* The draw: one sweep from HEAD down to 2019, nodes pop as the line arrives */
+.gitlog.is-drawing .gitlog-edge {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  animation: gitlog-draw var(--t) linear var(--d) forwards;
+}
+
+.gitlog.is-drawing .gitlog-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0);
+  animation: gitlog-pop 260ms var(--ease-out) var(--d) forwards;
+}
+
+.gitlog.is-drawing .gitlog-row,
+.gitlog.is-drawing .gitlog-label {
+  opacity: 0;
+  animation: gitlog-ink 200ms linear var(--d) forwards;
+}
+
+@keyframes gitlog-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes gitlog-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes gitlog-ink {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gitlog.is-drawing .gitlog-edge,
+  .gitlog.is-drawing .gitlog-dot,
+  .gitlog.is-drawing .gitlog-row,
+  .gitlog.is-drawing .gitlog-label {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    stroke-dashoffset: 0;
+  }
+}

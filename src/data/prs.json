@@ -1,0 +1,5289 @@
+[
+{
+"repo": "unfiltered",
+"number": 1,
+"title": "Add yoyo-loop config and project permissions",
+"created_at": "2026-07-31T17:31:40Z",
+"merged_at": "2026-07-31T17:39:54Z",
+"closed_at": "2026-07-31T17:39:54Z",
+"merged": true,
+"additions": 32,
+"deletions": 0,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "setup/yoyo-config"
+},
+{
+"repo": "unfiltered",
+"number": 2,
+"title": "YOY-11: Monorepo scaffold — Shopify app + engine package",
+"created_at": "2026-08-01T15:35:40Z",
+"merged_at": "2026-08-01T15:53:03Z",
+"closed_at": "2026-08-01T15:53:03Z",
+"merged": true,
+"additions": 13763,
+"deletions": 0,
+"changed_files": 51,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-11-monorepo-scaffold"
+},
+{
+"repo": "unfiltered",
+"number": 3,
+"title": "YOY-12: README + docs/ARCHITECTURE.md with keep-current policy",
+"created_at": "2026-08-01T16:08:45Z",
+"merged_at": "2026-08-01T16:22:08Z",
+"closed_at": "2026-08-01T16:22:08Z",
+"merged": true,
+"additions": 147,
+"deletions": 2,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-12-readme-architecture-docs"
+},
+{
+"repo": "unfiltered",
+"number": 4,
+"title": "YOY-13: Test, lint, typecheck tooling + CI on pull_request",
+"created_at": "2026-08-01T16:43:46Z",
+"merged_at": "2026-08-01T16:52:21Z",
+"closed_at": "2026-08-01T16:52:22Z",
+"merged": true,
+"additions": 619,
+"deletions": 4,
+"changed_files": 12,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-13-test-lint-ci"
+},
+{
+"repo": "unfiltered",
+"number": 5,
+"title": "YOY-14: Shopify auth & webhook verification logic, mock-tested",
+"created_at": "2026-08-01T17:12:33Z",
+"merged_at": "2026-08-01T17:34:54Z",
+"closed_at": "2026-08-01T17:34:54Z",
+"merged": true,
+"additions": 394,
+"deletions": 10,
+"changed_files": 12,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-14-auth-webhooks"
+},
+{
+"repo": "unfiltered",
+"number": 6,
+"title": "YOY-15: Dev-store verification runbook (live run pending on this branch)",
+"created_at": "2026-08-01T17:52:26Z",
+"merged_at": "2026-08-01T19:00:26Z",
+"closed_at": "2026-08-01T19:00:26Z",
+"merged": true,
+"additions": 169,
+"deletions": 13,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-15-dev-store-runbook"
+},
+{
+"repo": "unfiltered",
+"number": 7,
+"title": "YOY-17: Postgres foundation — Prisma on Postgres 18 + pgvector, hermetic test DB",
+"created_at": "2026-08-03T11:26:26Z",
+"merged_at": "2026-08-03T11:52:29Z",
+"closed_at": "2026-08-03T11:52:29Z",
+"merged": true,
+"additions": 145,
+"deletions": 19,
+"changed_files": 10,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-17-postgres-foundation"
+},
+{
+"repo": "unfiltered",
+"number": 8,
+"title": "YOY-18: Cost metering ledger + token-gated internal cost admin",
+"created_at": "2026-08-03T13:48:56Z",
+"merged_at": "2026-08-03T13:59:13Z",
+"closed_at": "2026-08-03T13:59:13Z",
+"merged": true,
+"additions": 575,
+"deletions": 4,
+"changed_files": 10,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-18-cost-ledger"
+},
+{
+"repo": "unfiltered",
+"number": 9,
+"title": "YOY-19: Provider ports + Gemini adapter (metered, fixture-tested, live-gated)",
+"created_at": "2026-08-03T14:20:10Z",
+"merged_at": "2026-08-03T14:54:04Z",
+"closed_at": "2026-08-03T14:54:04Z",
+"merged": true,
+"additions": 972,
+"deletions": 51,
+"changed_files": 18,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-19-provider-gemini"
+},
+{
+"repo": "unfiltered",
+"number": 10,
+"title": "YOY-16: Dependency audit — resolve the 21 npm-audit highs deliberately",
+"created_at": "2026-08-03T14:28:21Z",
+"merged_at": "2026-08-03T15:42:30Z",
+"closed_at": "2026-08-03T15:42:30Z",
+"merged": true,
+"additions": 137,
+"deletions": 110,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-16-dependency-audit"
+},
+{
+"repo": "unfiltered",
+"number": 11,
+"title": "YOY-20: Catalog schema + Shopify ingestion",
+"created_at": "2026-08-03T15:09:08Z",
+"merged_at": "2026-08-03T15:44:37Z",
+"closed_at": "2026-08-03T15:44:37Z",
+"merged": true,
+"additions": 607,
+"deletions": 1,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-20-catalog-ingestion"
+},
+{
+"repo": "unfiltered",
+"number": 12,
+"title": "YOY-21: Catalog sync via product webhooks",
+"created_at": "2026-08-04T08:32:21Z",
+"merged_at": "2026-08-04T15:08:20Z",
+"closed_at": "2026-08-04T15:08:20Z",
+"merged": true,
+"additions": 802,
+"deletions": 7,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-21-catalog-webhook-sync"
+},
+{
+"repo": "unfiltered",
+"number": 13,
+"title": "YOY-22: Enrichment — LLM attribute tags for every product",
+"created_at": "2026-08-04T15:29:02Z",
+"merged_at": "2026-08-04T15:50:33Z",
+"closed_at": "2026-08-04T15:50:33Z",
+"merged": true,
+"additions": 595,
+"deletions": 0,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-22-enrichment-llm-attribute-tags"
+},
+{
+"repo": "unfiltered",
+"number": 14,
+"title": "YOY-23: Embeddings + pgvector index",
+"created_at": "2026-08-05T13:21:57Z",
+"merged_at": "2026-08-05T13:31:55Z",
+"closed_at": "2026-08-05T13:31:55Z",
+"merged": true,
+"additions": 798,
+"deletions": 0,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-23-embeddings-pgvector"
+},
+{
+"repo": "unfiltered",
+"number": 15,
+"title": "YOY-24: Query classification — heuristic fast path + LLM classifier",
+"created_at": "2026-08-05T13:36:26Z",
+"merged_at": "2026-08-05T14:25:44Z",
+"closed_at": "2026-08-05T14:25:44Z",
+"merged": true,
+"additions": 555,
+"deletions": 0,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-24-query-classification"
+},
+{
+"repo": "unfiltered",
+"number": 16,
+"title": "YOY-25: Intent extraction — free text → structured intent",
+"created_at": "2026-08-05T18:46:46Z",
+"merged_at": "2026-08-05T18:59:20Z",
+"closed_at": "2026-08-05T18:59:20Z",
+"merged": true,
+"additions": 567,
+"deletions": 0,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-25-intent-extraction"
+},
+{
+"repo": "unfiltered",
+"number": 17,
+"title": "YOY-26: Retrieval — hard filters + vector similarity through the engine API",
+"created_at": "2026-08-05T19:10:19Z",
+"merged_at": "2026-08-05T19:18:44Z",
+"closed_at": "2026-08-05T19:18:44Z",
+"merged": true,
+"additions": 993,
+"deletions": 5,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-26-retrieval"
+},
+{
+"repo": "unfiltered",
+"number": 18,
+"title": "YOY-27: Sparse-catalog quality harness with pass bar and cost check",
+"created_at": "2026-08-05T19:34:23Z",
+"merged_at": "2026-08-05T20:07:39Z",
+"closed_at": "2026-08-05T20:07:39Z",
+"merged": true,
+"additions": 9131,
+"deletions": 3,
+"changed_files": 12,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-27-eval-harness"
+},
+{
+"repo": "unfiltered",
+"number": 19,
+"title": "YOY-29: M2 hardening — deferred findings",
+"created_at": "2026-08-05T20:32:07Z",
+"merged_at": "2026-08-06T10:03:36Z",
+"closed_at": "2026-08-06T10:03:36Z",
+"merged": true,
+"additions": 616,
+"deletions": 55,
+"changed_files": 19,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-29-m2-hardening"
+},
+{
+"repo": "unfiltered",
+"number": 20,
+"title": "YOY-28: free-tier pacing for live fixture regeneration",
+"created_at": "2026-08-06T09:52:38Z",
+"merged_at": "2026-08-06T10:04:29Z",
+"closed_at": "2026-08-06T10:04:29Z",
+"merged": true,
+"additions": 48,
+"deletions": 4,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-28-live-pacing"
+},
+{
+"repo": "unfiltered",
+"number": 21,
+"title": "YOY-28: translate JSON-Schema nullable unions for Gemini responseSchema",
+"created_at": "2026-08-06T10:20:36Z",
+"merged_at": "2026-08-06T10:24:02Z",
+"closed_at": "2026-08-06T10:24:02Z",
+"merged": true,
+"additions": 96,
+"deletions": 1,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-28-gemini-nullable-schema"
+},
+{
+"repo": "unfiltered",
+"number": 22,
+"title": "YOY-28: live-run hardening — timeouts, transient retries, tunable pacing",
+"created_at": "2026-08-07T09:50:30Z",
+"merged_at": "2026-08-07T10:01:02Z",
+"closed_at": "2026-08-07T10:01:02Z",
+"merged": true,
+"additions": 299,
+"deletions": 24,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-28-live-run-hardening"
+},
+{
+"repo": "unfiltered",
+"number": 23,
+"title": "YOY-31: Canonical category/occasion taxonomy — enum-pinned prompts + normalization at both parse sites",
+"created_at": "2026-08-07T10:33:59Z",
+"merged_at": "2026-08-07T10:51:02Z",
+"closed_at": "2026-08-07T10:51:02Z",
+"merged": true,
+"additions": 487,
+"deletions": 59,
+"changed_files": 10,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-31-canonical-taxonomy"
+},
+{
+"repo": "unfiltered",
+"number": 24,
+"title": "YOY-35: Eval quality — unknown-passes filtering, prompt precision, category groups, strict nullable enums",
+"created_at": "2026-08-07T12:03:06Z",
+"merged_at": "2026-08-07T12:14:55Z",
+"closed_at": "2026-08-07T12:14:55Z",
+"merged": true,
+"additions": 405,
+"deletions": 36,
+"changed_files": 13,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-35-eval-quality"
+},
+{
+"repo": "unfiltered",
+"number": 25,
+"title": "YOY-28: real-model eval recordings (bar passed)",
+"created_at": "2026-08-07T12:49:24Z",
+"merged_at": "2026-08-07T12:52:01Z",
+"closed_at": "2026-08-07T12:52:01Z",
+"merged": true,
+"additions": 62046,
+"deletions": 5918,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-28-live-fixtures"
+},
+{
+"repo": "unfiltered",
+"number": 26,
+"title": "YOY-28: M2 live-run evidence",
+"created_at": "2026-08-07T13:34:09Z",
+"merged_at": "2026-08-07T13:40:01Z",
+"closed_at": "2026-08-07T13:40:01Z",
+"merged": true,
+"additions": 79,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-28-evidence"
+},
+{
+"repo": "unfiltered",
+"number": 27,
+"title": "PRD v2: vision enrichment, catalog-size tiers, cost & pricing ops",
+"created_at": "2026-08-07T18:24:54Z",
+"merged_at": "2026-08-07T18:28:13Z",
+"closed_at": "2026-08-07T18:28:13Z",
+"merged": true,
+"additions": 67,
+"deletions": 13,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "prd-v2-vision-and-pricing-ops"
+},
+{
+"repo": "unfiltered",
+"number": 28,
+"title": "config: set slack_channel_id for watchdog verification",
+"created_at": "2026-08-08T13:14:06Z",
+"merged_at": "2026-08-08T13:16:03Z",
+"closed_at": "2026-08-08T13:16:03Z",
+"merged": true,
+"additions": 1,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "config-slack-channel-id"
+},
+{
+"repo": "unfiltered",
+"number": 29,
+"title": "YOY-42: Refinement — merge follow-up queries into the previous intent",
+"created_at": "2026-08-08T15:35:55Z",
+"merged_at": "2026-08-08T15:52:00Z",
+"closed_at": "2026-08-08T15:52:01Z",
+"merged": true,
+"additions": 731,
+"deletions": 13,
+"changed_files": 11,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-42-refinement-previous-intent"
+},
+{
+"repo": "unfiltered",
+"number": 30,
+"title": "YOY-41: Classic keyword engine — pg_trgm search with typo tolerance (EN+HE)",
+"created_at": "2026-08-08T16:06:08Z",
+"merged_at": "2026-08-08T16:50:14Z",
+"closed_at": "2026-08-08T16:50:14Z",
+"merged": true,
+"additions": 1656,
+"deletions": 15,
+"changed_files": 17,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-41-classic-keyword-engine"
+},
+{
+"repo": "unfiltered",
+"number": 31,
+"title": "YOY-43: Storefront widget scaffold + UI test lane (Playwright, CI, yoyo config)",
+"created_at": "2026-08-08T16:16:07Z",
+"merged_at": "2026-08-08T16:41:17Z",
+"closed_at": "2026-08-08T16:41:17Z",
+"merged": true,
+"additions": 472,
+"deletions": 10,
+"changed_files": 20,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-43-widget-scaffold-ui-lane"
+},
+{
+"repo": "unfiltered",
+"number": 32,
+"title": "YOY-44: Product display snapshot — handle and featured-image URL at ingestion",
+"created_at": "2026-08-08T16:59:03Z",
+"merged_at": "2026-08-08T17:09:47Z",
+"closed_at": "2026-08-08T17:09:47Z",
+"merged": true,
+"additions": 250,
+"deletions": 11,
+"changed_files": 10,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-44-product-display-snapshot"
+},
+{
+"repo": "unfiltered",
+"number": 33,
+"title": "YOY-45: Hybrid search orchestrator with silent fallback ladder",
+"created_at": "2026-08-08T18:28:15Z",
+"merged_at": "2026-08-08T18:36:55Z",
+"closed_at": "2026-08-08T18:36:55Z",
+"merged": true,
+"additions": 906,
+"deletions": 28,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-45-hybrid-search-orchestrator"
+},
+{
+"repo": "unfiltered",
+"number": 34,
+"title": "YOY-46: Storefront search API over the Shopify app proxy",
+"created_at": "2026-08-08T18:53:12Z",
+"merged_at": "2026-08-08T19:01:23Z",
+"closed_at": "2026-08-08T19:01:23Z",
+"merged": true,
+"additions": 1112,
+"deletions": 75,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-46-storefront-search-proxy"
+},
+{
+"repo": "unfiltered",
+"number": 35,
+"title": "YOY-47: Query log, click beacon, and per-session AI throttle",
+"created_at": "2026-08-08T19:12:32Z",
+"merged_at": "2026-08-08T19:25:39Z",
+"closed_at": "2026-08-08T19:25:39Z",
+"merged": true,
+"additions": 959,
+"deletions": 25,
+"changed_files": 12,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-47-query-log-click-throttle"
+},
+{
+"repo": "unfiltered",
+"number": 36,
+"title": "YOY-48: Widget — theme search takeover + instant classic results",
+"created_at": "2026-08-08T19:26:50Z",
+"merged_at": "2026-08-08T19:35:09Z",
+"closed_at": "2026-08-08T19:35:09Z",
+"merged": true,
+"additions": 1051,
+"deletions": 106,
+"changed_files": 16,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-48-widget-search-takeover"
+},
+{
+"repo": "unfiltered",
+"number": 37,
+"title": "YOY-49: Widget — AI results with chips, zero-hit state, refinement flow",
+"created_at": "2026-08-08T19:48:20Z",
+"merged_at": "2026-08-08T20:03:34Z",
+"closed_at": "2026-08-08T20:03:34Z",
+"merged": true,
+"additions": 630,
+"deletions": 40,
+"changed_files": 9,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-49-widget-ai-chips-refinement"
+},
+{
+"repo": "unfiltered",
+"number": 38,
+"title": "YOY-50: widget EN+HE localization + RTL mirroring",
+"created_at": "2026-08-09T09:12:38Z",
+"merged_at": "2026-08-09T09:19:25Z",
+"closed_at": "2026-08-09T09:19:25Z",
+"merged": true,
+"additions": 449,
+"deletions": 31,
+"changed_files": 18,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-50-widget-localization-rtl"
+},
+{
+"repo": "unfiltered",
+"number": 39,
+"title": "YOY-51: M3 manual live-run runbook on the dev store",
+"created_at": "2026-08-09T14:38:40Z",
+"merged_at": "2026-08-09T14:47:32Z",
+"closed_at": "2026-08-09T14:47:32Z",
+"merged": true,
+"additions": 347,
+"deletions": 8,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-51-m3-live-run-runbook"
+},
+{
+"repo": "unfiltered",
+"number": 40,
+"title": "YOY-60: browser-passable proxy transport (GET), remainder-path routes, native predictive suppression",
+"created_at": "2026-08-09T16:44:50Z",
+"merged_at": "2026-08-09T16:57:48Z",
+"closed_at": "2026-08-09T16:57:48Z",
+"merged": true,
+"additions": 731,
+"deletions": 53,
+"changed_files": 13,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-60-proxy-transport-suppression"
+},
+{
+"repo": "unfiltered",
+"number": 41,
+"title": "fix(proxy): app_proxy url path matches served routes (YOY-60 follow-up)",
+"created_at": "2026-08-09T17:11:03Z",
+"merged_at": "2026-08-09T17:15:29Z",
+"closed_at": "2026-08-09T17:15:29Z",
+"merged": true,
+"additions": 1,
+"deletions": 1,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-60-app-proxy-path"
+},
+{
+"repo": "unfiltered",
+"number": 42,
+"title": "YOY-51: M3 live-run evidence (Part 4)",
+"created_at": "2026-08-09T18:11:59Z",
+"merged_at": "2026-08-09T18:18:33Z",
+"closed_at": "2026-08-09T18:18:33Z",
+"merged": true,
+"additions": 23,
+"deletions": 19,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "m3-live-run-evidence"
+},
+{
+"repo": "unfiltered",
+"number": 43,
+"title": "YOY-61: NL misroute fix, ACTIVE-only catalog, widget failure containment",
+"created_at": "2026-08-09T18:46:44Z",
+"merged_at": "2026-08-09T19:29:36Z",
+"closed_at": "2026-08-09T19:29:36Z",
+"merged": true,
+"additions": 1376,
+"deletions": 29,
+"changed_files": 25,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-61-live-run-defects"
+},
+{
+"repo": "unfiltered",
+"number": 44,
+"title": "YOY-52 (ACs 4, 5, 6, 9): proxy route containment, throttle hardening, Cache-Control: no-store",
+"created_at": "2026-08-09T18:54:07Z",
+"merged_at": "2026-08-09T19:29:57Z",
+"closed_at": "2026-08-09T19:29:57Z",
+"merged": true,
+"additions": 294,
+"deletions": 42,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-52-proxy-throttle-hardening"
+},
+{
+"repo": "unfiltered",
+"number": 45,
+"title": "YOY-52 (ACs 2, 13, 16): eval cost split, title-dominant classic ranking, relaxed zero-hit close matches",
+"created_at": "2026-08-09T19:02:07Z",
+"merged_at": "2026-08-09T20:03:14Z",
+"closed_at": "2026-08-09T20:03:14Z",
+"merged": true,
+"additions": 292,
+"deletions": 18,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-52-search-quality"
+},
+{
+"repo": "unfiltered",
+"number": 46,
+"title": "YOY-52 (ACs 7, 11, 14): magnifier immediate search, extension locales, Hebrew display parity",
+"created_at": "2026-08-09T19:09:05Z",
+"merged_at": "2026-08-09T20:03:26Z",
+"closed_at": "2026-08-09T20:03:26Z",
+"merged": true,
+"additions": 87,
+"deletions": 5,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-52-widget-hardening"
+},
+{
+"repo": "unfiltered",
+"number": 47,
+"title": "YOY-52 (ACs 3, 8): CI bundle-drift guard, pinned Shopify CLI, live-run doc reality",
+"created_at": "2026-08-09T19:19:47Z",
+"merged_at": "2026-08-09T19:45:36Z",
+"closed_at": "2026-08-09T19:45:36Z",
+"merged": true,
+"additions": 475,
+"deletions": 13,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-52-ci-tooling-docs"
+},
+{
+"repo": "unfiltered",
+"number": 48,
+"title": "YOY-52 (AC-1 amendment, AC-10): regen harness per-golden expectations; last-occurrence shop read",
+"created_at": "2026-08-10T08:35:26Z",
+"merged_at": "2026-08-10T08:50:17Z",
+"closed_at": "2026-08-10T08:50:17Z",
+"merged": true,
+"additions": 109,
+"deletions": 8,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-52-regen-harness-shop-guarantee"
+},
+{
+"repo": "unfiltered",
+"number": 49,
+"title": "YOY-52 (AC-15, AC-18, AC-17 prep): comparative-tightening prompt + goldens, attribute-query classifier steer, click-route duplicate-shop pin",
+"created_at": "2026-08-10T09:12:09Z",
+"merged_at": "2026-08-10T09:18:30Z",
+"closed_at": "2026-08-10T09:18:30Z",
+"merged": true,
+"additions": 265,
+"deletions": 7,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-52-prompt-fixes-ac18-pin"
+},
+{
+"repo": "unfiltered",
+"number": 50,
+"title": "YOY-52 (Option B directive): hybrid routing ladder, temperature-0 classification, full-picture regen harness",
+"created_at": "2026-08-10T10:05:13Z",
+"merged_at": "2026-08-10T10:20:29Z",
+"closed_at": "2026-08-10T10:20:29Z",
+"merged": true,
+"additions": 173,
+"deletions": 66,
+"changed_files": 9,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-52-hybrid-routing-ladder"
+},
+{
+"repo": "unfiltered",
+"number": 51,
+"title": "YOY-52 (comparative-enforcement directive): deterministic bound tightening in code, temperature-0 extraction, size canonicalization, carry-over worked example",
+"created_at": "2026-08-10T10:50:08Z",
+"merged_at": "2026-08-10T10:59:53Z",
+"closed_at": "2026-08-10T10:59:53Z",
+"merged": true,
+"additions": 339,
+"deletions": 12,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-52-deterministic-comparative-enforcement"
+},
+{
+"repo": "unfiltered",
+"number": 52,
+"title": "YOY-52 (run-5 directive): single-source refinement merge — src-aliased tests, explicit outcome judgment, deterministic carry-over",
+"created_at": "2026-08-10T14:18:32Z",
+"merged_at": "2026-08-10T14:46:21Z",
+"closed_at": "2026-08-10T14:46:21Z",
+"merged": true,
+"additions": 416,
+"deletions": 32,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-52-refinement-merge-single-source"
+},
+{
+"repo": "unfiltered",
+"number": 53,
+"title": "YOY-52 (AC-19): a restored price bound never contradicts the model's explicit bound",
+"created_at": "2026-08-10T14:58:10Z",
+"merged_at": "2026-08-10T15:18:48Z",
+"closed_at": "2026-08-10T15:18:48Z",
+"merged": true,
+"additions": 80,
+"deletions": 5,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-52-ac19-contradiction-guard"
+},
+{
+"repo": "unfiltered",
+"number": 54,
+"title": "YOY-52: source-execution guard + cwd-proof regen:live entrypoint",
+"created_at": "2026-08-10T16:36:55Z",
+"merged_at": "2026-08-10T16:44:22Z",
+"closed_at": "2026-08-10T16:44:22Z",
+"merged": true,
+"additions": 114,
+"deletions": 1,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-52-source-execution-guard"
+},
+{
+"repo": "unfiltered",
+"number": 55,
+"title": "YOY-52: run-7 live eval recordings + authorized r02 soft-attribute amendment",
+"created_at": "2026-08-10T17:20:03Z",
+"merged_at": "2026-08-10T17:32:40Z",
+"closed_at": "2026-08-10T17:32:40Z",
+"merged": true,
+"additions": 35809,
+"deletions": 30262,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-52-run7-live-recordings"
+},
+{
+"repo": "unfiltered",
+"number": 56,
+"title": "docs: parity floor, decided interaction model, design intent, differentiation map",
+"created_at": "2026-08-10T19:30:07Z",
+"merged_at": "2026-08-10T20:10:29Z",
+"closed_at": "2026-08-10T20:10:29Z",
+"merged": true,
+"additions": 64,
+"deletions": 2,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-changes-requested"
+],
+"branch": "docs-parity-floor-comparison"
+},
+{
+"repo": "unfiltered",
+"number": 57,
+"title": "YOY-67: cross-language routing guard, classic zero-hit escalation, orchestrator singleton",
+"created_at": "2026-08-10T20:02:39Z",
+"merged_at": "2026-08-10T20:51:40Z",
+"closed_at": "2026-08-10T20:51:40Z",
+"merged": true,
+"additions": 487,
+"deletions": 42,
+"changed_files": 12,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-67-routing-cross-language"
+},
+{
+"repo": "unfiltered",
+"number": 58,
+"title": "YOY-67 AC-4: require Online Store publication across ingest, webhooks, and search stores",
+"created_at": "2026-08-10T20:26:26Z",
+"merged_at": "2026-08-10T20:51:59Z",
+"closed_at": "2026-08-10T20:51:59Z",
+"merged": true,
+"additions": 333,
+"deletions": 25,
+"changed_files": 12,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-67-online-store-publication"
+},
+{
+"repo": "unfiltered",
+"number": 59,
+"title": "YOY-67 AC-5/AC-6: color-evidence tiering with labeled unknowns; no overlay before first response",
+"created_at": "2026-08-10T20:41:20Z",
+"merged_at": "2026-08-10T21:05:16Z",
+"closed_at": "2026-08-10T21:05:16Z",
+"merged": true,
+"additions": 505,
+"deletions": 28,
+"changed_files": 20,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-67-truthful-chips-focus"
+},
+{
+"repo": "unfiltered",
+"number": 60,
+"title": "YOY-67: run-8 regenerated eval recordings (all-live provenance)",
+"created_at": "2026-08-11T08:48:47Z",
+"merged_at": "2026-08-11T08:52:21Z",
+"closed_at": "2026-08-11T08:52:21Z",
+"merged": true,
+"additions": 34042,
+"deletions": 34050,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-67-run8-eval-recordings"
+},
+{
+"repo": "unfiltered",
+"number": 61,
+"title": "YOY-68: live classic previews per keystroke; full pipeline only on explicit submit",
+"created_at": "2026-08-11T09:39:14Z",
+"merged_at": "2026-08-11T10:29:52Z",
+"closed_at": "2026-08-11T10:29:52Z",
+"merged": true,
+"additions": 619,
+"deletions": 67,
+"changed_files": 17,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-68-preview-submit-split"
+},
+{
+"repo": "unfiltered",
+"number": 62,
+"title": "YOY-69: commit the ingest entrypoint script; cancel searches on overlay dismissal",
+"created_at": "2026-08-11T10:36:50Z",
+"merged_at": "2026-08-11T10:41:47Z",
+"closed_at": "2026-08-11T10:41:47Z",
+"merged": true,
+"additions": 209,
+"deletions": 56,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-69-ingest-entrypoint"
+},
+{
+"repo": "unfiltered",
+"number": 63,
+"title": "YOY-72: audit follow-ups — pin escalation guards, hydration publication predicate, eval docs",
+"created_at": "2026-08-11T13:10:59Z",
+"merged_at": "2026-08-11T13:14:22Z",
+"closed_at": "2026-08-11T13:14:22Z",
+"merged": true,
+"additions": 133,
+"deletions": 11,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-72-audit-followups"
+},
+{
+"repo": "unfiltered",
+"number": 64,
+"title": "YOY-71 + YOY-75: fail-loud Prisma drift guard; generated repo map with CI drift check",
+"created_at": "2026-08-11T13:59:19Z",
+"merged_at": "2026-08-11T14:04:00Z",
+"closed_at": "2026-08-11T14:04:00Z",
+"merged": true,
+"additions": 638,
+"deletions": 0,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-71-75-dx-and-repo-map"
+},
+{
+"repo": "unfiltered",
+"number": 65,
+"title": "YOY-78: Prisma guard compares content not mtime; re-sync repo-map from post-YOY-77 template",
+"created_at": "2026-08-11T14:24:11Z",
+"merged_at": "2026-08-11T14:28:21Z",
+"closed_at": "2026-08-11T14:28:21Z",
+"merged": true,
+"additions": 53,
+"deletions": 25,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-78-pr64-followups"
+},
+{
+"repo": "unfiltered",
+"number": 66,
+"title": "PRD: binding portability constraint (Shopify as adapter, never mechanism)",
+"created_at": "2026-08-13T10:33:57Z",
+"merged_at": "2026-08-13T10:39:20Z",
+"closed_at": "2026-08-13T10:39:20Z",
+"merged": true,
+"additions": 7,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "prd-portability-amendment"
+},
+{
+"repo": "unfiltered",
+"number": 67,
+"title": "docs: author DESIGN.md (design invariants + playground direction system)",
+"created_at": "2026-08-15T11:23:16Z",
+"merged_at": "2026-08-15T11:50:51Z",
+"closed_at": "2026-08-15T11:50:51Z",
+"merged": true,
+"additions": 223,
+"deletions": 0,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-design-md"
+},
+{
+"repo": "unfiltered",
+"number": 68,
+"title": "YOY-81: commit the adapter-boundary portability map (AC-3)",
+"created_at": "2026-08-15T13:38:27Z",
+"merged_at": "2026-08-15T14:04:11Z",
+"closed_at": "2026-08-15T14:04:11Z",
+"merged": true,
+"additions": 93,
+"deletions": 0,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-81-portability-map"
+},
+{
+"repo": "unfiltered",
+"number": 69,
+"title": "YOY-86: competitive strategy doc + PRD positioning/portability amendments",
+"created_at": "2026-08-15T20:09:50Z",
+"merged_at": "2026-08-15T20:23:36Z",
+"closed_at": "2026-08-15T20:23:36Z",
+"merged": true,
+"additions": 48,
+"deletions": 6,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-86-competitive-strategy"
+},
+{
+"repo": "unfiltered",
+"number": 70,
+"title": "chore: add write_inventory scope for catalog inventory management",
+"created_at": "2026-08-16T11:40:21Z",
+"merged_at": "2026-08-16T11:45:18Z",
+"closed_at": "2026-08-16T11:45:18Z",
+"merged": true,
+"additions": 1,
+"deletions": 1,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "chore/write-inventory-scope"
+},
+{
+"repo": "unfiltered",
+"number": 71,
+"title": "YOY-70: theme-native result rendering spike — Variant A alt-template fetch, Variant B harvest-clone",
+"created_at": "2026-08-16T13:22:32Z",
+"merged_at": "2026-08-16T18:46:09Z",
+"closed_at": "2026-08-16T18:46:09Z",
+"merged": true,
+"additions": 2182,
+"deletions": 6,
+"changed_files": 29,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-70-theme-native-spike"
+},
+{
+"repo": "unfiltered",
+"number": 72,
+"title": "PRD: binding Mirror Bar amendment (platform-agnostic design fidelity; YOY-70 founder session)",
+"created_at": "2026-08-16T19:04:51Z",
+"merged_at": "2026-08-16T19:07:04Z",
+"closed_at": "2026-08-16T19:07:04Z",
+"merged": true,
+"additions": 4,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-70-prd-mirror-bar"
+},
+{
+"repo": "unfiltered",
+"number": 73,
+"title": "YOY-99: global takeover of every search input + theme search-UI reset on native submit",
+"created_at": "2026-08-16T19:22:02Z",
+"merged_at": "2026-08-16T20:24:56Z",
+"closed_at": "2026-08-16T20:24:56Z",
+"merged": true,
+"additions": 459,
+"deletions": 27,
+"changed_files": 15,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-99-global-search-takeover"
+},
+{
+"repo": "unfiltered",
+"number": 74,
+"title": "YOY-84: rename engine/widget tenant key shopDomain → storeId (ports only)",
+"created_at": "2026-08-16T19:31:05Z",
+"merged_at": "2026-08-16T21:03:08Z",
+"closed_at": "2026-08-16T21:03:08Z",
+"merged": true,
+"additions": 135,
+"deletions": 121,
+"changed_files": 43,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-84-storeid-rename"
+},
+{
+"repo": "unfiltered",
+"number": 75,
+"title": "YOY-87: card contract url — server-resolved product links (LEAK-2)",
+"created_at": "2026-08-16T19:44:11Z",
+"merged_at": "2026-08-16T21:25:32Z",
+"closed_at": "2026-08-16T21:25:32Z",
+"merged": true,
+"additions": 574,
+"deletions": 81,
+"changed_files": 36,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-87-card-url"
+},
+{
+"repo": "unfiltered",
+"number": 76,
+"title": "YOY-98: refresh the expiring offline access token in unattended ingest; fail loudly with the re-authorize instruction (AC-1, AC-2)",
+"created_at": "2026-08-16T19:59:52Z",
+"merged_at": "2026-08-16T20:25:29Z",
+"closed_at": "2026-08-16T20:25:29Z",
+"merged": true,
+"additions": 486,
+"deletions": 14,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-98-offline-token-refresh"
+},
+{
+"repo": "unfiltered",
+"number": 77,
+"title": "YOY-100: native view full-page mirror — results render as the theme's own search-results page",
+"created_at": "2026-08-17T11:30:49Z",
+"merged_at": "2026-08-17T12:27:22Z",
+"closed_at": "2026-08-17T12:27:22Z",
+"merged": true,
+"additions": 1093,
+"deletions": 74,
+"changed_files": 45,
+"author": "0xYoyo",
+"labels": [
+"loop-approved",
+"needs-human-review"
+],
+"branch": "YOY-100-full-page-mirror"
+},
+{
+"repo": "unfiltered",
+"number": 78,
+"title": "YOY-101: native view — keystroke previews ride the theme's native predictive; owned preview box retired from the native path",
+"created_at": "2026-08-17T12:37:26Z",
+"merged_at": "2026-08-17T13:12:59Z",
+"closed_at": "2026-08-17T13:12:59Z",
+"merged": true,
+"additions": 249,
+"deletions": 41,
+"changed_files": 19,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-101-native-predictive"
+},
+{
+"repo": "unfiltered",
+"number": 79,
+"title": "YOY-88: playground catalog registry, catalog-source port, Shopify products.json adapter, ingest:public CLI",
+"created_at": "2026-08-17T12:52:47Z",
+"merged_at": "2026-08-17T13:20:29Z",
+"closed_at": "2026-08-17T13:20:29Z",
+"merged": true,
+"additions": 2487,
+"deletions": 2,
+"changed_files": 18,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-88-public-catalog-ingest"
+},
+{
+"repo": "unfiltered",
+"number": 80,
+"title": "YOY-82: native view residual chrome — no New search/× buttons; chips and status inherit-first per the Mirror Bar",
+"created_at": "2026-08-17T13:43:27Z",
+"merged_at": "2026-08-17T14:29:43Z",
+"closed_at": "2026-08-17T14:29:43Z",
+"merged": true,
+"additions": 150,
+"deletions": 72,
+"changed_files": 36,
+"author": "0xYoyo",
+"labels": [
+"loop-approved",
+"needs-human-review"
+],
+"branch": "YOY-82-native-residual-chrome"
+},
+{
+"repo": "unfiltered",
+"number": 81,
+"title": "YOY-89: generic public-catalog source — sitemap → schema.org Product JSON-LD crawler",
+"created_at": "2026-08-17T13:59:21Z",
+"merged_at": "2026-08-17T14:30:30Z",
+"closed_at": "2026-08-17T14:30:30Z",
+"merged": true,
+"additions": 1776,
+"deletions": 56,
+"changed_files": 23,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-89-jsonld-crawl"
+},
+{
+"repo": "unfiltered",
+"number": 82,
+"title": "chore: add read_products scope (products/* webhook validation)",
+"created_at": "2026-08-18T18:43:32Z",
+"merged_at": "2026-08-18T18:51:46Z",
+"closed_at": "2026-08-18T18:51:46Z",
+"merged": true,
+"additions": 1,
+"deletions": 1,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "scope-read-products"
+},
+{
+"repo": "unfiltered",
+"number": 83,
+"title": "YOY-104: app resolves workspace packages to src; dist-seam CI job guards the built artifact",
+"created_at": "2026-08-19T10:19:39Z",
+"merged_at": "2026-08-19T10:55:20Z",
+"closed_at": "2026-08-19T10:55:20Z",
+"merged": true,
+"additions": 235,
+"deletions": 14,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-104-app-resolves-workspace-src"
+},
+{
+"repo": "unfiltered",
+"number": 84,
+"title": "YOY-106: native path loads in the theme's results page — the legacy overlay never renders a search (AC-1, AC-2, AC-3)",
+"created_at": "2026-08-19T12:23:08Z",
+"merged_at": "2026-08-19T12:58:33Z",
+"closed_at": "2026-08-19T12:58:33Z",
+"merged": true,
+"additions": 295,
+"deletions": 33,
+"changed_files": 23,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-106-native-loading-surface"
+},
+{
+"repo": "unfiltered",
+"number": 85,
+"title": "YOY-107: full match set on both routes, paged by the theme's own pagination (AC-1…AC-5)",
+"created_at": "2026-08-19T12:47:53Z",
+"merged_at": "2026-08-19T13:25:36Z",
+"closed_at": "2026-08-19T13:25:36Z",
+"merged": true,
+"additions": 965,
+"deletions": 64,
+"changed_files": 36,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-107-full-match-set-pagination"
+},
+{
+"repo": "unfiltered",
+"number": 86,
+"title": "YOY-108: a client-side timeout falls back to classic results, never a failure state (AC-1…AC-4)",
+"created_at": "2026-08-19T13:08:32Z",
+"merged_at": "2026-08-19T13:47:53Z",
+"closed_at": "2026-08-19T13:47:53Z",
+"merged": true,
+"additions": 396,
+"deletions": 31,
+"changed_files": 24,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-108-classic-fallback-on-timeout"
+},
+{
+"repo": "unfiltered",
+"number": 87,
+"title": "YOY-90: playground search + click API with per-IP throttle and daily AI caps (AC-1..AC-8)",
+"created_at": "2026-08-20T09:54:18Z",
+"merged_at": "2026-08-20T10:21:35Z",
+"closed_at": "2026-08-20T10:21:35Z",
+"merged": true,
+"additions": 1333,
+"deletions": 0,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-90-playground-search-api"
+},
+{
+"repo": "unfiltered",
+"number": 88,
+"title": "YOY-91: deploy the playground as a Render Docker web service (AC-1..AC-5)",
+"created_at": "2026-08-20T10:37:06Z",
+"merged_at": "2026-08-20T11:00:20Z",
+"closed_at": "2026-08-20T11:00:20Z",
+"merged": true,
+"additions": 417,
+"deletions": 22,
+"changed_files": 11,
+"author": "0xYoyo",
+"labels": [
+"loop-approved",
+"needs-human-review"
+],
+"branch": "YOY-91-render-deployment"
+},
+{
+"repo": "unfiltered",
+"number": 89,
+"title": "YOY-92: playground shell + UI test lane (AC-1..AC-9)",
+"created_at": "2026-08-20T11:28:08Z",
+"merged_at": "2026-08-20T11:56:00Z",
+"closed_at": "2026-08-20T11:56:00Z",
+"merged": true,
+"additions": 2684,
+"deletions": 140,
+"changed_files": 63,
+"author": "0xYoyo",
+"labels": [
+"loop-approved",
+"needs-human-review"
+],
+"branch": "YOY-92-playground-shell"
+},
+{
+"repo": "unfiltered",
+"number": 90,
+"title": "YOY-93: playground AI states — chips, refinement, zero hit, details, examples (AC-1..AC-7)",
+"created_at": "2026-08-20T12:12:43Z",
+"merged_at": "2026-08-20T12:37:03Z",
+"closed_at": "2026-08-20T12:37:03Z",
+"merged": true,
+"additions": 2134,
+"deletions": 64,
+"changed_files": 87,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-93-playground-ai-states"
+},
+{
+"repo": "unfiltered",
+"number": 91,
+"title": "YOY-94: store-preload page /s/ (AC-1..AC-5)",
+"created_at": "2026-08-20T12:54:52Z",
+"merged_at": "2026-08-20T13:34:17Z",
+"closed_at": "2026-08-20T13:34:17Z",
+"merged": true,
+"additions": 811,
+"deletions": 8,
+"changed_files": 49,
+"author": "0xYoyo",
+"labels": [
+"loop-approved",
+"needs-human-review"
+],
+"branch": "YOY-94-store-preload-page"
+},
+{
+"repo": "unfiltered",
+"number": 92,
+"title": "YOY-105: iterative HNSW scans on tenant-filtered retrieval — full small-tenant recall (AC-1..AC-4)",
+"created_at": "2026-08-20T14:39:40Z",
+"merged_at": "2026-08-20T15:44:23Z",
+"closed_at": "2026-08-20T15:44:23Z",
+"merged": true,
+"additions": 318,
+"deletions": 16,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-105-hnsw-iterative-scan"
+},
+{
+"repo": "unfiltered",
+"number": 93,
+"title": "YOY-95: M4 live-run runbook for the deployed playground (AC-1..AC-3)",
+"created_at": "2026-08-21T14:06:34Z",
+"merged_at": "2026-08-21T14:31:54Z",
+"closed_at": "2026-08-21T14:31:54Z",
+"merged": true,
+"additions": 471,
+"deletions": 0,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-95-m4-live-run-runbook"
+},
+{
+"repo": "unfiltered",
+"number": 94,
+"title": "YOY-95: M4 live-run evidence — all 27 steps recorded (closes the issue)",
+"created_at": "2026-08-22T16:20:51Z",
+"merged_at": "2026-08-22T16:31:24Z",
+"closed_at": "2026-08-22T16:31:24Z",
+"merged": true,
+"additions": 73,
+"deletions": 53,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-95-evidence-table"
+},
+{
+"repo": "unfiltered",
+"number": 95,
+"title": "YOY-109: low thinking on the intent call; log the intent-failure class (AC-1..AC-4)",
+"created_at": "2026-08-22T16:58:20Z",
+"merged_at": "2026-08-22T17:18:47Z",
+"closed_at": "2026-08-22T17:18:47Z",
+"merged": true,
+"additions": 203,
+"deletions": 4,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-109-intent-thinking-level"
+},
+{
+"repo": "unfiltered",
+"number": 96,
+"title": "YOY-96 (AC-2, AC-17): name missing refresh credentials before the grant; explicit budget on tenant vector scans",
+"created_at": "2026-08-22T17:51:20Z",
+"merged_at": "2026-08-22T18:22:19Z",
+"closed_at": "2026-08-22T18:22:19Z",
+"merged": true,
+"additions": 199,
+"deletions": 8,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-offline-creds-vector-budget"
+},
+{
+"repo": "unfiltered",
+"number": 97,
+"title": "YOY-96 (AC-7, AC-19): one bad JSON-LD page never aborts the crawl; meter Gemini thought tokens",
+"created_at": "2026-08-22T18:48:51Z",
+"merged_at": "2026-08-22T18:56:25Z",
+"closed_at": "2026-08-22T18:56:25Z",
+"merged": true,
+"additions": 158,
+"deletions": 12,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-jsonld-robustness-thought-tokens"
+},
+{
+"repo": "unfiltered",
+"number": 98,
+"title": "YOY-96 (AC-11): key the playground per-IP throttle by the last trusted X-Forwarded-For hop",
+"created_at": "2026-08-22T19:01:54Z",
+"merged_at": "2026-08-22T19:09:51Z",
+"closed_at": "2026-08-22T19:09:51Z",
+"merged": true,
+"additions": 140,
+"deletions": 16,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-trusted-proxy-hop"
+},
+{
+"repo": "unfiltered",
+"number": 99,
+"title": "YOY-96 (AC-14, AC-16): no click beacon for preview cards; the store line reads as one phrase",
+"created_at": "2026-08-22T19:17:53Z",
+"merged_at": "2026-08-22T19:23:11Z",
+"closed_at": "2026-08-22T19:23:11Z",
+"merged": true,
+"additions": 174,
+"deletions": 4,
+"changed_files": 21,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-playground-beacon-storeline"
+},
+{
+"repo": "unfiltered",
+"number": 100,
+"title": "YOY-96 (AC-1, AC-4): sanitize fetched theme markup before injection — cards and the full-page shell",
+"created_at": "2026-08-22T19:30:27Z",
+"merged_at": "2026-08-22T19:38:58Z",
+"closed_at": "2026-08-22T19:38:58Z",
+"merged": true,
+"additions": 275,
+"deletions": 6,
+"changed_files": 15,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-widget-markup-sanitizer"
+},
+{
+"repo": "unfiltered",
+"number": 101,
+"title": "YOY-96 (AC-21, AC-10): sanitizer also disarms formaction/xlink:href; the mirror's pushed entry carries its page",
+"created_at": "2026-08-22T19:44:50Z",
+"merged_at": "2026-08-22T19:52:34Z",
+"closed_at": "2026-08-22T19:52:34Z",
+"merged": true,
+"additions": 111,
+"deletions": 9,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-sanitizer-formaction-mirror-page"
+},
+{
+"repo": "unfiltered",
+"number": 102,
+"title": "YOY-96 (AC-3, AC-5): the mirrored count line is hidden rather than wrong, and never states the previous query while loading",
+"created_at": "2026-08-22T19:59:45Z",
+"merged_at": "2026-08-22T20:06:48Z",
+"closed_at": "2026-08-22T20:06:48Z",
+"merged": true,
+"additions": 223,
+"deletions": 23,
+"changed_files": 16,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-count-line-pattern-loading"
+},
+{
+"repo": "unfiltered",
+"number": 103,
+"title": "YOY-96 (AC-6, AC-8): close the theme's inline predictive dropdown on a native submit; page links never inherit Dawn's current-item disabled state",
+"created_at": "2026-08-22T20:20:29Z",
+"merged_at": "2026-08-22T21:03:42Z",
+"closed_at": "2026-08-22T21:03:42Z",
+"merged": true,
+"additions": 276,
+"deletions": 10,
+"changed_files": 21,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-predictive-close-pagination-template"
+},
+{
+"repo": "unfiltered",
+"number": 104,
+"title": "YOY-96 (AC-15): the collapsed Try: row stays one scrollable row on narrow viewports",
+"created_at": "2026-08-22T21:10:07Z",
+"merged_at": "2026-08-22T21:22:51Z",
+"closed_at": "2026-08-22T21:22:51Z",
+"merged": true,
+"additions": 55,
+"deletions": 0,
+"changed_files": 10,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-classic-rescue-attributable"
+},
+{
+"repo": "unfiltered",
+"number": 105,
+"title": "YOY-96 (AC-18, AC-20): explicit timeout-minutes on every CI job; render.yaml joins sensitive_paths",
+"created_at": "2026-08-22T21:26:33Z",
+"merged_at": "2026-08-24T16:51:42Z",
+"closed_at": "2026-08-24T16:51:42Z",
+"merged": true,
+"additions": 11,
+"deletions": 0,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-96-ci-timeouts-render-sensitive"
+},
+{
+"repo": "unfiltered",
+"number": 106,
+"title": "YOY-96 (AC-12): a plain npm ci is deterministic — ordered build:packages replaces the racing prepare hooks",
+"created_at": "2026-08-24T17:30:28Z",
+"merged_at": "2026-08-24T17:47:25Z",
+"closed_at": "2026-08-24T17:47:25Z",
+"merged": true,
+"additions": 48,
+"deletions": 32,
+"changed_files": 9,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-96-npm-ci-deterministic"
+},
+{
+"repo": "unfiltered",
+"number": 107,
+"title": "YOY-96 (AC-13): the playground self-hosts one Latin + Hebrew family (Heebo) instead of the OS fallback",
+"created_at": "2026-08-24T18:02:04Z",
+"merged_at": "2026-08-24T18:10:33Z",
+"closed_at": "2026-08-24T18:10:33Z",
+"merged": true,
+"additions": 271,
+"deletions": 13,
+"changed_files": 42,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-96-playground-font"
+},
+{
+"repo": "unfiltered",
+"number": 108,
+"title": "YOY-96 (AC-9): timeout-rescued searches are attributable — mode=classic, a real SearchEvent with routeReason, working click beacons",
+"created_at": "2026-08-24T18:55:53Z",
+"merged_at": "2026-08-24T19:45:29Z",
+"closed_at": "2026-08-24T19:45:29Z",
+"merged": true,
+"additions": 410,
+"deletions": 65,
+"changed_files": 24,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-96-classic-rescue-attributable-v2"
+},
+{
+"repo": "unfiltered",
+"number": 109,
+"title": "chore: Render Frankfurt re-creation — env group, region, runbook (Part of YOY-115)",
+"created_at": "2026-08-25T18:11:07Z",
+"merged_at": "2026-08-25T19:05:01Z",
+"closed_at": "2026-08-25T19:05:01Z",
+"merged": true,
+"additions": 457,
+"deletions": 77,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-115-render-frankfurt-prep"
+},
+{
+"repo": "unfiltered",
+"number": 110,
+"title": "chore: Frankfurt service live — URL and creation via API (Part of YOY-115)",
+"created_at": "2026-08-25T19:17:52Z",
+"merged_at": "2026-08-25T19:23:31Z",
+"closed_at": "2026-08-25T19:23:31Z",
+"merged": true,
+"additions": 296,
+"deletions": 36,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-115-frankfurt-service-live"
+},
+{
+"repo": "unfiltered",
+"number": 111,
+"title": "YOY-119: Gemini vision-model comparison — decision table, sample, desk research",
+"created_at": "2026-08-26T10:34:25Z",
+"merged_at": "2026-08-26T10:49:51Z",
+"closed_at": "2026-08-26T10:49:51Z",
+"merged": true,
+"additions": 8198,
+"deletions": 0,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-119-vision-model-comparison"
+},
+{
+"repo": "unfiltered",
+"number": 112,
+"title": "YOY-114 (AC-1..8): per-stage latency instrumentation, latency probe + LATENCY.md method, PRD colour/close-match law, COMPETITORS Cartally findings",
+"created_at": "2026-08-26T11:46:45Z",
+"merged_at": "2026-08-26T12:04:54Z",
+"closed_at": "2026-08-26T12:04:54Z",
+"merged": true,
+"additions": 1720,
+"deletions": 224,
+"changed_files": 46,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-114-latency-stages-probe"
+},
+{
+"repo": "unfiltered",
+"number": 113,
+"title": "YOY-115 (AC-1..4): one-statement classic search — cards in the statement, no hydrate; directUrl + pool-database-url prep for AC-5",
+"created_at": "2026-08-26T12:17:02Z",
+"merged_at": "2026-08-26T12:34:54Z",
+"closed_at": "2026-08-26T12:34:54Z",
+"merged": true,
+"additions": 625,
+"deletions": 98,
+"changed_files": 25,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-115-one-statement-classic"
+},
+{
+"repo": "unfiltered",
+"number": 114,
+"title": "YOY-115 (AC-5, AC-6): record the M5 classic rows in docs/LATENCY.md — bar met at p95 19 ms; pooled row deferred to YOY-124 AC-11",
+"created_at": "2026-08-26T12:51:03Z",
+"merged_at": "2026-08-26T13:02:43Z",
+"closed_at": "2026-08-26T13:02:43Z",
+"merged": true,
+"additions": 12,
+"deletions": 2,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-115-pooled-measurement"
+},
+{
+"repo": "unfiltered",
+"number": 115,
+"title": "YOY-112 (AC-1, AC-2, AC-4): daily live smoke — four read-only probes, fake-server tests, routine prompt + phone checklist",
+"created_at": "2026-08-26T13:10:59Z",
+"merged_at": "2026-08-26T14:26:08Z",
+"closed_at": "2026-08-26T14:26:08Z",
+"merged": true,
+"additions": 654,
+"deletions": 3,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-112-live-smoke"
+},
+{
+"repo": "unfiltered",
+"number": 116,
+"title": "YOY-116 (AC-1..8): lite-first confidence routing for intent extraction — classes + threshold, accuracy on low confidence or lite failure, intentTier, eval blend with zero-regression baseline, price correction",
+"created_at": "2026-08-26T14:16:55Z",
+"merged_at": "2026-08-26T14:30:29Z",
+"closed_at": "2026-08-26T14:30:29Z",
+"merged": true,
+"additions": 10094,
+"deletions": 74,
+"changed_files": 54,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-116-lite-first-intent"
+},
+{
+"repo": "unfiltered",
+"number": 117,
+"title": "YOY-64 (AC-1..5): queued cost ledger, trimmed intent prompt, intent abort, exact-query intent reuse, overlapping stages",
+"created_at": "2026-08-26T16:38:01Z",
+"merged_at": "2026-08-26T18:11:46Z",
+"closed_at": "2026-08-26T18:11:46Z",
+"merged": true,
+"additions": 25934,
+"deletions": 400,
+"changed_files": 41,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-64-ai-latency"
+},
+{
+"repo": "unfiltered",
+"number": 118,
+"title": "YOY-64 (AC-7): record the AC-6 live measurement; probe sends distinct query text per run",
+"created_at": "2026-08-26T18:55:29Z",
+"merged_at": "2026-08-26T19:20:09Z",
+"closed_at": "2026-08-26T19:20:09Z",
+"merged": true,
+"additions": 148,
+"deletions": 14,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-64-latency-evidence"
+},
+{
+"repo": "unfiltered",
+"number": 119,
+"title": "YOY-64 (AC-6 mitigation): hedge the occasion-class accuracy intent call with the lite tier past 2500 ms",
+"created_at": "2026-08-26T19:39:28Z",
+"merged_at": "2026-08-26T20:10:53Z",
+"closed_at": "2026-08-26T20:10:53Z",
+"merged": true,
+"additions": 426,
+"deletions": 7,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-64-occasion-lite-first"
+},
+{
+"repo": "unfiltered",
+"number": 120,
+"title": "YOY-64 (AC-6): record the live measurement on the hedge code — all AI bars met, 0 degraded of 200",
+"created_at": "2026-08-27T09:47:10Z",
+"merged_at": "2026-08-27T09:56:53Z",
+"closed_at": "2026-08-27T09:56:53Z",
+"merged": true,
+"additions": 29,
+"deletions": 3,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-64-ac6-live-record"
+},
+{
+"repo": "unfiltered",
+"number": 121,
+"title": "YOY-110 (AC-1–5, AC-7): colour exclusion by primary colour — primaryColor, versioned enrichment, both stores, fixtures re-recorded",
+"created_at": "2026-08-27T10:18:41Z",
+"merged_at": "2026-08-27T10:34:07Z",
+"closed_at": "2026-08-27T10:34:07Z",
+"merged": true,
+"additions": 46045,
+"deletions": 62674,
+"changed_files": 25,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-110-primary-colour-exclusion"
+},
+{
+"repo": "unfiltered",
+"number": 122,
+"title": "YOY-111 (AC-1–5): close matches relax one constraint at a time, price first, never the exclusion — closeMatchesRelaxed + relaxed heading EN/HE",
+"created_at": "2026-08-27T11:07:05Z",
+"merged_at": "2026-08-27T11:22:11Z",
+"closed_at": "2026-08-27T11:22:11Z",
+"merged": true,
+"additions": 993,
+"deletions": 100,
+"changed_files": 47,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-111-close-match-ladder"
+},
+{
+"repo": "unfiltered",
+"number": 123,
+"title": "YOY-117 (AC-1–4): colourway families — familyKey on every ingestion path, one card per family in both stores, eval family goldens, ingest:public --path-prefix",
+"created_at": "2026-08-27T11:52:53Z",
+"merged_at": "2026-08-27T12:04:58Z",
+"closed_at": "2026-08-27T12:04:58Z",
+"merged": true,
+"additions": 4136,
+"deletions": 92,
+"changed_files": 34,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-117-colourway-families"
+},
+{
+"repo": "unfiltered",
+"number": 124,
+"title": "YOY-118 (AC-1–5): Constructor-bar eval set (EN + HE) — negations, price caps, occasion ≠ category — scored in the harness with a measured floor",
+"created_at": "2026-08-27T13:40:35Z",
+"merged_at": "2026-08-27T13:49:07Z",
+"closed_at": "2026-08-27T13:49:07Z",
+"merged": true,
+"additions": 29830,
+"deletions": 23,
+"changed_files": 13,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-118-constructor-bar"
+},
+{
+"repo": "unfiltered",
+"number": 125,
+"title": "YOY-120 (AC-1–6): image capture at ingestion — ProductImage (≤ 4 per product, content-hashed) on all three paths + multimodal LlmClient port",
+"created_at": "2026-08-27T14:06:37Z",
+"merged_at": "2026-08-27T14:47:47Z",
+"closed_at": "2026-08-27T14:47:47Z",
+"merged": true,
+"additions": 1326,
+"deletions": 48,
+"changed_files": 29,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-120-product-images"
+},
+{
+"repo": "unfiltered",
+"number": 126,
+"title": "YOY-121 (AC-1..AC-6): Vision enrichment pass at ingestion — vocabularies, migration, hash-keyed vision call, text/vision merge, re-embedding, report",
+"created_at": "2026-08-27T15:04:19Z",
+"merged_at": "2026-08-27T15:15:26Z",
+"closed_at": "2026-08-27T15:15:26Z",
+"merged": true,
+"additions": 1786,
+"deletions": 61,
+"changed_files": 19,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-121-vision-enrichment"
+},
+{
+"repo": "unfiltered",
+"number": 127,
+"title": "YOY-121 (AC-7, AC-8): Measured vision cost — $0.000474/image, $1.90 per 1,000 products — recorded in PRD §3 and ARCHITECTURE; closes the issue",
+"created_at": "2026-08-27T16:34:38Z",
+"merged_at": "2026-08-27T18:15:06Z",
+"closed_at": "2026-08-27T18:15:06Z",
+"merged": true,
+"additions": 14,
+"deletions": 4,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-121-vision-cost"
+},
+{
+"repo": "unfiltered",
+"number": 128,
+"title": "YOY-122 (AC-1, AC-2, AC-3, AC-5): Contamination cases + sparse-product goldens in the eval harness — vision fixtures, recorded vision answers, contamination scorer; fixes stored-answer readers dropping nulls",
+"created_at": "2026-08-27T18:53:03Z",
+"merged_at": "2026-08-27T19:09:11Z",
+"closed_at": "2026-08-27T19:09:11Z",
+"merged": true,
+"additions": 24351,
+"deletions": 25,
+"changed_files": 31,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-122-vision-eval"
+},
+{
+"repo": "unfiltered",
+"number": 129,
+"title": "YOY-133 (AC-1, AC-2, AC-3, AC-5, AC-7): negated attributes are hard exclusions, \"dress for a wedding ≠ wedding dress\" — Constructor-bar mustNot leaks 18 → 1",
+"created_at": "2026-08-27T20:48:31Z",
+"merged_at": "2026-08-27T21:02:34Z",
+"closed_at": "2026-08-27T21:02:34Z",
+"merged": true,
+"additions": 4314,
+"deletions": 5030,
+"changed_files": 51,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-133-negated-attributes"
+},
+{
+"repo": "unfiltered",
+"number": 130,
+"title": "YOY-133 (AC-4, AC-6): purpose phrases route AI deterministically (\"sneakers for running\", \"שמלה לחתונה\") — Constructor-bar mustNot leaks 1 → 0; live probe all bars met",
+"created_at": "2026-08-27T21:27:16Z",
+"merged_at": "2026-08-27T21:42:56Z",
+"closed_at": "2026-08-27T21:42:56Z",
+"merged": true,
+"additions": 341,
+"deletions": 83,
+"changed_files": 20,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-133-purpose-phrase"
+},
+{
+"repo": "unfiltered",
+"number": 131,
+"title": "YOY-123 (AC-1, AC-2, AC-3, AC-5): playground re-drawn on the 2026-08-28 direction — kit tokens verbatim, invariant lane, re-recorded baselines",
+"created_at": "2026-08-28T13:30:19Z",
+"merged_at": "2026-08-28T14:07:53Z",
+"closed_at": "2026-08-28T14:07:53Z",
+"merged": true,
+"additions": 1946,
+"deletions": 669,
+"changed_files": 137,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-123-playground-design"
+},
+{
+"repo": "unfiltered",
+"number": 132,
+"title": "YOY-123 (AC-4): the widget marks an exclusion achromatically — heavier border, struck value, no hue",
+"created_at": "2026-08-28T14:37:46Z",
+"merged_at": "2026-08-28T14:57:43Z",
+"closed_at": "2026-08-28T14:57:43Z",
+"merged": true,
+"additions": 521,
+"deletions": 36,
+"changed_files": 36,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-123-widget-negation-chips"
+},
+{
+"repo": "unfiltered",
+"number": 133,
+"title": "YOY-125 (AC-1, AC-2, AC-5, AC-7): latency probe iterates SEARCH_STAGES + documents its marker; DEPLOY.md documents the six intent-ladder knobs",
+"created_at": "2026-08-28T15:43:00Z",
+"merged_at": "2026-08-28T15:52:27Z",
+"closed_at": "2026-08-28T15:52:27Z",
+"merged": true,
+"additions": 51,
+"deletions": 23,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-125-probe-stages-deploy-knobs"
+},
+{
+"repo": "unfiltered",
+"number": 134,
+"title": "YOY-125 (AC-3, AC-4): intent reuse anchors on the extraction; the classic zero-hit escalation reuses its speculative intent",
+"created_at": "2026-08-28T15:59:37Z",
+"merged_at": "2026-08-28T16:07:57Z",
+"closed_at": "2026-08-28T16:07:57Z",
+"merged": true,
+"additions": 222,
+"deletions": 11,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-125-intent-reuse-escalation"
+},
+{
+"repo": "unfiltered",
+"number": 135,
+"title": "YOY-125 (AC-6): aborted structured completions are metered by estimate instead of dropped from the ledger",
+"created_at": "2026-08-28T16:12:31Z",
+"merged_at": "2026-08-28T16:21:34Z",
+"closed_at": "2026-08-28T16:21:34Z",
+"merged": true,
+"additions": 163,
+"deletions": 8,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-125-meter-aborted-calls"
+},
+{
+"repo": "unfiltered",
+"number": 136,
+"title": "YOY-125 (AC-8, AC-11): a designator's first colour wins; a bare modifier is not a colourway",
+"created_at": "2026-08-28T16:33:25Z",
+"merged_at": "2026-08-28T16:45:23Z",
+"closed_at": "2026-08-28T16:45:23Z",
+"merged": true,
+"additions": 123,
+"deletions": 33,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-125-primary-colour-designator"
+},
+{
+"repo": "unfiltered",
+"number": 137,
+"title": "YOY-125 (AC-9, AC-10): the keyword fallback names the full ladder; the candidate scan is bounded again",
+"created_at": "2026-08-28T16:51:26Z",
+"merged_at": "2026-08-28T16:59:06Z",
+"closed_at": "2026-08-28T16:59:06Z",
+"merged": true,
+"additions": 211,
+"deletions": 20,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-125-relaxed-ladder-scan-bound"
+},
+{
+"repo": "unfiltered",
+"number": 138,
+"title": "YOY-125 (AC-12, AC-13, AC-17): only images are hashed; a fetch blip keeps the vision answer; Print is a colourway again",
+"created_at": "2026-08-28T17:06:19Z",
+"merged_at": "2026-08-28T17:24:01Z",
+"closed_at": "2026-08-28T17:24:01Z",
+"merged": true,
+"additions": 202,
+"deletions": 9,
+"changed_files": 9,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-125-image-vision-integrity"
+},
+{
+"repo": "unfiltered",
+"number": 139,
+"title": "YOY-125 (AC-15, AC-16): the purpose rule needs a real ל preposition; the token comment cites the shipped grid rule",
+"created_at": "2026-08-28T17:28:28Z",
+"merged_at": "2026-08-28T17:41:47Z",
+"closed_at": "2026-08-28T17:41:47Z",
+"merged": true,
+"additions": 67,
+"deletions": 5,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-125-purpose-phrase-css-comment"
+},
+{
+"repo": "unfiltered",
+"number": 140,
+"title": "YOY-125 (AC-14): vision recordings key on the title AND the ordered image bytes",
+"created_at": "2026-08-28T17:46:28Z",
+"merged_at": "2026-08-28T17:55:57Z",
+"closed_at": "2026-08-28T17:55:57Z",
+"merged": true,
+"additions": 113,
+"deletions": 28,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-125-vision-recording-key"
+},
+{
+"repo": "unfiltered",
+"number": 141,
+"title": "YOY-124 (AC-1, AC-9b): the M5 live-run runbook, vision evidence readbacks, tightened smoke ceilings",
+"created_at": "2026-08-28T18:17:09Z",
+"merged_at": "2026-08-28T18:26:26Z",
+"closed_at": "2026-08-28T18:26:26Z",
+"merged": true,
+"additions": 540,
+"deletions": 10,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-124-m5-live-run-runbook"
+},
+{
+"repo": "unfiltered",
+"number": 142,
+"title": "YOY-124 (AC-11): the pooled classic row is measured — p95 50 ms; the 2026-08-28 live evidence recorded",
+"created_at": "2026-08-28T19:15:17Z",
+"merged_at": "2026-08-28T19:27:44Z",
+"closed_at": "2026-08-28T19:27:44Z",
+"merged": true,
+"additions": 46,
+"deletions": 17,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-124-ac11-pooled-latency-row"
+},
+{
+"repo": "unfiltered",
+"number": 143,
+"title": "YOY-124 (AC-7 evidence): Part 2 executed — 100% vision coverage, contamination clean, the retrieval bar fails",
+"created_at": "2026-08-28T19:32:32Z",
+"merged_at": "2026-08-28T19:40:47Z",
+"closed_at": "2026-08-28T19:40:47Z",
+"merged": true,
+"additions": 17,
+"deletions": 10,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-124-part2-vision-evidence"
+},
+{
+"repo": "unfiltered",
+"number": 144,
+"title": "YOY-124 (AC-4, AC-5, AC-6 evidence): Part 4 executed — the colour law holds, three defects filed",
+"created_at": "2026-08-28T19:48:39Z",
+"merged_at": "2026-08-28T20:14:28Z",
+"closed_at": "2026-08-28T20:14:28Z",
+"merged": true,
+"additions": 21,
+"deletions": 10,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-124-part4-correctness-law"
+},
+{
+"repo": "unfiltered",
+"number": 145,
+"title": "YOY-124 (AC-8 evidence): Part 6 executed — $0.37 per 1,000 searches, the gate holds, vision cost open",
+"created_at": "2026-08-28T20:20:46Z",
+"merged_at": "2026-08-28T20:45:35Z",
+"closed_at": "2026-08-28T20:45:35Z",
+"merged": true,
+"additions": 8,
+"deletions": 8,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-124-part6-cost"
+},
+{
+"repo": "unfiltered",
+"number": 146,
+"title": "YOY-124 (AC-3 evidence): step 9's playground half measured — 49/43/43 ms; the storefront half needs the store password",
+"created_at": "2026-08-28T20:49:50Z",
+"merged_at": "2026-08-28T21:07:34Z",
+"closed_at": "2026-08-28T21:07:35Z",
+"merged": true,
+"additions": 5,
+"deletions": 5,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-124-step9-parity-half"
+},
+{
+"repo": "unfiltered",
+"number": 147,
+"title": "YOY-135 (AC-1, AC-2, AC-3): the duplicate tentree cards are Mens/Womens pairs — closed as data, live-run row 14 annotated",
+"created_at": "2026-08-28T23:18:32Z",
+"merged_at": "2026-08-28T23:28:43Z",
+"closed_at": "2026-08-28T23:28:44Z",
+"merged": true,
+"additions": 5,
+"deletions": 4,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-135-families-are-data"
+},
+{
+"repo": "unfiltered",
+"number": 148,
+"title": "YOY-136 (AC-1, AC-2, AC-3, AC-4): the two zero-result curated examples swapped for ones the catalog answers; the twelve examples replay offline as example-goldens.json",
+"created_at": "2026-08-28T23:52:48Z",
+"merged_at": "2026-08-29T00:05:19Z",
+"closed_at": "2026-08-29T00:05:19Z",
+"merged": true,
+"additions": 6670,
+"deletions": 21,
+"changed_files": 24,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-136-examples-answer"
+},
+{
+"repo": "unfiltered",
+"number": 149,
+"title": "YOY-124 (AC-2..AC-10, AC-12): the M5 live run closes — last two founder inputs recorded, five decisions scored, the 4.5 s worst-case wait shipped",
+"created_at": "2026-08-29T10:22:12Z",
+"merged_at": "2026-08-29T10:31:04Z",
+"closed_at": "2026-08-29T10:31:04Z",
+"merged": true,
+"additions": 112,
+"deletions": 56,
+"changed_files": 9,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-124-close-the-run"
+},
+{
+"repo": "unfiltered",
+"number": 150,
+"title": "YOY-102: build the widget bundle in CI instead of committing it",
+"created_at": "2026-09-28T11:11:19Z",
+"merged_at": "2026-09-28T11:36:58Z",
+"closed_at": "2026-09-28T11:36:58Z",
+"merged": true,
+"additions": 25,
+"deletions": 12,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-102-widget-bundle-in-ci"
+},
+{
+"repo": "unfiltered",
+"number": 151,
+"title": "PRD v3 from the reset decisions",
+"created_at": "2026-09-28T12:38:00Z",
+"merged_at": "2026-09-28T14:16:54Z",
+"closed_at": "2026-09-28T14:16:54Z",
+"merged": true,
+"additions": 442,
+"deletions": 188,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "prd-v3"
+},
+{
+"repo": "unfiltered",
+"number": 152,
+"title": "Site: marketing pages from the design export; playground moves to /try",
+"created_at": "2026-09-28T15:25:14Z",
+"merged_at": "2026-09-28T16:33:01Z",
+"closed_at": "2026-09-28T16:33:01Z",
+"merged": true,
+"additions": 4490,
+"deletions": 214,
+"changed_files": 106,
+"author": "0xYoyo",
+"labels": [],
+"branch": "site-from-design-export"
+},
+{
+"repo": "unfiltered",
+"number": 153,
+"title": "README: any language, per PRD v3",
+"created_at": "2026-09-29T15:36:15Z",
+"merged_at": "2026-09-30T12:14:52Z",
+"closed_at": "2026-09-30T12:14:52Z",
+"merged": true,
+"additions": 1,
+"deletions": 1,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "readme-any-language"
+},
+{
+"repo": "unfiltered",
+"number": 154,
+"title": "PRD v3: Engine v2 refinements of 2026-09-30",
+"created_at": "2026-09-30T12:17:59Z",
+"merged_at": "2026-09-30T12:34:02Z",
+"closed_at": "2026-09-30T12:34:02Z",
+"merged": true,
+"additions": 122,
+"deletions": 42,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "prd-v3-refinements-2026-09-30"
+},
+{
+"repo": "unfiltered",
+"number": 155,
+"title": "Ignore .playwright-mcp/ scratch output",
+"created_at": "2026-10-01T09:15:25Z",
+"merged_at": "2026-10-01T09:30:54Z",
+"closed_at": "2026-10-01T09:30:54Z",
+"merged": true,
+"additions": 1,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "gitignore-playwright-mcp"
+},
+{
+"repo": "unfiltered",
+"number": 156,
+"title": "PRD v3: Engine v2 amendments of 2026-10-01 (budget rules, hidden-set home, label values, in-stock, fallback labels)",
+"created_at": "2026-10-01T11:24:30Z",
+"merged_at": "2026-10-01T11:32:17Z",
+"closed_at": "2026-10-01T11:32:17Z",
+"merged": true,
+"additions": 66,
+"deletions": 27,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "prd-v3-m6-bumps-2026-10-01"
+},
+{
+"repo": "unfiltered",
+"number": 157,
+"title": "YOY-140 (AC-1..AC-12): score set builder, grader, runner and fixture format — tested on synthetic data",
+"created_at": "2026-10-01T15:49:24Z",
+"merged_at": "2026-10-01T16:02:16Z",
+"closed_at": "2026-10-01T16:02:17Z",
+"merged": true,
+"additions": 2100,
+"deletions": 18,
+"changed_files": 17,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-140-score-tooling"
+},
+{
+"repo": "unfiltered",
+"number": 158,
+"title": "YOY-141 (AC-1, AC-2, AC-3): the dispatch-only hidden-score workflow and its leak check",
+"created_at": "2026-10-01T16:09:26Z",
+"merged_at": "2026-10-01T16:32:34Z",
+"closed_at": "2026-10-01T16:32:34Z",
+"merged": true,
+"additions": 369,
+"deletions": 15,
+"changed_files": 10,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-141-score-workflow"
+},
+{
+"repo": "unfiltered",
+"number": 159,
+"title": "YOY-141 data lane: public score set and seed fixture",
+"created_at": "2026-10-01T16:40:35Z",
+"merged_at": null,
+"closed_at": "2026-10-01T16:55:37Z",
+"merged": false,
+"additions": null,
+"deletions": null,
+"changed_files": null,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-141-score-data"
+},
+{
+"repo": "unfiltered",
+"number": 160,
+"title": "YOY-141 (AC-11, AC-12): the grader sees what a shopper sees; log selection is shopper-shaped",
+"created_at": "2026-10-01T17:02:47Z",
+"merged_at": "2026-10-01T17:30:56Z",
+"closed_at": "2026-10-01T17:30:56Z",
+"merged": true,
+"additions": 285,
+"deletions": 22,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-141-shopper-shaped-grader"
+},
+{
+"repo": "unfiltered",
+"number": 161,
+"title": "YOY-141 data lane: public score set and seed fixture (run 2)",
+"created_at": "2026-10-01T17:33:33Z",
+"merged_at": "2026-10-01T17:40:01Z",
+"closed_at": "2026-10-01T17:40:01Z",
+"merged": true,
+"additions": 473,
+"deletions": 0,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-141-score-data-2"
+},
+{
+"repo": "unfiltered",
+"number": 162,
+"title": "YOY-141 (AC-7, AC-9): M5 public baseline and noise band, deployment latency probe, run cost from the ledger",
+"created_at": "2026-10-01T18:00:04Z",
+"merged_at": "2026-10-01T18:13:15Z",
+"closed_at": "2026-10-01T18:13:15Z",
+"merged": true,
+"additions": 157,
+"deletions": 17,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-141-baseline-runs"
+},
+{
+"repo": "unfiltered",
+"number": 163,
+"title": "YOY-141 (AC-8, AC-10): hidden run 1 on the M5 engine — scores and cost recorded",
+"created_at": "2026-10-01T18:19:07Z",
+"merged_at": "2026-10-01T18:36:46Z",
+"closed_at": "2026-10-01T18:36:46Z",
+"merged": true,
+"additions": 11,
+"deletions": 3,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-141-hidden-run-1"
+},
+{
+"repo": "unfiltered",
+"number": 164,
+"title": "YOY-141 (AC-8, AC-10, AC-13): failures counted by stage and class; the clean hidden run 1 recorded",
+"created_at": "2026-10-01T18:46:28Z",
+"merged_at": "2026-10-01T18:57:12Z",
+"closed_at": "2026-10-01T18:57:12Z",
+"merged": true,
+"additions": 218,
+"deletions": 25,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-141-failure-classes"
+},
+{
+"repo": "unfiltered",
+"number": 165,
+"title": "YOY-141 (AC-6 step 1): the calibration set, ungraded — ten public en searches with their top six",
+"created_at": "2026-10-01T19:06:12Z",
+"merged_at": "2026-10-01T19:18:37Z",
+"closed_at": "2026-10-01T19:18:37Z",
+"merged": true,
+"additions": 635,
+"deletions": 1,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-141-calibration-set"
+},
+{
+"repo": "unfiltered",
+"number": 166,
+"title": "YOY-141 (AC-6): calibration grades and grader agreement — 58.3 % exact, 88.3 % within one",
+"created_at": "2026-10-01T19:25:00Z",
+"merged_at": "2026-10-01T19:35:48Z",
+"closed_at": "2026-10-01T19:35:48Z",
+"merged": true,
+"additions": 94,
+"deletions": 10,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-141-calibration-agreement"
+},
+{
+"repo": "unfiltered",
+"number": 167,
+"title": "YOY-142 (AC-1–AC-9): ProductVariant table, filled from all four sources",
+"created_at": "2026-10-01T19:47:01Z",
+"merged_at": "2026-10-01T19:58:35Z",
+"closed_at": "2026-10-01T19:58:35Z",
+"merged": true,
+"additions": 1249,
+"deletions": 32,
+"changed_files": 20,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-142-variants-table"
+},
+{
+"repo": "unfiltered",
+"number": 168,
+"title": "YOY-142 (AC-11): operator scripts load .env in-process",
+"created_at": "2026-10-01T20:04:45Z",
+"merged_at": "2026-10-01T20:13:53Z",
+"closed_at": "2026-10-01T20:13:53Z",
+"merged": true,
+"additions": 46,
+"deletions": 6,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-142-scripts-load-env"
+},
+{
+"repo": "unfiltered",
+"number": 169,
+"title": "YOY-143 (AC-1–AC-10): the card writer — a plain-text card per product",
+"created_at": "2026-10-01T20:41:30Z",
+"merged_at": "2026-10-01T20:53:39Z",
+"closed_at": "2026-10-01T20:53:39Z",
+"merged": true,
+"additions": 1288,
+"deletions": 26,
+"changed_files": 18,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-143-card-writer"
+},
+{
+"repo": "unfiltered",
+"number": 170,
+"title": "YOY-143 (AC-12): the card spend cap is code — CARD_SPEND_CAP_USD stops the run",
+"created_at": "2026-10-02T08:37:38Z",
+"merged_at": "2026-10-02T08:46:15Z",
+"closed_at": "2026-10-02T08:46:15Z",
+"merged": true,
+"additions": 153,
+"deletions": 11,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-143-card-spend-cap"
+},
+{
+"repo": "unfiltered",
+"number": 171,
+"title": "YOY-144 (AC-1–AC-8): multi-vector card index with the raw-text fallback",
+"created_at": "2026-10-02T10:15:08Z",
+"merged_at": "2026-10-02T10:25:25Z",
+"closed_at": "2026-10-02T10:25:25Z",
+"merged": true,
+"additions": 1016,
+"deletions": 23,
+"changed_files": 14,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-144-card-vector-index"
+},
+{
+"repo": "unfiltered",
+"number": 172,
+"title": "YOY-144 (AC-9, AC-10): seed fixture with cards, card vectors and variants",
+"created_at": "2026-10-02T11:02:15Z",
+"merged_at": "2026-10-02T11:13:40Z",
+"closed_at": "2026-10-02T11:13:40Z",
+"merged": true,
+"additions": 173,
+"deletions": 10,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-144-fixture-cards"
+},
+{
+"repo": "unfiltered",
+"number": 173,
+"title": "YOY-145 (AC-1–AC-13): Engine v2 find step behind ENGINE_V2, with server-side pages and counts",
+"created_at": "2026-10-02T11:32:37Z",
+"merged_at": "2026-10-02T11:55:58Z",
+"closed_at": "2026-10-02T11:55:58Z",
+"merged": true,
+"additions": 1260,
+"deletions": 23,
+"changed_files": 22,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-145-find-step"
+},
+{
+"repo": "unfiltered",
+"number": 174,
+"title": "YOY-146 (AC-1–AC-11): clients request pages from the server",
+"created_at": "2026-10-02T12:10:14Z",
+"merged_at": "2026-10-02T12:20:34Z",
+"closed_at": "2026-10-02T12:20:34Z",
+"merged": true,
+"additions": 1337,
+"deletions": 103,
+"changed_files": 61,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-146-client-pages"
+},
+{
+"repo": "unfiltered",
+"number": 175,
+"title": "YOY-147 (AC-1–AC-15, AC-17, AC-18): the judge — one call per page, reading facts; hidden run 3 above run 2",
+"created_at": "2026-10-03T09:08:02Z",
+"merged_at": "2026-10-03T09:27:56Z",
+"closed_at": "2026-10-03T09:27:56Z",
+"merged": true,
+"additions": 2074,
+"deletions": 47,
+"changed_files": 24,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-147-judge"
+},
+{
+"repo": "unfiltered",
+"number": 176,
+"title": "YOY-148 (AC-1–AC-10): judge answer cache, verdict log and late labels",
+"created_at": "2026-10-03T09:41:56Z",
+"merged_at": "2026-10-03T09:55:51Z",
+"closed_at": "2026-10-03T09:55:51Z",
+"merged": true,
+"additions": 964,
+"deletions": 44,
+"changed_files": 18,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-148-judge-cache"
+},
+{
+"repo": "unfiltered",
+"number": 177,
+"title": "YOY-149 (AC-1–AC-18): stated wishes — extraction, walls, number tiers, exclusions, code labels and chips",
+"created_at": "2026-10-03T15:20:04Z",
+"merged_at": "2026-10-03T15:53:53Z",
+"closed_at": "2026-10-03T15:53:53Z",
+"merged": true,
+"additions": 4164,
+"deletions": 139,
+"changed_files": 66,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-149-chips-numbers"
+},
+{
+"repo": "unfiltered",
+"number": 178,
+"title": "YOY-150 (AC-1 – AC-11, AC-13): refinement and the two-meanings chip; hidden run 4 posted (fr misses its band)",
+"created_at": "2026-10-03T18:31:36Z",
+"merged_at": "2026-10-03T18:51:08Z",
+"closed_at": "2026-10-03T18:51:08Z",
+"merged": true,
+"additions": 2092,
+"deletions": 125,
+"changed_files": 87,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-150-refinement-two-meanings"
+},
+{
+"repo": "unfiltered",
+"number": 179,
+"title": "YOY-150 (AC-12): hidden-run gate rule dated in SCORE.md; W-7 names the two-meanings chip",
+"created_at": "2026-10-03T18:52:06Z",
+"merged_at": "2026-10-03T18:58:13Z",
+"closed_at": "2026-10-03T18:58:14Z",
+"merged": true,
+"additions": 17,
+"deletions": 0,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-150-ac12-gate-rule"
+},
+{
+"repo": "unfiltered",
+"number": 180,
+"title": "YOY-151 (AC-1 – AC-10): one honest label line on the playground and both widget paths",
+"created_at": "2026-10-04T16:01:56Z",
+"merged_at": "2026-10-04T16:32:09Z",
+"closed_at": "2026-10-04T16:32:09Z",
+"merged": true,
+"additions": 2442,
+"deletions": 40,
+"changed_files": 109,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-151-labels-on-cards"
+},
+{
+"repo": "unfiltered",
+"number": 181,
+"title": "YOY-152 (AC-1 – AC-7): Jev judge behind JUDGE_PROVIDER, shared judge suite, score.yml judge input, hidden run 5 per judge",
+"created_at": "2026-10-04T16:50:57Z",
+"merged_at": "2026-10-04T17:17:57Z",
+"closed_at": "2026-10-04T17:17:57Z",
+"merged": true,
+"additions": 1240,
+"deletions": 26,
+"changed_files": 17,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-152-jev-judge"
+},
+{
+"repo": "unfiltered",
+"number": 182,
+"title": "YOY-152 (AC-8, AC-9): Jev is the default judge; Flash-Lite stays selectable",
+"created_at": "2026-10-04T17:35:51Z",
+"merged_at": "2026-10-04T18:24:11Z",
+"closed_at": "2026-10-04T18:24:11Z",
+"merged": true,
+"additions": 66,
+"deletions": 24,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved",
+"needs-human-review"
+],
+"branch": "YOY-152-jev-default"
+},
+{
+"repo": "unfiltered",
+"number": 183,
+"title": "YOY-153 (AC-1 – AC-8): Engine v2 on by default — v2 Constructor suite, smoke and probe on v2",
+"created_at": "2026-10-04T19:03:29Z",
+"merged_at": "2026-10-04T19:16:32Z",
+"closed_at": "2026-10-04T19:16:32Z",
+"merged": true,
+"additions": 257065,
+"deletions": 118,
+"changed_files": 23,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-153-engine-v2-default"
+},
+{
+"repo": "unfiltered",
+"number": 184,
+"title": "YOY-154 (AC-1): the M6 live-run runbook, the judge line on the probe, and the judge-log readback",
+"created_at": "2026-10-05T09:52:27Z",
+"merged_at": "2026-10-05T09:58:55Z",
+"closed_at": "2026-10-05T09:58:55Z",
+"merged": true,
+"additions": 448,
+"deletions": 2,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-154-m6-live-run-runbook"
+},
+{
+"repo": "unfiltered",
+"number": 185,
+"title": "YOY-154 (AC-3): the speed probe on the deployment — the Jev judge times out on 28 % of uncached searches (row 15 FAIL, filed)",
+"created_at": "2026-10-05T10:16:05Z",
+"merged_at": "2026-10-05T10:27:40Z",
+"closed_at": "2026-10-05T10:27:40Z",
+"merged": true,
+"additions": 41,
+"deletions": 14,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-154-probe-speed-and-judge"
+},
+{
+"repo": "unfiltered",
+"number": 186,
+"title": "YOY-154 (AC-4, AC-5 playground halves): labels and paging on the playground — three label rows fail, filed",
+"created_at": "2026-10-05T10:39:48Z",
+"merged_at": "2026-10-05T11:04:30Z",
+"closed_at": "2026-10-05T11:04:31Z",
+"merged": true,
+"additions": 7,
+"deletions": 7,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-154-playground-labels-paging"
+},
+{
+"repo": "unfiltered",
+"number": 187,
+"title": "YOY-160 (AC-1, AC-2, AC-4): late labels keep the page's code-computed labels — price-near survives a judge timeout",
+"created_at": "2026-10-06T11:32:48Z",
+"merged_at": "2026-10-06T11:56:55Z",
+"closed_at": "2026-10-06T11:56:55Z",
+"merged": true,
+"additions": 75,
+"deletions": 7,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-160-late-labels-keep-code-labels"
+},
+{
+"repo": "unfiltered",
+"number": 188,
+"title": "YOY-165 (AC-1 – AC-4): /try?engine=v1|v2 picks the engine for the page view, with a badge and a details row naming it",
+"created_at": "2026-10-06T11:59:21Z",
+"merged_at": "2026-10-06T12:36:55Z",
+"closed_at": "2026-10-06T12:36:55Z",
+"merged": true,
+"additions": 456,
+"deletions": 6,
+"changed_files": 35,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-165-playground-engine-param"
+},
+{
+"repo": "unfiltered",
+"number": 189,
+"title": "YOY-159 (AC-1): split the judge stage — judgeRows beside judge, slowest and median single call in the diagnostics and the probe",
+"created_at": "2026-10-06T12:21:09Z",
+"merged_at": "2026-10-06T12:51:31Z",
+"closed_at": "2026-10-06T12:51:31Z",
+"merged": true,
+"additions": 472,
+"deletions": 42,
+"changed_files": 29,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-159-judge-stage-split"
+},
+{
+"repo": "unfiltered",
+"number": 190,
+"title": "YOY-162 (AC-1, AC-3): an excluded term is kept only when the sentence negates it — \"jacket under 30\" no longer excludes jacket",
+"created_at": "2026-10-06T12:40:38Z",
+"merged_at": "2026-10-06T12:51:57Z",
+"closed_at": "2026-10-06T12:51:57Z",
+"merged": true,
+"additions": 99,
+"deletions": 6,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-162-exclusion-needs-negation"
+},
+{
+"repo": "unfiltered",
+"number": 191,
+"title": "YOY-159 (AC-2, AC-3): the slowest call dominates — 1,200 ms per-call limit marks a straggler partial; the 24 Jev calls share one warm keep-alive pool",
+"created_at": "2026-10-06T13:12:27Z",
+"merged_at": "2026-10-06T14:24:42Z",
+"closed_at": "2026-10-06T14:24:42Z",
+"merged": true,
+"additions": 373,
+"deletions": 22,
+"changed_files": 11,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-159-judge-call-timeout-pool"
+},
+{
+"repo": "unfiltered",
+"number": 192,
+"title": "YOY-163 (AC-1 – AC-4): a product the judge calls not relevant is dropped from a page that has anything better",
+"created_at": "2026-10-06T13:24:30Z",
+"merged_at": "2026-10-06T13:37:15Z",
+"closed_at": "2026-10-06T13:37:15Z",
+"merged": true,
+"additions": 93,
+"deletions": 30,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-163-drop-not-relevant"
+},
+{
+"repo": "unfiltered",
+"number": 193,
+"title": "YOY-161 (AC-1, AC-3): size-missing is N/A on the seed catalog — 0 of its 1,820 variants is unavailable",
+"created_at": "2026-10-06T13:38:09Z",
+"merged_at": "2026-10-06T14:05:36Z",
+"closed_at": "2026-10-06T14:05:36Z",
+"merged": true,
+"additions": 7,
+"deletions": 1,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-161-size-missing-na-on-seed"
+},
+{
+"repo": "unfiltered",
+"number": 194,
+"title": "YOY-164 (AC-1 – AC-3): the native label line sits inside the theme card after the price; price amounts read the storefront's way",
+"created_at": "2026-10-06T13:58:08Z",
+"merged_at": "2026-10-06T14:25:01Z",
+"closed_at": "2026-10-06T14:25:01Z",
+"merged": true,
+"additions": 242,
+"deletions": 29,
+"changed_files": 44,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-164-native-label-inside-card"
+},
+{
+"repo": "unfiltered",
+"number": 195,
+"title": "YOY-154 (AC-2, AC-4 – AC-9): record the dev-store and founder evidence — every row of the M6 live run has a result and an id",
+"created_at": "2026-10-06T14:13:21Z",
+"merged_at": "2026-10-06T14:26:27Z",
+"closed_at": "2026-10-06T14:26:27Z",
+"merged": true,
+"additions": 37,
+"deletions": 29,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-154-dev-store-evidence"
+},
+{
+"repo": "unfiltered",
+"number": 196,
+"title": "YOY-159 (AC-4): re-measure on the deployment — judge-timeout 2 % of uncached searches, judge p95 1206 ms",
+"created_at": "2026-10-06T14:38:50Z",
+"merged_at": "2026-10-06T15:58:36Z",
+"closed_at": "2026-10-06T15:58:36Z",
+"merged": true,
+"additions": 4,
+"deletions": 1,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-159-ac4-remeasure"
+},
+{
+"repo": "unfiltered",
+"number": 197,
+"title": "YOY-166 (AC-1 – AC-4): a judged page's close products sit under a \"Close matches\" divider when the page has matches",
+"created_at": "2026-10-06T16:51:09Z",
+"merged_at": "2026-10-06T17:02:22Z",
+"closed_at": "2026-10-06T17:02:22Z",
+"merged": true,
+"additions": 929,
+"deletions": 76,
+"changed_files": 67,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-166-close-matches-divider"
+},
+{
+"repo": "unfiltered",
+"number": 198,
+"title": "PRD v3.4: M6 live-run decisions — labels, close matches, tiers re-validated",
+"created_at": "2026-10-06T16:55:14Z",
+"merged_at": "2026-10-06T17:12:00Z",
+"closed_at": "2026-10-06T17:12:00Z",
+"merged": true,
+"additions": 10,
+"deletions": 14,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "prd-v3-4-m6-live-run-decisions"
+},
+{
+"repo": "unfiltered",
+"number": 199,
+"title": "YOY-168 (AC-1 – AC-6): one short label line — no prices, no close-match label under the \"Close matches\" heading",
+"created_at": "2026-10-06T17:23:21Z",
+"merged_at": "2026-10-06T17:34:01Z",
+"closed_at": "2026-10-06T17:34:01Z",
+"merged": true,
+"additions": 396,
+"deletions": 88,
+"changed_files": 81,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-168-label-one-line"
+},
+{
+"repo": "unfiltered",
+"number": 200,
+"title": "YOY-169 (AC-1 – AC-4): cards request sized product images from the Shopify CDN",
+"created_at": "2026-10-06T17:44:02Z",
+"merged_at": "2026-10-06T17:57:16Z",
+"closed_at": "2026-10-06T17:57:16Z",
+"merged": true,
+"additions": 533,
+"deletions": 7,
+"changed_files": 51,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-169-sized-card-images"
+},
+{
+"repo": "unfiltered",
+"number": 201,
+"title": "YOY-156 (AC-1 – AC-7): site copy pass — text wordmark, /try calls to action, stale doc lines",
+"created_at": "2026-10-06T18:05:33Z",
+"merged_at": "2026-10-06T18:11:58Z",
+"closed_at": "2026-10-06T18:11:58Z",
+"merged": true,
+"additions": 282,
+"deletions": 35,
+"changed_files": 81,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-156-site-copy-pass"
+},
+{
+"repo": "unfiltered",
+"number": 202,
+"title": "YOY-157 (AC-6, AC-8, AC-10, AC-11, AC-12, AC-14, AC-18, AC-21): docs, comments and no-code ticks",
+"created_at": "2026-10-07T08:50:11Z",
+"merged_at": "2026-10-07T08:57:58Z",
+"closed_at": "2026-10-07T08:57:58Z",
+"merged": true,
+"additions": 13,
+"deletions": 9,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-hardening-docs-ticks"
+},
+{
+"repo": "unfiltered",
+"number": 203,
+"title": "YOY-157 (AC-15, AC-16, AC-17): whole-token sizes, no currency exclusions, firm size spares unsized products",
+"created_at": "2026-10-07T09:04:23Z",
+"merged_at": "2026-10-07T09:25:01Z",
+"closed_at": "2026-10-07T09:25:01Z",
+"merged": true,
+"additions": 111,
+"deletions": 9,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-extraction-wishes"
+},
+{
+"repo": "unfiltered",
+"number": 204,
+"title": "YOY-157 (AC-9, AC-28): card scan follows the ask languages; Hebrew plural currencies are not exclusions",
+"created_at": "2026-10-07T09:32:15Z",
+"merged_at": "2026-10-07T09:47:40Z",
+"closed_at": "2026-10-07T09:47:40Z",
+"merged": true,
+"additions": 56,
+"deletions": 10,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-catalog-currency"
+},
+{
+"repo": "unfiltered",
+"number": 205,
+"title": "YOY-157 (AC-13): the judge answer cache keys on every non-price row input and the row cap",
+"created_at": "2026-10-07T09:51:32Z",
+"merged_at": "2026-10-07T10:08:26Z",
+"closed_at": "2026-10-07T10:08:26Z",
+"merged": true,
+"additions": 116,
+"deletions": 5,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-judge-cache-key"
+},
+{
+"repo": "unfiltered",
+"number": 206,
+"title": "YOY-157 (AC-24, code half): a judge call's ledger wait is bounded by the call's own signal",
+"created_at": "2026-10-07T10:15:45Z",
+"merged_at": "2026-10-07T10:23:57Z",
+"closed_at": "2026-10-07T10:23:57Z",
+"merged": true,
+"additions": 144,
+"deletions": 11,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-judge-call-settle"
+},
+{
+"repo": "unfiltered",
+"number": 207,
+"title": "YOY-157 (AC-23): under Engine v2, route names the path that answered",
+"created_at": "2026-10-07T10:30:52Z",
+"merged_at": "2026-10-07T10:43:52Z",
+"closed_at": "2026-10-07T10:43:52Z",
+"merged": true,
+"additions": 41,
+"deletions": 16,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-v2-route"
+},
+{
+"repo": "unfiltered",
+"number": 208,
+"title": "YOY-157 (AC-24, deployment half): record the re-measure — every uncached search's slowest judge call ≤ 1202 ms",
+"created_at": "2026-10-07T10:48:03Z",
+"merged_at": "2026-10-07T10:54:53Z",
+"closed_at": "2026-10-07T10:54:53Z",
+"merged": true,
+"additions": 1,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-ac24-probe"
+},
+{
+"repo": "unfiltered",
+"number": 209,
+"title": "YOY-157 (AC-29): only page 1 of a submitted search spends throttle and daily-cap budget",
+"created_at": "2026-10-07T11:02:20Z",
+"merged_at": "2026-10-07T11:10:20Z",
+"closed_at": "2026-10-07T11:10:20Z",
+"merged": true,
+"additions": 109,
+"deletions": 3,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-page-budget"
+},
+{
+"repo": "unfiltered",
+"number": 210,
+"title": "YOY-157 (AC-2, AC-3, AC-19, AC-20): score workflow defaults to production; leak guard from the workflow's own commit",
+"created_at": "2026-10-07T11:16:00Z",
+"merged_at": "2026-10-07T11:29:33Z",
+"closed_at": "2026-10-07T11:29:33Z",
+"merged": true,
+"additions": 50,
+"deletions": 20,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-157-score-workflow"
+},
+{
+"repo": "unfiltered",
+"number": 211,
+"title": "YOY-157 (AC-30): the widget refinement spec waits for each response to be applied",
+"created_at": "2026-10-07T11:40:18Z",
+"merged_at": "2026-10-07T11:51:50Z",
+"closed_at": "2026-10-07T11:51:50Z",
+"merged": true,
+"additions": 78,
+"deletions": 15,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-refinement-spec"
+},
+{
+"repo": "unfiltered",
+"number": 212,
+"title": "YOY-157 (AC-31): score workflow runs the scored ref and the leak guard in separate jobs",
+"created_at": "2026-10-07T11:59:47Z",
+"merged_at": "2026-10-07T12:08:26Z",
+"closed_at": "2026-10-07T12:08:26Z",
+"merged": true,
+"additions": 124,
+"deletions": 40,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-157-score-two-jobs"
+},
+{
+"repo": "unfiltered",
+"number": 213,
+"title": "YOY-157 (AC-5): npm run typecheck covers the operator scripts",
+"created_at": "2026-10-07T12:12:08Z",
+"merged_at": "2026-10-07T12:18:06Z",
+"closed_at": "2026-10-07T12:18:06Z",
+"merged": true,
+"additions": 1,
+"deletions": 1,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-typecheck-scripts"
+},
+{
+"repo": "unfiltered",
+"number": 214,
+"title": "YOY-157 (AC-1): a score run's cost line, proven end to end on a fixed-cost replay run",
+"created_at": "2026-10-07T12:22:31Z",
+"merged_at": "2026-10-07T12:41:41Z",
+"closed_at": "2026-10-07T12:41:41Z",
+"merged": true,
+"additions": 84,
+"deletions": 0,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-157-score-cost-line"
+},
+{
+"repo": "unfiltered",
+"number": 215,
+"title": "YOY-157 (AC-4): JSON-LD offers that share a url are not collapsed into one variant",
+"created_at": "2026-10-07T12:46:25Z",
+"merged_at": "2026-10-07T13:22:11Z",
+"closed_at": "2026-10-07T13:22:11Z",
+"merged": true,
+"additions": 62,
+"deletions": 4,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-jsonld-variant-ids"
+},
+{
+"repo": "unfiltered",
+"number": 216,
+"title": "YOY-157 (AC-25): the playground card passes srcSet the React way",
+"created_at": "2026-10-07T13:30:33Z",
+"merged_at": "2026-10-07T13:40:39Z",
+"closed_at": "2026-10-07T13:40:39Z",
+"merged": true,
+"additions": 144,
+"deletions": 2,
+"changed_files": 25,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-card-srcset"
+},
+{
+"repo": "unfiltered",
+"number": 217,
+"title": "YOY-157 (AC-22): the widget block's translated name has schema locale entries",
+"created_at": "2026-10-07T13:50:35Z",
+"merged_at": "2026-10-07T14:04:40Z",
+"closed_at": "2026-10-07T14:04:40Z",
+"merged": true,
+"additions": 68,
+"deletions": 0,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-widget-schema-name"
+},
+{
+"repo": "unfiltered",
+"number": 218,
+"title": "YOY-157 (AC-26): the landing page's button pairs lead to two different places",
+"created_at": "2026-10-07T14:10:29Z",
+"merged_at": "2026-10-07T14:21:49Z",
+"closed_at": "2026-10-07T14:21:50Z",
+"merged": true,
+"additions": 66,
+"deletions": 4,
+"changed_files": 10,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-landing-ctas"
+},
+{
+"repo": "unfiltered",
+"number": 219,
+"title": "YOY-157 (AC-32): the playground refinement spec waits for each response to be applied",
+"created_at": "2026-10-07T14:37:22Z",
+"merged_at": "2026-10-07T14:46:37Z",
+"closed_at": "2026-10-07T14:46:37Z",
+"merged": true,
+"additions": 42,
+"deletions": 9,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-playground-refine-spec"
+},
+{
+"repo": "unfiltered",
+"number": 220,
+"title": "YOY-157 (AC-27): under the Jev judge, other-variant cards sit under the \"Close matches\" heading",
+"created_at": "2026-10-07T14:58:02Z",
+"merged_at": "2026-10-07T15:24:05Z",
+"closed_at": "2026-10-07T15:24:05Z",
+"merged": true,
+"additions": 382,
+"deletions": 20,
+"changed_files": 30,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-157-jev-close-split"
+},
+{
+"repo": "unfiltered",
+"number": 221,
+"title": "YOY-155 (AC-1 – AC-8): delete the old engine — one search path, tag engine-v1-last",
+"created_at": "2026-10-10T15:56:45Z",
+"merged_at": "2026-10-10T16:57:27Z",
+"closed_at": "2026-10-10T16:57:27Z",
+"merged": true,
+"additions": 2650,
+"deletions": 91499,
+"changed_files": 182,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-155-delete-old-engine"
+},
+{
+"repo": "unfiltered",
+"number": 222,
+"title": "YOY-158 (AC-1 – AC-6): Jev's merchant-fact label from closed-list picks, measured first; cost and second-reading note",
+"created_at": "2026-10-10T17:07:06Z",
+"merged_at": "2026-10-10T17:13:34Z",
+"closed_at": "2026-10-10T17:13:34Z",
+"merged": true,
+"additions": 395,
+"deletions": 37,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-158-fact-measure"
+},
+{
+"repo": "unfiltered",
+"number": 223,
+"title": "YOY-171 (AC-9, AC-10): the he drop is judge variance; fact-differs respects whole-word values",
+"created_at": "2026-10-10T17:30:04Z",
+"merged_at": "2026-10-10T17:55:55Z",
+"closed_at": "2026-10-10T17:55:55Z",
+"merged": true,
+"additions": 71,
+"deletions": 3,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-variance-fact-words"
+},
+{
+"repo": "unfiltered",
+"number": 224,
+"title": "YOY-171 (AC-1): a judge deadline miss's late answer replaces the find-order page",
+"created_at": "2026-10-10T18:10:41Z",
+"merged_at": "2026-10-10T18:17:31Z",
+"closed_at": "2026-10-10T18:17:31Z",
+"merged": true,
+"additions": 1057,
+"deletions": 280,
+"changed_files": 70,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-late-page"
+},
+{
+"repo": "unfiltered",
+"number": 225,
+"title": "YOY-171 (AC-2): stand-ins never look like exact matches",
+"created_at": "2026-10-10T18:27:19Z",
+"merged_at": "2026-10-10T18:35:36Z",
+"closed_at": "2026-10-10T18:35:36Z",
+"merged": true,
+"additions": 503,
+"deletions": 45,
+"changed_files": 35,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-stand-ins"
+},
+{
+"repo": "unfiltered",
+"number": 226,
+"title": "YOY-171 (AC-3, AC-4): one label line instead of the same label on every card; far-over-budget cheapest first",
+"created_at": "2026-10-10T18:45:07Z",
+"merged_at": "2026-10-10T19:08:07Z",
+"closed_at": "2026-10-10T19:08:07Z",
+"merged": true,
+"additions": 620,
+"deletions": 41,
+"changed_files": 47,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-one-label-line"
+},
+{
+"repo": "unfiltered",
+"number": 227,
+"title": "YOY-171 (AC-6): the wish extraction's time is measured",
+"created_at": "2026-10-10T19:14:58Z",
+"merged_at": "2026-10-10T19:29:11Z",
+"closed_at": "2026-10-10T19:29:11Z",
+"merged": true,
+"additions": 255,
+"deletions": 12,
+"changed_files": 29,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-171-extract-time"
+},
+{
+"repo": "unfiltered",
+"number": 228,
+"title": "YOY-171 (AC-8): first-row images load first",
+"created_at": "2026-10-10T19:33:19Z",
+"merged_at": "2026-10-10T19:45:57Z",
+"closed_at": "2026-10-10T19:45:57Z",
+"merged": true,
+"additions": 247,
+"deletions": 5,
+"changed_files": 28,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-eager-images"
+},
+{
+"repo": "unfiltered",
+"number": 229,
+"title": "YOY-171 (AC-11): the extraction's late share is measured on the deployment",
+"created_at": "2026-10-10T19:59:50Z",
+"merged_at": "2026-10-10T20:08:53Z",
+"closed_at": "2026-10-10T20:08:53Z",
+"merged": true,
+"additions": 65,
+"deletions": 8,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-extract-late-share"
+},
+{
+"repo": "unfiltered",
+"number": 230,
+"title": "YOY-171 (AC-7): the extraction starts on the typing pause",
+"created_at": "2026-10-10T20:16:18Z",
+"merged_at": "2026-10-10T20:37:42Z",
+"closed_at": "2026-10-10T20:37:42Z",
+"merged": true,
+"additions": 165,
+"deletions": 16,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-preview-extraction"
+},
+{
+"repo": "unfiltered",
+"number": 231,
+"title": "YOY-171 (AC-12): the latency probe paces every set",
+"created_at": "2026-10-10T20:42:54Z",
+"merged_at": "2026-10-10T20:49:04Z",
+"closed_at": "2026-10-10T20:49:05Z",
+"merged": true,
+"additions": 93,
+"deletions": 28,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-probe-pacing"
+},
+{
+"repo": "unfiltered",
+"number": 232,
+"title": "YOY-171 (AC-13, AC-14): extraction spend on unguarded requests is bounded; the probe marks every set",
+"created_at": "2026-10-10T20:54:28Z",
+"merged_at": "2026-10-10T21:02:01Z",
+"closed_at": "2026-10-10T21:02:01Z",
+"merged": true,
+"additions": 305,
+"deletions": 44,
+"changed_files": 15,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-extraction-allowance"
+},
+{
+"repo": "unfiltered",
+"number": 233,
+"title": "YOY-171 (AC-15): the proxy's AI budgets hold against a rotated sessionId",
+"created_at": "2026-10-10T21:34:43Z",
+"merged_at": "2026-10-10T21:41:34Z",
+"closed_at": "2026-10-10T21:41:34Z",
+"merged": true,
+"additions": 160,
+"deletions": 12,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-shop-budgets"
+},
+{
+"repo": "unfiltered",
+"number": 234,
+"title": "YOY-171 (AC-5): colour is a code-checked wish, ordered after the judge within its group",
+"created_at": "2026-10-10T22:25:27Z",
+"merged_at": "2026-10-10T22:32:08Z",
+"closed_at": "2026-10-10T22:32:08Z",
+"merged": true,
+"additions": 972,
+"deletions": 79,
+"changed_files": 50,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-color-wish"
+},
+{
+"repo": "unfiltered",
+"number": 235,
+"title": "YOY-171 (AC-17): a hidden run waits for the wish extraction",
+"created_at": "2026-10-11T09:24:58Z",
+"merged_at": "2026-10-11T10:31:03Z",
+"closed_at": "2026-10-11T10:31:03Z",
+"merged": true,
+"additions": 62,
+"deletions": 7,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-171-score-extraction-grace"
+},
+{
+"repo": "unfiltered",
+"number": 236,
+"title": "YOY-171 (AC-18): two timing-sensitive tests no longer flake on CI",
+"created_at": "2026-10-11T10:39:26Z",
+"merged_at": "2026-10-11T11:16:33Z",
+"closed_at": "2026-10-11T11:16:33Z",
+"merged": true,
+"additions": 16,
+"deletions": 2,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-deflake-timing-tests"
+},
+{
+"repo": "unfiltered",
+"number": 237,
+"title": "YOY-171 (AC-4, AC-16): far-over-budget cheapest first only after the judge, inside the page",
+"created_at": "2026-10-11T11:28:37Z",
+"merged_at": "2026-10-11T11:35:56Z",
+"closed_at": "2026-10-11T11:35:57Z",
+"merged": true,
+"additions": 258,
+"deletions": 57,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-171-far-after-judge"
+},
+{
+"repo": "unfiltered",
+"number": 238,
+"title": "PRD v3.5 — M6 hardening tail, measurement rules, M7 sketch",
+"created_at": "2026-10-13T14:55:43Z",
+"merged_at": "2026-10-13T15:49:26Z",
+"closed_at": "2026-10-13T15:49:26Z",
+"merged": true,
+"additions": 22,
+"deletions": 20,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "prd-v3-5-m6-tail-m7-sketch"
+},
+{
+"repo": "unfiltered",
+"number": 239,
+"title": "YOY-172 (AC-1..AC-7): per-index grade lines, judge=none and the control loop",
+"created_at": "2026-10-14T11:28:13Z",
+"merged_at": "2026-10-14T11:47:40Z",
+"closed_at": "2026-10-14T11:47:40Z",
+"merged": true,
+"additions": 490,
+"deletions": 39,
+"changed_files": 14,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-172-per-index-grades-no-judge"
+},
+{
+"repo": "unfiltered",
+"number": 240,
+"title": "YOY-173 (AC-1–AC-7): M7 controls and baselines on the current set; served titles under --per-search",
+"created_at": "2026-10-14T12:18:21Z",
+"merged_at": "2026-10-14T12:27:01Z",
+"closed_at": "2026-10-14T12:27:01Z",
+"merged": true,
+"additions": 142,
+"deletions": 10,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-173-controls-baselines"
+},
+{
+"repo": "unfiltered",
+"number": 241,
+"title": "YOY-174 (AC-1–AC-4): find recall on the public en and he searches",
+"created_at": "2026-10-14T13:02:58Z",
+"merged_at": "2026-10-14T13:22:49Z",
+"closed_at": "2026-10-14T13:22:49Z",
+"merged": true,
+"additions": 4877,
+"deletions": 13,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-174-find-recall"
+},
+{
+"repo": "unfiltered",
+"number": 242,
+"title": "YOY-175: Hebrew 75, the hard set, the brand/person rubric, one table per set (AC-1–4, AC-7)",
+"created_at": "2026-10-14T15:38:07Z",
+"merged_at": "2026-10-14T17:12:59Z",
+"closed_at": "2026-10-14T17:12:59Z",
+"merged": true,
+"additions": 1713,
+"deletions": 248,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-175-hebrew-75-hard-set"
+},
+{
+"repo": "unfiltered",
+"number": 243,
+"title": "YOY-175: the M7 reference — three hidden runs, score-reference-m7.json (AC-6)",
+"created_at": "2026-10-14T17:41:36Z",
+"merged_at": "2026-10-14T17:59:22Z",
+"closed_at": "2026-10-14T17:59:22Z",
+"merged": true,
+"additions": 130,
+"deletions": 0,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-175-m7-reference"
+},
+{
+"repo": "unfiltered",
+"number": 244,
+"title": "YOY-176: The Hebrew cause — four hypotheses tested, none named; runner-only FIND_KEYWORD_LEG switch (AC-1–AC-5)",
+"created_at": "2026-10-16T10:01:34Z",
+"merged_at": "2026-10-16T10:12:50Z",
+"closed_at": "2026-10-16T10:12:50Z",
+"merged": true,
+"additions": 256,
+"deletions": 7,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-176-hebrew-cause"
+},
+{
+"repo": "unfiltered",
+"number": 245,
+"title": "YOY-177: tentree fixture, a seed-or-tentree fixture choice, and the real-merchant score (AC-1–AC-4)",
+"created_at": "2026-10-17T11:38:13Z",
+"merged_at": "2026-10-17T12:14:27Z",
+"closed_at": "2026-10-17T12:14:27Z",
+"merged": true,
+"additions": 882,
+"deletions": 14,
+"changed_files": 16,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-177-tentree-fixture"
+},
+{
+"repo": "unfiltered",
+"number": 246,
+"title": "YOY-178: judge=off on the playground — the by-eye comparison's judge-off side (AC-3)",
+"created_at": "2026-10-18T07:44:47Z",
+"merged_at": "2026-10-18T08:01:36Z",
+"closed_at": "2026-10-18T08:01:36Z",
+"merged": true,
+"additions": 124,
+"deletions": 5,
+"changed_files": 10,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-178-judge-off-playground"
+},
+{
+"repo": "yoyo-loop",
+"number": 1,
+"title": "yoyo-init: require Edit(path) for path-scoped file permissions",
+"created_at": "2026-07-29T18:35:56Z",
+"merged_at": "2026-07-29T18:53:37Z",
+"closed_at": "2026-07-29T18:53:37Z",
+"merged": true,
+"additions": 6,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoyo-init-edit-path-rules"
+},
+{
+"repo": "yoyo-loop",
+"number": 2,
+"title": "Fix four review findings across the builder and reviewer",
+"created_at": "2026-07-30T10:08:48Z",
+"merged_at": "2026-07-30T10:10:51Z",
+"closed_at": "2026-07-30T10:10:51Z",
+"merged": true,
+"additions": 51,
+"deletions": 17,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoyo-detached-builder-worktree"
+},
+{
+"repo": "yoyo-loop",
+"number": 3,
+"title": "Record the repo's branch and PR conventions in CLAUDE.md",
+"created_at": "2026-07-30T10:12:03Z",
+"merged_at": "2026-07-30T10:13:03Z",
+"closed_at": "2026-07-30T10:13:03Z",
+"merged": true,
+"additions": 57,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "add-claude-md-conventions"
+},
+{
+"repo": "yoyo-loop",
+"number": 4,
+"title": "Check for local-only commits before detaching, not after",
+"created_at": "2026-07-30T10:17:59Z",
+"merged_at": "2026-07-30T10:18:51Z",
+"closed_at": "2026-07-30T10:18:51Z",
+"merged": true,
+"additions": 33,
+"deletions": 9,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "check-local-commits-before-detach"
+},
+{
+"repo": "yoyo-loop",
+"number": 5,
+"title": "Guard hook v2: versioned, repo/branch-aware, tested",
+"created_at": "2026-07-30T12:03:00Z",
+"merged_at": "2026-07-30T12:14:27Z",
+"closed_at": "2026-07-30T12:14:27Z",
+"merged": true,
+"additions": 492,
+"deletions": 0,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoyo-guard-hook-v2"
+},
+{
+"repo": "yoyo-loop",
+"number": 6,
+"title": "Permission inversion: guard hook becomes the sole judge of Bash",
+"created_at": "2026-07-30T12:04:54Z",
+"merged_at": "2026-07-30T12:14:44Z",
+"closed_at": "2026-07-30T12:14:44Z",
+"merged": true,
+"additions": 69,
+"deletions": 12,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoyo-permission-inversion"
+},
+{
+"repo": "yoyo-loop",
+"number": 7,
+"title": "Auto-sync and auto-prune in the loop skills",
+"created_at": "2026-07-30T12:08:32Z",
+"merged_at": "2026-07-30T12:15:07Z",
+"closed_at": "2026-07-30T12:15:07Z",
+"merged": true,
+"additions": 55,
+"deletions": 1,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoyo-auto-sync-prune"
+},
+{
+"repo": "yoyo-loop",
+"number": 8,
+"title": "Add ROADMAP.md and user-level MCP allow for Linear",
+"created_at": "2026-07-30T12:53:11Z",
+"merged_at": "2026-07-30T12:58:24Z",
+"closed_at": "2026-07-30T12:58:24Z",
+"merged": true,
+"additions": 28,
+"deletions": 0,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoyo-roadmap-mcp-allow"
+},
+{
+"repo": "yoyo-loop",
+"number": 9,
+"title": "Phase 2: multi-issue spec splitting via blocked-by chains",
+"created_at": "2026-07-31T08:53:07Z",
+"merged_at": "2026-07-31T08:58:13Z",
+"closed_at": "2026-07-31T08:58:13Z",
+"merged": true,
+"additions": 64,
+"deletions": 14,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoyo-spec-splitting"
+},
+{
+"repo": "yoyo-loop",
+"number": 10,
+"title": "Phase 3: /yoyo-status read-only queue view",
+"created_at": "2026-07-31T08:55:29Z",
+"merged_at": "2026-07-31T09:01:42Z",
+"closed_at": "2026-07-31T09:01:42Z",
+"merged": true,
+"additions": 87,
+"deletions": 9,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoyo-status-skill"
+},
+{
+"repo": "yoyo-loop",
+"number": 11,
+"title": "Make /yoyo-status cross-project; fix blocked/backlog category overlap",
+"created_at": "2026-07-31T09:34:16Z",
+"merged_at": "2026-07-31T09:56:40Z",
+"closed_at": "2026-07-31T09:56:40Z",
+"merged": true,
+"additions": 61,
+"deletions": 16,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoyo-status-cross-project"
+},
+{
+"repo": "yoyo-loop",
+"number": 12,
+"title": "Roadmap: multi-project reordering",
+"created_at": "2026-07-31T14:04:12Z",
+"merged_at": "2026-07-31T17:16:08Z",
+"closed_at": "2026-07-31T17:16:08Z",
+"merged": true,
+"additions": 57,
+"deletions": 9,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "roadmap-multi-project"
+},
+{
+"repo": "yoyo-loop",
+"number": 13,
+"title": "Phase 4: PRD intake for yoyo-spec",
+"created_at": "2026-07-31T17:07:45Z",
+"merged_at": "2026-07-31T17:16:20Z",
+"closed_at": "2026-07-31T17:16:20Z",
+"merged": true,
+"additions": 46,
+"deletions": 1,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "prd-intake"
+},
+{
+"repo": "yoyo-loop",
+"number": 14,
+"title": "yoyo-init: PRD adoption",
+"created_at": "2026-07-31T17:19:46Z",
+"merged_at": "2026-07-31T17:25:14Z",
+"closed_at": "2026-07-31T17:25:14Z",
+"merged": true,
+"additions": 25,
+"deletions": 1,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "init-prd-adoption"
+},
+{
+"repo": "yoyo-loop",
+"number": 15,
+"title": "yoyo-init: factory config is a sensitive path by default",
+"created_at": "2026-07-31T17:46:05Z",
+"merged_at": "2026-07-31T17:57:28Z",
+"closed_at": "2026-07-31T17:57:28Z",
+"merged": true,
+"additions": 13,
+"deletions": 3,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "init-claude-sensitive"
+},
+{
+"repo": "yoyo-loop",
+"number": 16,
+"title": "Roadmap: Phase 4 done",
+"created_at": "2026-08-01T14:10:35Z",
+"merged_at": "2026-08-01T14:11:42Z",
+"closed_at": "2026-08-01T14:11:42Z",
+"merged": true,
+"additions": 10,
+"deletions": 8,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "roadmap-phase-4-done"
+},
+{
+"repo": "yoyo-loop",
+"number": 17,
+"title": "Sync before judging: spec and review order fix",
+"created_at": "2026-08-01T14:23:13Z",
+"merged_at": "2026-08-01T14:27:06Z",
+"closed_at": "2026-08-01T14:27:06Z",
+"merged": true,
+"additions": 42,
+"deletions": 17,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "spec-review-sync-ordering"
+},
+{
+"repo": "yoyo-loop",
+"number": 18,
+"title": "Roadmap: add Phase 4.5 — bootstrap CI seed",
+"created_at": "2026-08-01T14:58:55Z",
+"merged_at": "2026-08-01T15:09:26Z",
+"closed_at": "2026-08-01T15:09:26Z",
+"merged": true,
+"additions": 61,
+"deletions": 8,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "roadmap-bootstrap-ci-seed"
+},
+{
+"repo": "yoyo-loop",
+"number": 19,
+"title": "Phase 5a: outbound Slack notifications",
+"created_at": "2026-08-02T15:59:23Z",
+"merged_at": "2026-08-02T16:06:10Z",
+"closed_at": "2026-08-02T16:06:10Z",
+"merged": true,
+"additions": 138,
+"deletions": 10,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [],
+"branch": "phase-5a-slack-notifications"
+},
+{
+"repo": "yoyo-loop",
+"number": 20,
+"title": "Guard: ASK tier becomes deny-with-escalation",
+"created_at": "2026-08-02T16:10:19Z",
+"merged_at": "2026-08-02T16:36:56Z",
+"closed_at": "2026-08-02T16:36:56Z",
+"merged": true,
+"additions": 135,
+"deletions": 39,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [],
+"branch": "guard-ask-to-deny"
+},
+{
+"repo": "yoyo-loop",
+"number": 21,
+"title": "Builder: blocker relations are a hard gate; guard: allow .env.example",
+"created_at": "2026-08-03T12:19:13Z",
+"merged_at": "2026-08-03T12:35:32Z",
+"closed_at": "2026-08-03T12:35:32Z",
+"merged": true,
+"additions": 46,
+"deletions": 2,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "builder-blocker-enforcement"
+},
+{
+"repo": "yoyo-loop",
+"number": 22,
+"title": "needs-human-review becomes a merge gate; only loop-stuck ejects from repair",
+"created_at": "2026-08-03T16:40:26Z",
+"merged_at": "2026-08-03T16:57:16Z",
+"closed_at": "2026-08-03T16:57:16Z",
+"merged": true,
+"additions": 101,
+"deletions": 25,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "needs-human-review-merge-gate"
+},
+{
+"repo": "yoyo-loop",
+"number": 23,
+"title": "Pass-hygiene hardenings + ROADMAP north star",
+"created_at": "2026-08-03T17:00:00Z",
+"merged_at": "2026-08-03T17:04:25Z",
+"closed_at": "2026-08-03T17:04:25Z",
+"merged": true,
+"additions": 68,
+"deletions": 1,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "pass-hygiene-north-star"
+},
+{
+"repo": "yoyo-loop",
+"number": 24,
+"title": "Hardening tail for deferred findings + repair-round counting fix",
+"created_at": "2026-08-04T15:17:11Z",
+"merged_at": "2026-08-04T15:21:08Z",
+"closed_at": "2026-08-04T15:21:08Z",
+"merged": true,
+"additions": 107,
+"deletions": 11,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "hardening-tail-and-fix-round-counting"
+},
+{
+"repo": "yoyo-loop",
+"number": 25,
+"title": "Ship-step NHR Slack notification + merged-branch tidy uses -d only",
+"created_at": "2026-08-05T08:39:11Z",
+"merged_at": "2026-08-05T08:45:30Z",
+"closed_at": "2026-08-05T08:45:30Z",
+"merged": true,
+"additions": 33,
+"deletions": 5,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "ship-nhr-notify-and-branch-d-only"
+},
+{
+"repo": "yoyo-loop",
+"number": 26,
+"title": "Notification send-evidence everywhere + reviewer branch-tidy alignment",
+"created_at": "2026-08-05T14:27:39Z",
+"merged_at": "2026-08-05T14:33:05Z",
+"closed_at": "2026-08-05T14:33:05Z",
+"merged": true,
+"additions": 105,
+"deletions": 27,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "notification-evidence-and-reviewer-tidy"
+},
+{
+"repo": "yoyo-loop",
+"number": 27,
+"title": "YOY-38: UI verification gate",
+"created_at": "2026-08-08T09:32:14Z",
+"merged_at": "2026-08-08T09:43:02Z",
+"closed_at": "2026-08-08T09:43:02Z",
+"merged": true,
+"additions": 93,
+"deletions": 0,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-38-ui-verification-gate"
+},
+{
+"repo": "yoyo-loop",
+"number": 28,
+"title": "YOY-30: guard triage — .env.example staging, default-branch ref rewrites, workaround-is-escalation",
+"created_at": "2026-08-08T09:47:27Z",
+"merged_at": "2026-08-08T09:51:19Z",
+"closed_at": "2026-08-08T09:51:19Z",
+"merged": true,
+"additions": 67,
+"deletions": 4,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-30-guard-triage"
+},
+{
+"repo": "yoyo-loop",
+"number": 29,
+"title": "YOY-33: factory micro-fixes — generic tail template, interim-tail rule, one-off prompt pattern, status validation",
+"created_at": "2026-08-08T09:57:03Z",
+"merged_at": "2026-08-08T10:02:29Z",
+"closed_at": "2026-08-08T10:02:29Z",
+"merged": true,
+"additions": 118,
+"deletions": 8,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-33-pre-m3-micro-fixes"
+},
+{
+"repo": "yoyo-loop",
+"number": 30,
+"title": "YOY-40: factory watchdog — read-only claims-vs-primary-sources sweep, Slack-as-state alert discipline",
+"created_at": "2026-08-08T11:14:37Z",
+"merged_at": "2026-08-08T11:29:44Z",
+"closed_at": "2026-08-08T11:29:44Z",
+"merged": true,
+"additions": 188,
+"deletions": 19,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-40-factory-watchdog"
+},
+{
+"repo": "yoyo-loop",
+"number": 31,
+"title": "YOY-56: commit .claude/settings.json at init; evaluate build-preflight dirt against origin's default branch",
+"created_at": "2026-08-08T17:30:51Z",
+"merged_at": "2026-08-08T17:32:50Z",
+"closed_at": "2026-08-08T17:32:50Z",
+"merged": true,
+"additions": 61,
+"deletions": 10,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-56-commit-settings-preflight"
+},
+{
+"repo": "yoyo-loop",
+"number": 32,
+"title": "YOY-57: builder services NHR+LCR PRs; reviewer must-fix branch explicitly preserves pre-existing NHR",
+"created_at": "2026-08-08T17:35:27Z",
+"merged_at": "2026-08-08T17:40:05Z",
+"closed_at": "2026-08-08T17:40:05Z",
+"merged": true,
+"additions": 27,
+"deletions": 4,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-57-nhr-lcr-repair-path"
+},
+{
+"repo": "yoyo-loop",
+"number": 33,
+"title": "YOY-58: merge-decision pings fire at the verdict, not at ship; 2xx sends are final",
+"created_at": "2026-08-08T17:47:19Z",
+"merged_at": "2026-08-08T17:50:56Z",
+"closed_at": "2026-08-08T17:50:56Z",
+"merged": true,
+"additions": 65,
+"deletions": 32,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-58-notification-timing"
+},
+{
+"repo": "yoyo-loop",
+"number": 34,
+"title": "Factory window: YOY-59 zsh-safe sends, YOY-65 Part-of/verified unassign, YOY-63 conflicting-approval retraction",
+"created_at": "2026-08-11T12:13:10Z",
+"merged_at": "2026-08-11T12:29:39Z",
+"closed_at": "2026-08-11T12:29:39Z",
+"merged": true,
+"additions": 117,
+"deletions": 19,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "factory-window-59-65-63"
+},
+{
+"repo": "yoyo-loop",
+"number": 35,
+"title": "YOY-62: spec chain ordering from AC content references (backward-reference check + stop-on-cycle)",
+"created_at": "2026-08-11T13:03:31Z",
+"merged_at": "2026-08-11T13:14:06Z",
+"closed_at": "2026-08-11T13:14:06Z",
+"merged": true,
+"additions": 25,
+"deletions": 1,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-62-ac-reference-ordering"
+},
+{
+"repo": "yoyo-loop",
+"number": 36,
+"title": "YOY-66: generated repo map + dependency graph with CI drift guard (init-seeded)",
+"created_at": "2026-08-11T13:22:02Z",
+"merged_at": "2026-08-11T13:46:24Z",
+"closed_at": "2026-08-11T13:46:24Z",
+"merged": true,
+"additions": 332,
+"deletions": 0,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-66-repo-map"
+},
+{
+"repo": "yoyo-loop",
+"number": 37,
+"title": "YOY-76: env-write consistency — file-tool env writes deny like Bash (roadmap refresh stopped: garbled payload)",
+"created_at": "2026-08-11T13:58:53Z",
+"merged_at": "2026-08-11T14:03:50Z",
+"closed_at": "2026-08-11T14:03:50Z",
+"merged": true,
+"additions": 91,
+"deletions": 0,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-76-env-write-guard"
+},
+{
+"repo": "yoyo-loop",
+"number": 38,
+"title": "YOY-77: repo-map lists example env files in git mode + ROADMAP 2026-08-11 refresh",
+"created_at": "2026-08-11T14:14:25Z",
+"merged_at": "2026-08-11T14:18:38Z",
+"closed_at": "2026-08-11T14:18:38Z",
+"merged": true,
+"additions": 172,
+"deletions": 8,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-77-repo-map-env-example"
+},
+{
+"repo": "yoyo-loop",
+"number": 39,
+"title": "YOY-73/74/80: three-lane bug intake + /yoyo-diagnose, UX quality gate v2, standing decisions",
+"created_at": "2026-08-13T10:55:48Z",
+"merged_at": "2026-08-13T11:20:52Z",
+"closed_at": "2026-08-13T11:20:52Z",
+"merged": true,
+"additions": 388,
+"deletions": 11,
+"changed_files": 11,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-73-74-80-factory-window"
+},
+{
+"repo": "yoyo-loop",
+"number": 40,
+"title": "YOY-79: /yoyo-design — DESIGN.md authoring skill; docs/HANDOFF.md → docs/PROCESS.md",
+"created_at": "2026-08-13T11:29:03Z",
+"merged_at": "2026-08-13T11:56:55Z",
+"closed_at": "2026-08-13T11:56:55Z",
+"merged": true,
+"additions": 204,
+"deletions": 20,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-79-yoyo-design"
+},
+{
+"repo": "yoyo-loop",
+"number": 41,
+"title": "YOY-83: /yoyo-design regenerates the repo map when the drift guard exists; validator pins the carve-out",
+"created_at": "2026-08-15T13:39:52Z",
+"merged_at": "2026-08-15T13:52:41Z",
+"closed_at": "2026-08-15T13:52:41Z",
+"merged": true,
+"additions": 57,
+"deletions": 4,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-83-design-map-carveout"
+},
+{
+"repo": "yoyo-loop",
+"number": 42,
+"title": "YOY-85: regenerate after staging (design + one-off template); /yoyo-design ends on main",
+"created_at": "2026-08-15T14:07:31Z",
+"merged_at": "2026-08-15T14:21:56Z",
+"closed_at": "2026-08-15T14:21:56Z",
+"merged": true,
+"additions": 39,
+"deletions": 14,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-85-regen-staging-end-on-main"
+},
+{
+"repo": "yoyo-loop",
+"number": 43,
+"title": "yoyo-build: regenerate the repo map when the diff changes the tree",
+"created_at": "2026-08-16T20:29:06Z",
+"merged_at": "2026-08-16T20:37:07Z",
+"closed_at": "2026-08-16T20:37:07Z",
+"merged": true,
+"additions": 18,
+"deletions": 0,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [],
+"branch": "chore/build-regenerates-repo-map"
+},
+{
+"repo": "yoyo-loop",
+"number": 44,
+"title": "guard: extend the example-env exception from writes to reads",
+"created_at": "2026-08-19T14:00:31Z",
+"merged_at": "2026-08-19T14:05:21Z",
+"closed_at": "2026-08-19T14:05:21Z",
+"merged": true,
+"additions": 72,
+"deletions": 7,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "guard-env-example-reads"
+},
+{
+"repo": "yoyo-loop",
+"number": 45,
+"title": "settings: stop denying reads of committed example env files",
+"created_at": "2026-08-19T14:10:45Z",
+"merged_at": "2026-08-19T14:19:11Z",
+"closed_at": "2026-08-19T14:19:11Z",
+"merged": true,
+"additions": 38,
+"deletions": 16,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "settings-env-example-reads"
+},
+{
+"repo": "yoyo-loop",
+"number": 46,
+"title": "YOY-113/YOY-103: multi-PR lifecycle (resume lane, AC ticks, closure convention), stale-gate notification for conflicting needs-human-review PRs, ROADMAP refresh",
+"created_at": "2026-08-25T12:02:56Z",
+"merged_at": "2026-08-25T12:29:29Z",
+"closed_at": "2026-08-25T12:29:29Z",
+"merged": true,
+"additions": 400,
+"deletions": 22,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [],
+"branch": "yoy-113-103-multi-pr-lifecycle-stale-gate"
+},
+{
+"repo": "yoyo-loop",
+"number": 47,
+"title": "ROADMAP: product state refresh — M5 chained, Frankfurt move, gate math",
+"created_at": "2026-08-26T10:00:59Z",
+"merged_at": "2026-08-26T10:03:10Z",
+"closed_at": "2026-08-26T10:03:10Z",
+"merged": true,
+"additions": 22,
+"deletions": 15,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "roadmap-product-state-2026-08-26"
+},
+{
+"repo": "yoyo-loop",
+"number": 48,
+"title": "ROADMAP: product-state refresh — M5 shipped, briza M2, factory queue named",
+"created_at": "2026-09-27T09:08:44Z",
+"merged_at": "2026-09-27T09:16:59Z",
+"closed_at": "2026-09-27T09:16:59Z",
+"merged": true,
+"additions": 94,
+"deletions": 49,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "roadmap-m5-shipped-refresh"
+},
+{
+"repo": "yoyo-loop",
+"number": 49,
+"title": "YOY-127 step 1: reviewer waits for CI; loop cadence 5m",
+"created_at": "2026-09-28T11:08:47Z",
+"merged_at": "2026-09-28T11:20:34Z",
+"closed_at": "2026-09-28T11:20:34Z",
+"merged": true,
+"additions": 34,
+"deletions": 5,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "reviewer-waits-for-ci"
+},
+{
+"repo": "yoyo-loop",
+"number": 50,
+"title": "YOY-127 step 2: builder pick gate; one Linear ID per PR",
+"created_at": "2026-09-28T11:23:25Z",
+"merged_at": "2026-09-28T11:36:52Z",
+"closed_at": "2026-09-28T11:36:52Z",
+"merged": true,
+"additions": 51,
+"deletions": 2,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "builder-pick-rule-one-id"
+},
+{
+"repo": "yoyo-loop",
+"number": 51,
+"title": "yoyo-loop stands on its own",
+"created_at": "2026-09-28T11:39:37Z",
+"merged_at": "2026-09-28T12:31:10Z",
+"closed_at": "2026-09-28T12:31:10Z",
+"merged": true,
+"additions": 28,
+"deletions": 41,
+"changed_files": 3,
+"author": "0xYoyo",
+"labels": [],
+"branch": "own-name"
+},
+{
+"repo": "yoyo-loop",
+"number": 52,
+"title": "ROADMAP: product state refreshed to PRD v3 (M6 = Engine v2)",
+"created_at": "2026-09-29T15:36:18Z",
+"merged_at": "2026-09-30T12:15:05Z",
+"closed_at": "2026-09-30T12:15:05Z",
+"merged": true,
+"additions": 22,
+"deletions": 14,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "roadmap-prd-v3"
+},
+{
+"repo": "yoyo-loop",
+"number": 53,
+"title": "yoyo-init: turn on delete-branch-on-merge at repo setup",
+"created_at": "2026-10-03T19:18:52Z",
+"merged_at": "2026-10-03T19:27:54Z",
+"closed_at": "2026-10-03T19:27:54Z",
+"merged": true,
+"additions": 6,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "init-delete-branch-on-merge"
+},
+{
+"repo": "yoyo-loop",
+"number": 54,
+"title": "YOY-170: builder claims no new issue while any PR is open (serial by default)",
+"created_at": "2026-10-06T16:17:11Z",
+"merged_at": "2026-10-06T16:33:35Z",
+"closed_at": "2026-10-06T16:33:35Z",
+"merged": true,
+"additions": 29,
+"deletions": 16,
+"changed_files": 4,
+"author": "0xYoyo",
+"labels": [],
+"branch": "YOY-170-serial-open-pr-gate"
+},
+{
+"repo": "yoyo-loop",
+"number": 55,
+"title": "Factory: builder never asks in the terminal; scratch worktrees removed; init prints /loop 5m; YOY-175 one-off lessons",
+"created_at": "2026-10-16T09:32:29Z",
+"merged_at": "2026-10-16T09:38:20Z",
+"closed_at": "2026-10-16T09:38:20Z",
+"merged": true,
+"additions": 113,
+"deletions": 4,
+"changed_files": 5,
+"author": "0xYoyo",
+"labels": [],
+"branch": "factory-never-ask-scratch-worktrees"
+},
+{
+"repo": "briza",
+"number": 1,
+"title": "PRD: domain is a candidate, not a decision",
+"created_at": "2026-08-08T12:58:16Z",
+"merged_at": "2026-08-08T13:04:02Z",
+"closed_at": "2026-08-08T13:04:02Z",
+"merged": true,
+"additions": 8,
+"deletions": 6,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "prd-domain-placeholder"
+},
+{
+"repo": "briza",
+"number": 2,
+"title": "config: dedupe slack_channel_id, drop stray fragment",
+"created_at": "2026-08-08T13:05:16Z",
+"merged_at": "2026-08-08T13:06:39Z",
+"closed_at": "2026-08-08T13:06:39Z",
+"merged": true,
+"additions": 0,
+"deletions": 3,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "fix-yoyo-config-slack-key"
+},
+{
+"repo": "briza",
+"number": 3,
+"title": "Scaffold Astro site with RTL placeholder page (YOY-53)",
+"created_at": "2026-08-08T15:31:58Z",
+"merged_at": "2026-08-08T15:50:33Z",
+"closed_at": "2026-08-08T15:50:33Z",
+"merged": true,
+"additions": 5531,
+"deletions": 0,
+"changed_files": 7,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-53-astro-scaffold"
+},
+{
+"repo": "briza",
+"number": 4,
+"title": "chore: commit .claude/settings.json (track loop fixture, matches unfiltered)",
+"created_at": "2026-08-08T16:04:04Z",
+"merged_at": "2026-08-08T16:06:57Z",
+"closed_at": "2026-08-08T16:06:57Z",
+"merged": true,
+"additions": 11,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "chore/commit-claude-settings"
+},
+{
+"repo": "briza",
+"number": 5,
+"title": "Tooling and CI gate: Biome, Vitest, astro check, Playwright",
+"created_at": "2026-08-08T16:27:47Z",
+"merged_at": "2026-08-08T16:41:11Z",
+"closed_at": "2026-08-08T16:41:11Z",
+"merged": true,
+"additions": 1674,
+"deletions": 57,
+"changed_files": 13,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-54-tooling-ci-gate"
+},
+{
+"repo": "briza",
+"number": 6,
+"title": "M1 hardening: render store name from STORE_NAME constant",
+"created_at": "2026-08-08T17:11:24Z",
+"merged_at": "2026-08-08T17:20:18Z",
+"closed_at": "2026-08-08T17:20:18Z",
+"merged": true,
+"additions": 5,
+"deletions": 3,
+"changed_files": 2,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-55-store-name-constant"
+},
+{
+"repo": "briza",
+"number": 7,
+"title": "PRD v2: site direction, page copy, facts register, hosting, M2/M3 restructure",
+"created_at": "2026-08-26T19:44:32Z",
+"merged_at": "2026-08-27T09:29:44Z",
+"closed_at": "2026-08-27T09:29:44Z",
+"merged": true,
+"additions": 244,
+"deletions": 100,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "prd-v2-direction"
+},
+{
+"repo": "briza",
+"number": 8,
+"title": "Assets, design kit, Cloudflare deploy config, site constants",
+"created_at": "2026-08-27T10:17:30Z",
+"merged_at": "2026-08-27T10:36:38Z",
+"closed_at": "2026-08-27T10:36:38Z",
+"merged": true,
+"additions": 5494,
+"deletions": 1,
+"changed_files": 129,
+"author": "0xYoyo",
+"labels": [],
+"branch": "assets-deploy-config"
+},
+{
+"repo": "briza",
+"number": 9,
+"title": "docs: DESIGN.md — design invariants and direction system",
+"created_at": "2026-08-27T10:57:28Z",
+"merged_at": "2026-08-27T10:58:33Z",
+"closed_at": "2026-08-27T10:58:33Z",
+"merged": true,
+"additions": 301,
+"deletions": 0,
+"changed_files": 1,
+"author": "0xYoyo",
+"labels": [],
+"branch": "design-md"
+},
+{
+"repo": "briza",
+"number": 10,
+"title": "M2-1 design system, page shell, hero, sticky bar, footer (YOY-128, AC-1..13)",
+"created_at": "2026-08-27T12:55:25Z",
+"merged_at": "2026-08-27T13:08:14Z",
+"closed_at": "2026-08-27T13:08:14Z",
+"merged": true,
+"additions": 1191,
+"deletions": 44,
+"changed_files": 31,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-128-design-system-shell"
+},
+{
+"repo": "briza",
+"number": 11,
+"title": "M2-2 Offer, How-it-works, Story and Photos sections (YOY-129, AC-1..10)",
+"created_at": "2026-08-27T13:15:56Z",
+"merged_at": "2026-08-27T13:40:24Z",
+"closed_at": "2026-08-27T13:40:24Z",
+"merged": true,
+"additions": 527,
+"deletions": 10,
+"changed_files": 10,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-129-content-sections"
+},
+{
+"repo": "briza",
+"number": 12,
+"title": "M2-3 Hours module, Visit and Reviews sections (YOY-130, AC-1..8)",
+"created_at": "2026-08-27T13:47:11Z",
+"merged_at": "2026-08-27T13:52:53Z",
+"closed_at": "2026-08-27T13:52:53Z",
+"merged": true,
+"additions": 647,
+"deletions": 5,
+"changed_files": 8,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-130-visit-reviews"
+},
+{
+"repo": "briza",
+"number": 13,
+"title": "M2-4 SEO, structured data and production build readiness (YOY-131, AC-1..9)",
+"created_at": "2026-08-27T14:04:40Z",
+"merged_at": "2026-08-27T14:22:36Z",
+"closed_at": "2026-08-27T14:22:36Z",
+"merged": true,
+"additions": 3916,
+"deletions": 1819,
+"changed_files": 18,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-131-seo-build-readiness"
+},
+{
+"repo": "briza",
+"number": 14,
+"title": "M2 hardening: sticky-bar breakpoint, desktop hero crop, Offer rhythm (YOY-132, AC-1..3)",
+"created_at": "2026-08-27T14:35:38Z",
+"merged_at": "2026-08-27T14:49:17Z",
+"closed_at": "2026-08-27T14:49:17Z",
+"merged": true,
+"additions": 65,
+"deletions": 16,
+"changed_files": 6,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-132-m2-hardening"
+},
+{
+"repo": "briza",
+"number": 15,
+"title": "Redesign: photographic split-panel layout (founder-directed)",
+"created_at": "2026-08-28T13:38:31Z",
+"merged_at": "2026-08-28T14:08:28Z",
+"closed_at": "2026-08-28T14:08:28Z",
+"merged": true,
+"additions": 1473,
+"deletions": 433,
+"changed_files": 40,
+"author": "0xYoyo",
+"labels": [],
+"branch": "redesign-photographic"
+},
+{
+"repo": "briza",
+"number": 16,
+"title": "Polish: viewport-locked sections, surface rhythm, photo recasting",
+"created_at": "2026-08-28T14:43:24Z",
+"merged_at": "2026-08-28T15:09:06Z",
+"closed_at": "2026-08-28T15:09:06Z",
+"merged": true,
+"additions": 526,
+"deletions": 194,
+"changed_files": 33,
+"author": "0xYoyo",
+"labels": [],
+"branch": "redesign-polish"
+},
+{
+"repo": "briza",
+"number": 17,
+"title": "Go live: real WhatsApp group invite link on the join buttons",
+"created_at": "2026-10-14T11:36:53Z",
+"merged_at": null,
+"closed_at": "2026-10-14T11:48:37Z",
+"merged": false,
+"additions": null,
+"deletions": null,
+"changed_files": null,
+"author": "0xYoyo",
+"labels": [],
+"branch": "group-invite-url"
+},
+{
+"repo": "briza",
+"number": 18,
+"title": "YOY-189 Go live: real group invite link + store landline in footer and Visit (AC-1–AC-6)",
+"created_at": "2026-10-14T12:14:34Z",
+"merged_at": "2026-10-14T12:27:32Z",
+"closed_at": "2026-10-14T12:27:32Z",
+"merged": true,
+"additions": 152,
+"deletions": 54,
+"changed_files": 13,
+"author": "0xYoyo",
+"labels": [
+"needs-human-review"
+],
+"branch": "YOY-189-go-live-invite-landline"
+},
+{
+"repo": "prompt-racers",
+"number": 1,
+"title": "Wave 3 — championship end, quiz freeze, garage wizard, racer select, navigation",
+"created_at": "2026-08-08T21:13:59Z",
+"merged_at": "2026-08-08T21:15:26Z",
+"closed_at": "2026-08-08T21:15:26Z",
+"merged": true,
+"additions": 354856,
+"deletions": 5902,
+"changed_files": 614,
+"author": "0xYoyo",
+"labels": [],
+"branch": "wave-3"
+},
+{
+"repo": "prompt-racers",
+"number": 2,
+"title": "Consolidate waves 1-4 onto main",
+"created_at": "2026-08-12T19:10:24Z",
+"merged_at": "2026-08-12T19:12:59Z",
+"closed_at": "2026-08-12T19:12:59Z",
+"merged": true,
+"additions": 10397,
+"deletions": 772106,
+"changed_files": 626,
+"author": "0xYoyo",
+"labels": [],
+"branch": "consolidate-waves-1-4"
+},
+{
+"repo": "prompt-racers",
+"number": 3,
+"title": "Waves 5 + 5.1 — signage, audio, economy, perf, regression fixes",
+"created_at": "2026-08-14T12:24:14Z",
+"merged_at": "2026-08-25T14:46:13Z",
+"closed_at": "2026-08-25T14:46:13Z",
+"merged": true,
+"additions": 16532,
+"deletions": 987,
+"changed_files": 501,
+"author": "0xYoyo",
+"labels": [],
+"branch": "wave-5"
+},
+{
+"repo": "loop-tryouts",
+"number": 1,
+"title": "YOY-6: Build bilingual Brize boutique landing page",
+"created_at": "2026-07-28T11:42:45Z",
+"merged_at": "2026-07-28T14:46:42Z",
+"closed_at": "2026-07-28T14:46:42Z",
+"merged": true,
+"additions": 3227,
+"deletions": 0,
+"changed_files": 14,
+"author": "0xYoyo",
+"labels": [
+"loop-approved"
+],
+"branch": "YOY-6-brize-bilingual-landing"
+}
+]

@@ -1,0 +1,133 @@
+<!doctype html>
+<!--
+  Social card source. scripts/og.mjs opens this file in Chromium, injects the
+  commit dates from src/data/commits.json as window.OG, and screenshots it into
+  public/og.png (1200x630) and public/og-square.png (1080x1080).
+  Fonts are the project's own files, referenced by relative file paths.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: 'Bricolage';
+        src: url('../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-standard-normal.woff2')
+          format('woff2-variations');
+        font-weight: 200 800;
+        font-stretch: 75% 100%;
+      }
+      @font-face {
+        font-family: 'Commit Mono';
+        src: url('../src/design/fonts/CommitMono-VF.woff2') format('woff2-variations');
+        font-weight: 200 700;
+      }
+      :root {
+        --bg: #15120e;
+        --fg: #f1ece2;
+        --muted: #9a9185;
+        --line: rgba(241, 236, 226, 0.14);
+        --agent: #2b4bff;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; background: var(--bg); color: var(--fg); }
+      body {
+        font-family: 'Bricolage', sans-serif;
+        display: flex;
+        flex-direction: column;
+        padding: 72px 80px 64px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .handle {
+        font-family: 'Commit Mono', monospace;
+        font-size: 22px;
+        color: var(--muted);
+      }
+      h1 {
+        margin-top: 28px;
+        font-size: 158px;
+        font-weight: 800;
+        font-stretch: 100%;
+        line-height: 0.92;
+        letter-spacing: -0.035em;
+      }
+      .line {
+        margin-top: 30px;
+        font-size: 44px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+      }
+      .ribbon { margin-top: auto; }
+      svg { display: block; width: 100%; overflow: visible; }
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 16px;
+        font-family: 'Commit Mono', monospace;
+        font-size: 18px;
+        color: var(--muted);
+      }
+      /* Square variant: the name breaks onto two lines */
+      body.square { padding: 88px 80px 80px; }
+      body.square h1 { font-size: 196px; margin-top: 40px; }
+      body.square .line { font-size: 52px; margin-top: 40px; max-width: 12em; }
+    </style>
+  </head>
+  <body>
+    <div class="handle">0xYoyo</div>
+    <h1 id="name">Yoav Zrihan</h1>
+    <p class="line">I write the spec. Agents build. I merge.</p>
+    <div class="ribbon">
+      <svg id="dots"></svg>
+      <div class="meta"><span id="caption"></span><span id="range"></span></div>
+    </div>
+    <script>
+      const OG = window.OG; // { dates: string[], repos: number, square: boolean }
+      if (OG.square) {
+        document.body.classList.add('square');
+        document.getElementById('name').innerHTML = 'Yoav<br />Zrihan';
+      }
+      const svg = document.getElementById('dots');
+      const W = svg.getBoundingClientRect().width;
+      const H = OG.square ? 190 : 128;
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.setAttribute('height', H);
+
+      // x = commit date (linear time, so the 2024 gap shows), y = the hour of day
+      // in the author's local time, read straight from the ISO offset string.
+      // The day starts at 09:00 (almost nothing is committed 04:00 to 09:00), so the
+      // band runs 09:00 at the top to 04:00 at the bottom.
+      const t = OG.dates.map((d) => Date.parse(d));
+      const t0 = Math.min(...t);
+      const t1 = Math.max(...t);
+      const NS = 'http://www.w3.org/2000/svg';
+      const r = 1.8;
+
+      const axis = document.createElementNS(NS, 'line');
+      axis.setAttribute('x1', 0);
+      axis.setAttribute('x2', W);
+      axis.setAttribute('y1', H - 0.5);
+      axis.setAttribute('y2', H - 0.5);
+      axis.setAttribute('stroke', 'rgba(241,236,226,0.14)');
+      svg.appendChild(axis);
+
+      OG.dates.forEach((d, i) => {
+        const hour = Number(d.slice(11, 13)) + Number(d.slice(14, 16)) / 60;
+        const sinceNine = (hour - 9 + 24) % 24; // 0 at 09:00, 19 at 04:00
+        const c = document.createElementNS(NS, 'circle');
+        c.setAttribute('cx', (r + ((t[i] - t0) / (t1 - t0)) * (W - 2 * r)).toFixed(2));
+        c.setAttribute('cy', (r + 4 + (Math.min(sinceNine, 19) / 19) * (H - 2 * r - 10)).toFixed(2));
+        c.setAttribute('r', r);
+        c.setAttribute('fill', '#2b4bff');
+        c.setAttribute('fill-opacity', '0.7');
+        svg.appendChild(c);
+      });
+
+      const n = OG.dates.length.toLocaleString('en-US');
+      document.getElementById('caption').textContent = `${n} commits across ${OG.repos} repos`;
+      const y0 = new Date(t0).getUTCFullYear();
+      const y1 = new Date(t1).getUTCFullYear();
+      document.getElementById('range').textContent = `${y0} to ${y1}`;
+    </script>
+  </body>
+</html>

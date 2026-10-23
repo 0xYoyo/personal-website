@@ -1,0 +1,344 @@
+/* #3 Things I've built: an editorial list. Three roomy lead rows, then denser ones. */
+
+.projects-lede {
+  margin-top: 20px;
+  color: var(--muted);
+}
+
+.projects-list {
+  margin-top: clamp(36px, 5vw, 64px);
+  border-top: 1px solid var(--line);
+}
+
+.projects-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+
+.projects-row.is-featured {
+  padding: clamp(32px, 4.5vw, 56px) 0;
+  row-gap: 18px;
+}
+
+.projects-row.is-dense {
+  padding: 26px 0 28px;
+  row-gap: 10px;
+}
+
+/* Name and status */
+.projects-name {
+  font-weight: 700;
+  font-stretch: 96%;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.is-featured .projects-name {
+  font-size: clamp(30px, 3.4vw, 40px);
+}
+
+.is-dense .projects-name {
+  font-size: clamp(26px, 2.5vw, 32px);
+}
+
+.projects-status {
+  font-weight: 400;
+  font-stretch: 100%;
+  font-size: max(17px, 0.5em);
+  letter-spacing: 0;
+  color: var(--muted);
+  white-space: normal;
+}
+
+/* Period and commit count */
+.projects-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  color: var(--muted);
+}
+
+.projects-commits {
+  padding: 0 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-size: var(--text-mono-sm);
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+/* Body */
+.projects-body {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.projects-line {
+  max-width: 60ch;
+  text-wrap: pretty;
+}
+
+.is-featured .projects-line {
+  font-size: var(--text-lede);
+  line-height: 1.4;
+  max-width: 44ch;
+}
+
+.projects-facts {
+  display: grid;
+  gap: 3px;
+  max-width: 68ch;
+  font-size: var(--text-small);
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.is-featured .projects-facts {
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.projects-facts li {
+  text-wrap: pretty;
+}
+
+.projects-era-count {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.projects-stack {
+  color: var(--muted);
+  font-size: var(--text-mono-sm);
+  max-width: 80ch;
+}
+
+.projects-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  font-size: var(--text-small);
+}
+
+/* Asides: one distinguishing element per lead row */
+.projects-aside-cap {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.projects-skills-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.projects-skills-list li {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.projects-skills-list li:nth-child(odd) {
+  padding-right: 12px;
+}
+
+.projects-search {
+  display: grid;
+  gap: 10px;
+}
+
+.projects-search-line {
+  position: relative;
+  min-height: 52px;
+  padding: 14px 16px 14px 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--wash);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* A drawn magnifier, so the line reads as a search box */
+.projects-search-line::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 20px;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+}
+
+.projects-search-line::after {
+  content: '';
+  position: absolute;
+  left: 25px;
+  top: 30px;
+  width: 5px;
+  height: 1.5px;
+  background: var(--muted);
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
+
+.projects-search-line.is-follow {
+  margin-left: clamp(20px, 6%, 40px);
+  /* --muted alone is 4.27:1 on the wash; a third of the way to --fg clears 4.5:1 */
+  color: color-mix(in oklab, var(--muted), var(--fg) 35%);
+}
+
+.projects-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.15em;
+  margin-left: 2px;
+  vertical-align: -0.2em;
+  background: var(--agent-text);
+  animation: projects-blink 1.05s steps(1) infinite;
+}
+
+.projects-caret.is-resting {
+  animation: none;
+}
+
+@keyframes projects-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.projects-play {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+}
+
+.projects-play-he {
+  font-size: clamp(34px, 3.1vw, 42px);
+  white-space: nowrap;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.projects-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 26px 0 22px;
+  border: 1px solid var(--fg);
+  border-radius: 999px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 18px;
+  font-weight: 600;
+  transition:
+    background-color 160ms var(--ease-out),
+    color 160ms var(--ease-out);
+}
+
+.projects-play-btn:hover {
+  background: transparent;
+  color: var(--fg);
+}
+
+/* Phone: Prompt Racers shows its Hebrew title and Play right under the name */
+@media (max-width: 899px) {
+  .projects-row:has(.projects-play) .projects-aside {
+    order: 1;
+  }
+
+  .projects-row:has(.projects-play) .projects-body {
+    order: 2;
+  }
+}
+
+/* Desktop: the left/right rhythm */
+@media (min-width: 900px) {
+  .projects-row {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--col-gap);
+  }
+
+  /* Lead rows: name on the left, period on the right, then body and aside */
+  .is-featured .projects-name {
+    grid-column: 1 / span 8;
+    grid-row: 1;
+  }
+
+  .is-featured .projects-when {
+    grid-column: 9 / -1;
+    grid-row: 1;
+    justify-content: flex-end;
+    align-self: start;
+    padding-top: 0.7em;
+  }
+
+  .is-featured .projects-body {
+    grid-column: 1 / span 7;
+    grid-row: 2;
+  }
+
+  .is-featured .projects-aside {
+    grid-column: 9 / -1;
+    grid-row: 2;
+    align-self: start;
+    padding-top: 6px;
+  }
+
+  .is-featured.is-flip .projects-body {
+    grid-column: 6 / -1;
+  }
+
+  .is-featured.is-flip .projects-aside {
+    grid-column: 1 / span 4;
+  }
+
+  /* Dense rows: name, body, period in three columns */
+  .is-dense .projects-name {
+    grid-column: 1 / span 4;
+    grid-row: 1 / span 2;
+    padding-right: 12px;
+  }
+
+  .is-dense .projects-body {
+    grid-column: 5 / span 6;
+    grid-row: 1 / span 2;
+    padding-top: 4px;
+  }
+
+  .is-dense .projects-when {
+    grid-column: 11 / -1;
+    grid-row: 1;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    padding-top: 6px;
+  }
+
+  .is-dense .projects-facts {
+    gap: 2px;
+  }
+
+  /* A status with a reason sits on its own line under the name */
+  .is-dense .projects-status.has-note {
+    display: block;
+    margin-top: 8px;
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .projects-caret {
+    animation: none;
+  }
+}

@@ -1,0 +1,174 @@
+/*
+ * Design tokens.
+ *
+ * The lights come up as the page is built (POLISH_WAVE D). The page palette is
+ * one of eight states, picked by `data-lights` on <html> = the number of PRs
+ * merged after #1 (0..7):
+ *
+ *   ink regime   0-3  the background warms a visible step per merge, text stays paper
+ *   the switch   4    "lights on": background flips to paper, text to ink (700 ms)
+ *   paper regime 4-7  the paper brightens a step per merge to the finished stone
+ *
+ * --bg, --fg, --muted and --agent-text are registered colors, so the browser
+ * eases between states (global.css sets the transition). scripts/palette.mjs
+ * reads the values below straight from this file and `npm run contrast` checks
+ * every state stays >= 4.5:1; src/design/lights.ts mirrors the backgrounds for
+ * theme-color and the favicon (a test keeps them in sync).
+ *
+ * --progress (0..1, merged / 7) is still set on <html> for anything that wants
+ * a continuous number (the hero canvas reads it).
+ */
+
+@property --progress {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #15120e;
+}
+
+@property --fg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f1ece2;
+}
+
+@property --muted {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #9a9185;
+}
+
+@property --agent-text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #8caeff;
+}
+
+:root {
+  --progress: 0;
+
+  /* Accents (constant) */
+  --agent: #2b4bff; /* everything agents do */
+  --human: #f0a030; /* only the action a human can take: Merge */
+  --pass: #2fa36b;
+  --fail: #d9442b;
+
+  /* Lights state 0: deep warm ink (also the default before the app boots) */
+  --bg: #15120e;
+  --fg: #f1ece2;
+  --muted: #9a9185;
+  /* Cobalt as text: lifted on ink, deepened on paper, >= 4.5:1 in every state */
+  --agent-text: #8caeff;
+  --dur-light: 900ms;
+
+  /* Derived from the current state */
+  --line: color-mix(in srgb, var(--fg) 14%, transparent);
+  --line-strong: color-mix(in srgb, var(--fg) 28%, transparent);
+  --wash: color-mix(in srgb, var(--fg) 4%, transparent);
+
+  /* The factory console (control room, PR cards) stays ink at every progress:
+     it is the machine, not the page. */
+  --console-bg: #110f0c;
+  --console-raised: #1b1814;
+  --console-fg: #ece6da;
+  --console-muted: #958c80;
+  /* Quiet console text (diff line numbers, log timestamps): still >= 4.5:1 on the console */
+  --console-dim: #8a8276;
+  --console-line: rgba(236, 230, 218, 0.1);
+  --console-agent: #8c9dff;
+  --console-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 48px -12px rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.25);
+
+  /* Syntax colors for the diff stream (console only) */
+  --syn-keyword: #9fb0ff;
+  --syn-string: #cfe3a6;
+  --syn-comment: #8c8478;
+  --syn-number: #f2c48d;
+  --syn-tag: #e8a2c8;
+  --syn-punct: #b4ab9e;
+
+  /* Type */
+  --font-sans: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Commit Mono', 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-hebrew: 'Heebo', 'Bricolage Grotesque Variable', sans-serif;
+
+  --text-hero: clamp(56px, 11vw, 168px);
+  --text-h2: clamp(34px, 4.4vw, 56px);
+  --text-h3: clamp(22px, 2.2vw, 28px);
+  --text-lede: clamp(19px, 1.7vw, 22px);
+  --text-body: 17px;
+  --text-small: 15px;
+  --text-mono: 13px;
+  --text-mono-sm: 12px;
+  --leading-body: 1.55;
+
+  /* Layout */
+  --content-max: 1240px;
+  --gutter: 24px;
+  --col-gap: 24px;
+  --topbar-h: 44px;
+  --section-pad: clamp(72px, 10vw, 144px);
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-flip: cubic-bezier(0.65, 0, 0.15, 1);
+}
+
+/* Ink regime: unmistakably dark, one visible step per merge */
+:root[data-lights='1'] {
+  --bg: #1c1813;
+}
+
+:root[data-lights='2'] {
+  --bg: #241f19;
+}
+
+:root[data-lights='3'] {
+  --bg: #2d271f;
+  --muted: #9e9589;
+}
+
+/* The switch: lights on. Paper background, ink text, one deliberate 700 ms ease. */
+:root[data-lights='4'] {
+  --bg: #ddd9d0;
+  --fg: #171411;
+  --muted: #5e5851;
+  --agent-text: #2643ca;
+  --dur-light: 700ms;
+}
+
+/* Paper regime: brightening to the finished stone */
+:root[data-lights='5'] {
+  --bg: #e3dfd7;
+  --fg: #171411;
+  --muted: #625b54;
+  --agent-text: #2643ca;
+}
+
+:root[data-lights='6'] {
+  --bg: #e8e5dd;
+  --fg: #171411;
+  --muted: #655f57;
+  --agent-text: #2643ca;
+}
+
+:root[data-lights='7'] {
+  --bg: #edeae3;
+  --fg: #171411;
+  --muted: #68625a;
+  --agent-text: #2643ca;
+}
+
+@media (min-width: 900px) {
+  :root {
+    --gutter: 56px;
+    --text-mono: 14px;
+  }
+}

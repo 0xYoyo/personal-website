@@ -1,0 +1,76 @@
+.contact-links {
+  display: grid;
+  justify-items: start;
+  gap: clamp(4px, 0.6vw, 8px);
+  margin-top: clamp(28px, 4vw, 44px);
+}
+
+.contact-link {
+  display: inline-block;
+  /* 48px on desktop; ~30px at 390 so the address fits on one line */
+  font-size: clamp(28px, 4vw + 14px, 48px);
+  font-weight: 650;
+  font-stretch: 96%;
+  line-height: 1.12;
+  letter-spacing: -0.028em;
+  overflow-wrap: anywhere;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.14em;
+}
+
+.contact-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: clamp(24px, 3vw, 36px);
+  color: var(--muted);
+}
+
+.contact-address {
+  color: var(--fg);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+.contact-copy-btn {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  font: inherit;
+  transition: border-color 160ms var(--ease-out);
+}
+
+.contact-copy-btn:hover {
+  border-color: var(--fg);
+}
+
+.contact-footer {
+  display: grid;
+  gap: 8px;
+  margin-top: clamp(64px, 9vw, 120px);
+  padding-top: 20px;
+  /* Clears the control room pill (48px bar + 10–20px inset) when scrolled to the end. */
+  padding-bottom: clamp(56px, 6vw, 72px);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-small);
+  max-width: 80ch;
+}
+
+.contact-footer a {
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 560px) {
+  .contact-footer a {
+    white-space: nowrap;
+  }
+}
+
+.contact-colophon {
+  margin-top: 4px;
+  font-size: var(--text-mono-sm);
+}
