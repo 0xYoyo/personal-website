@@ -55,6 +55,13 @@ test('"Next one" walks on from the last card in the conversation', () => {
   assert.equal(mockReply('Next one', {}, history), '[[show:unfiltered]]');
 });
 
+test('every chip the site can show resolves to the right intent through the mock', async () => {
+  const { evalChips } = await import('./eval-brain.mjs');
+  const rows = evalChips((t) => mockReply(t, {}, []), 'mock');
+  assert.ok(rows.length >= 20);
+  assert.deepEqual(rows.filter((r) => !r.ok), []);
+});
+
 test('/build streams a prebuilt app picked by keyword', async () => {
   const ev = await sse(await post('/build', { instruction: 'a weather card' }));
   const html = ev.filter((e) => e.type === 'chunk').map((e) => e.html).join('');

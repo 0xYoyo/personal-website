@@ -20,7 +20,8 @@
     "preview": "npm run preview -w @yoyo/web",
     "typecheck": "npm run typecheck -w @yoyo/protocol && npm run typecheck -w @yoyo/web && npm run typecheck -w @yoyo/worker",
     "lint": "eslint .",
-    "test": "npm run gen -w @yoyo/worker && vitest run && node --test tools/mock-worker.test.mjs",
+    "test": "npm run gen -w @yoyo/worker && vitest run && node --test tools/mock-worker.test.mjs && npm run eval -- --quiet",
+    "eval": "node tools/eval-brain.mjs",
     "deploy:worker": "npm run deploy -w @yoyo/worker",
     "shots": "node tools/shots.mjs",
     "og": "node tools/og.mjs"
