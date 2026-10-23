@@ -195,6 +195,8 @@ export function createBrain(opts: BrainOptions = {}): Brain {
     },
 
     build(instruction, h = {}, o = {}): Promise<BuildResult> {
+      // A courtesy pre-check per browser. The real cap (5/hour per IP) is the Worker's; its
+      // `429 rate` on /build also rejects with `cap` (client maps 'rate' → 'cap' below).
       if (memory.recentBuilds().length >= LIMITS.buildsPerHour) return Promise.reject(new BrainError('cap'));
       if (!instruction.trim()) return Promise.reject(new BrainError('failed'));
       if (o.signal?.aborted) return Promise.reject(new BrainError('aborted'));
