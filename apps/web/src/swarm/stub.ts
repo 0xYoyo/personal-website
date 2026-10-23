@@ -88,13 +88,22 @@ function sampleRaster(text: string, n: number, stage: Rect, opts: { emoji: boole
   g.fillText(text, W / 2, H / 2 + size * 0.04);
   const data = g.getImageData(0, 0, W, H).data;
   const step = Math.max(1, Math.round(Math.sqrt((W * H) / 30000)));
-  const cand: number[] = [];
+  const fill: number[] = [];
+  const edge: number[] = [];
+  const at = (x: number, y: number) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : data[(y * W + x) * 4 + 3]!);
   for (let y = 0; y < H; y += step) {
     for (let x = 0; x < W; x += step) {
-      const a = data[(y * W + x) * 4 + 3]!;
-      if (a > 140) cand.push(y * W + x);
+      if (at(x, y) <= 140) continue;
+      const e = 2 * step;
+      if (at(x - e, y) <= 140 || at(x + e, y) <= 140 || at(x, y - e) <= 140 || at(x, y + e) <= 140) edge.push(y * W + x);
+      else fill.push(y * W + x);
     }
   }
+  // outlines carry the read at low counts: ~55% of targets go to edges
+  shuffleInPlace(edge);
+  shuffleInPlace(fill);
+  const nEdge = Math.min(edge.length, Math.round(n * 0.55));
+  const cand = [...edge.slice(0, nEdge), ...fill, ...edge.slice(nEdge)];
   if (!cand.length) {
     for (let i = 0; i < n; i++) {
       const t = (i / n) * TAU;
@@ -103,7 +112,6 @@ function sampleRaster(text: string, n: number, stage: Rect, opts: { emoji: boole
     }
     return { pts, rgb: null };
   }
-  shuffleInPlace(cand);
   const rgb = opts.keepColor ? new Uint8ClampedArray(n * 3) : null;
   const ext = opts.extrude ? Math.max(3, size * 0.05) : 0;
   for (let i = 0; i < n; i++) {

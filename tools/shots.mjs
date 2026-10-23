@@ -1,3 +1,4 @@
+/* global document */
 // Playwright QA shots for the UI shell (desktop 1440×900 and mobile 390×844).
 // Usage: npm run shots              (starts a Vite dev server on :5179)
 //        SHOTS_URL=http://127.0.0.1:4173 npm run shots   (use a running server)

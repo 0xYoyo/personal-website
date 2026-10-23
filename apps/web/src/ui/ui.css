@@ -280,7 +280,7 @@
   position: fixed;
   left: 50%;
   bottom: calc(28px + env(safe-area-inset-bottom));
-  transform: translate(-50%, 140%);
+  transform: translate(-50%, 220%);
   width: min(var(--bar-max), calc(100vw - 2 * var(--gutter)));
   z-index: var(--z-bar);
   transition: transform 700ms var(--ease-out);

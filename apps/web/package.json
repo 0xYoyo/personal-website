@@ -13,7 +13,6 @@
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource/heebo": "^5.3.0",
     "@yoyo/protocol": "^0.1.0",
-    "motion": "^12.43.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^5.0.16"
