@@ -31,6 +31,8 @@ let buildAbort: AbortController | null = null;
 let runner: Runner | null = null;
 let deferred: Action[] = [];
 let lastBuildRect: Rect | null = null;
+/** A shape the agent formed holds at least this long (POLISH1 A5). */
+const READ_FLOOR = 4000;
 /** Bumped by every turn; a pending "let the shape go" from an older turn checks it. */
 let settleSeq = 0;
 
@@ -235,15 +237,14 @@ export const ctl = {
       if (turn !== ac) return;
       S().finishAgent();
       S().setMood('idle');
-      // The words are shown in ≤ 2-line beats that outlast the stream (ui/beats.ts holds each
-      // beat ~170 ms per word): keep the shape until the last beat has been read, then let go.
-      // Short replies ("done.") still leave the shape up long enough to be seen: ≥ 4 s after the stream ends.
-      const readMs = Math.max(4000, startedAt + reply.text.split(/\s+/).length * 170 - performance.now() + 1800);
+      // The whole reply rests on screen; keep its shape up while it is read (~230 ms a word
+      // from the first word), and never less than 4 s after the stream ends — reduced motion too.
+      const readMs = Math.max(READ_FLOOR, startedAt + reply.text.split(/\s+/).length * 230 - performance.now() + 1800);
       const seq = ++settleSeq;
       setTimeout(() => {
         if (seq !== settleSeq || turn || S().overlay !== 'none' || runner?.running()) return;
         swarm()?.mood('idle');
-      }, S().reducedMotion ? 0 : readMs);
+      }, readMs);
       if (reply.text && S().voice) rt.voice?.speak(reply.text, pulseWord);
       if (!chipsSet) {
         if (opened) S().setChips(projectChips(opened));
