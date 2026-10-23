@@ -1,0 +1,33 @@
+# Cloudflare Worker for Yoyo's agent (the mind). See README.md for the full deploy walkthrough.
+name = "yoyo-agent"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# Optional: serve from your own domain instead of *.workers.dev (README step 9).
+# routes = [{ pattern = "agent.example.com", custom_domain = true }]
+
+[vars]
+# Comma-separated list of site origins allowed to call /chat, /build and /share.
+# A `*` matches any run of characters except "/" (so "http://localhost:*" covers every local port).
+ALLOWED_ORIGINS = "http://localhost:*,http://127.0.0.1:*"
+GEMINI_MODEL = "gemini-2.5-flash"
+DAILY_CHAT_CAP = "2000"
+DAILY_BUILD_CAP = "300"
+DAILY_SHARE_CAP = "1000"
+
+# KV namespaces. Replace the placeholder ids with the ids printed by
+#   npx wrangler kv namespace create SHARES
+#   npx wrangler kv namespace create LIMITS
+[[kv_namespaces]]
+binding = "SHARES"
+id = "REPLACE_WITH_SHARES_NAMESPACE_ID"
+
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "REPLACE_WITH_LIMITS_NAMESPACE_ID"
+
+# Secrets (never in this file):
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put IP_SALT        (optional; any random string)

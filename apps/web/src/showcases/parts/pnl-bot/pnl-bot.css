@@ -1,0 +1,240 @@
+.sc-pnl-bot-stage {
+  position: absolute;
+  inset: 0;
+}
+.sc-pnl-bot-msg {
+  position: absolute;
+  left: 5cqw;
+  top: 4.6cqw;
+  display: flex;
+  align-items: center;
+  gap: 1.4cqw;
+  font-size: 2.6cqw;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sc-pnl-bot-msg.is-bot {
+  top: 12.4cqw;
+}
+.sc-pnl-bot-av {
+  width: 5cqw;
+  height: 5cqw;
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.sc-pnl-bot-av.is-user {
+  background: var(--sc-line-2);
+}
+.sc-pnl-bot-av.is-bot {
+  background: var(--sc-accent);
+}
+.sc-pnl-bot-av svg {
+  width: 2.8cqw;
+  height: 2.8cqw;
+  fill: none;
+  stroke: #f4efe6;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.sc-pnl-bot-cmd {
+  font-weight: 400;
+  padding: 0.4cqw 1.1cqw;
+  border-radius: 0.8cqw;
+  background: var(--sc-soft);
+  border: 1px solid var(--sc-line);
+}
+.sc-pnl-bot-tag {
+  font-size: 1.8cqw;
+  font-weight: 400;
+  padding: 0.15cqw 0.8cqw;
+  border-radius: 0.6cqw;
+  background: var(--sc-accent);
+  color: #f4efe6;
+}
+.sc-pnl-bot-typing {
+  display: inline-flex;
+  gap: 0.5cqw;
+  margin-left: 0.6cqw;
+}
+.sc-pnl-bot-typing i {
+  width: 0.8cqw;
+  height: 0.8cqw;
+  border-radius: 50%;
+  background: var(--sc-muted);
+}
+.sc-pnl-bot-embed {
+  position: absolute;
+  left: 11.4cqw;
+  right: 5cqw;
+  top: 19.2cqw;
+  bottom: 4.4cqw;
+  border-radius: 1cqw;
+  border: 1px solid var(--sc-line);
+  background: var(--sc-raise);
+  overflow: hidden;
+}
+.sc-pnl-bot-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0.7cqw;
+  background: var(--sc-accent);
+  transform-origin: 50% 0;
+}
+.sc-pnl-bot-title {
+  position: absolute;
+  left: 3cqw;
+  top: 2.2cqw;
+  font-size: 3cqw;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sc-pnl-bot-wallets {
+  position: absolute;
+  left: 3cqw;
+  top: 8.4cqw;
+  width: 32cqw;
+  display: flex;
+  flex-direction: column;
+}
+.sc-pnl-bot-row {
+  display: flex;
+  align-items: center;
+  gap: 1.6cqw;
+  padding: 1.05cqw 0;
+  border-top: 1px solid var(--sc-line);
+  white-space: nowrap;
+}
+.sc-pnl-bot-chain {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8cqw;
+  width: 10cqw;
+  font-size: 2.2cqw;
+}
+.sc-pnl-bot-chain svg {
+  width: 2.8cqw;
+  height: 2.8cqw;
+  fill: none;
+  stroke: var(--sc-fg);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+.sc-pnl-bot-addr {
+  font-size: 2.2cqw;
+  color: var(--sc-muted);
+}
+.sc-pnl-bot-chart {
+  position: absolute;
+  left: 39cqw;
+  right: 3cqw;
+  top: 3cqw;
+  height: 25cqw;
+}
+.sc-pnl-bot-zero {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 30%;
+  border-top: 1px solid var(--sc-line-2);
+}
+.sc-pnl-bot-group {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 33.3%;
+}
+.sc-pnl-bot-col {
+  position: absolute;
+  width: 30%;
+  bottom: 30%;
+  border-radius: 0.5cqw 0.5cqw 0 0;
+}
+.sc-pnl-bot-col.is-neg {
+  bottom: auto;
+  top: 70%;
+  border-radius: 0 0 0.5cqw 0.5cqw;
+}
+.sc-pnl-bot-col.is-realized,
+.sc-pnl-bot-key i.is-realized {
+  background: var(--sc-fg);
+}
+.sc-pnl-bot-col.is-unrealized,
+.sc-pnl-bot-key i.is-unrealized {
+  background: transparent;
+  border: 0.3cqw solid var(--sc-accent);
+}
+.sc-pnl-bot-col.is-unrealized.is-neg {
+  border-top: 0;
+}
+.sc-pnl-bot-col.is-unrealized:not(.is-neg) {
+  border-bottom: 0;
+}
+.sc-pnl-bot-lab {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  font-size: 1.9cqw;
+  color: var(--sc-muted);
+}
+.sc-pnl-bot-totals {
+  position: absolute;
+  left: 3cqw;
+  right: 3cqw;
+  bottom: 2.2cqw;
+  display: flex;
+  gap: 5cqw;
+  padding-top: 1.6cqw;
+  border-top: 1px solid var(--sc-line);
+}
+.sc-pnl-bot-total {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4cqw;
+}
+.sc-pnl-bot-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8cqw;
+  font-size: 2cqw;
+  color: var(--sc-muted);
+}
+.sc-pnl-bot-key i {
+  display: inline-block;
+  width: 1.6cqw;
+  height: 1.6cqw;
+  border-radius: 0.3cqw;
+}
+.sc-pnl-bot-num {
+  font-size: 3.6cqw;
+  font-variant-numeric: tabular-nums;
+}
+@container (max-width: 520px) {
+  .sc-pnl-bot-addr {
+    display: none;
+  }
+  .sc-pnl-bot-wallets {
+    width: 14cqw;
+  }
+  .sc-pnl-bot-chain {
+    font-size: 2.6cqw;
+  }
+  .sc-pnl-bot-chart {
+    left: 22cqw;
+    height: 21cqw;
+  }
+  .sc-pnl-bot-lab {
+    font-size: 2.4cqw;
+  }
+  .sc-pnl-bot-key {
+    font-size: 2.5cqw;
+  }
+  .sc-pnl-bot-msg {
+    font-size: 3cqw;
+  }
+}

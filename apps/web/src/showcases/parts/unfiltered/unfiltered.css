@@ -1,0 +1,212 @@
+.sc-unfiltered-stage {
+  position: absolute;
+  inset: 0;
+}
+.sc-unfiltered-bar {
+  position: absolute;
+  left: 6cqw;
+  right: 6cqw;
+  top: 0;
+  height: 8.5cqw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--sc-line);
+}
+.sc-unfiltered-mark {
+  font-size: 2.3cqw;
+  color: var(--sc-muted);
+}
+.sc-unfiltered-nav {
+  display: flex;
+  gap: 1.6cqw;
+}
+.sc-unfiltered-nav i {
+  display: block;
+  width: 5cqw;
+  height: 0.5cqw;
+  border-radius: 1cqw;
+  background: var(--sc-line-2);
+}
+.sc-unfiltered-field {
+  position: absolute;
+  left: 6cqw;
+  right: 6cqw;
+  top: 12cqw;
+  height: 8.6cqw;
+  border-radius: 4.3cqw;
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-raise);
+  display: flex;
+  align-items: center;
+  padding: 0 3cqw 0 2.4cqw;
+  gap: 1.6cqw;
+  overflow: hidden;
+}
+.sc-unfiltered-field::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px solid var(--sc-accent);
+  opacity: var(--sc-uf-focus, 0);
+  pointer-events: none;
+}
+.sc-unfiltered-glass {
+  flex: none;
+  width: 3.2cqw;
+  height: 3.2cqw;
+  fill: none;
+  stroke: var(--sc-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.sc-unfiltered-q {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  font-size: 3cqw;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+}
+.sc-unfiltered-sel {
+  background: var(--sc-accent-soft);
+  box-shadow: none;
+}
+.sc-unfiltered-caret {
+  display: inline-block;
+  width: 0.28cqw;
+  height: 3.6cqw;
+  margin-left: 0.2cqw;
+  background: var(--sc-accent);
+}
+.sc-unfiltered-load {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0.35cqw;
+  background: var(--sc-accent);
+  transform-origin: 0 50%;
+}
+.sc-unfiltered-chips {
+  position: absolute;
+  left: 6cqw;
+  right: 6cqw;
+  top: 23.2cqw;
+  display: flex;
+  gap: 1.2cqw;
+  font-size: 2.35cqw;
+}
+.sc-unfiltered-chip {
+  display: inline-block;
+  padding: 0.55cqw 1.5cqw;
+  border-radius: 3cqw;
+  border: 1px solid var(--sc-line-2);
+  color: var(--sc-fg);
+  transform-origin: 50% 50%;
+  white-space: nowrap;
+}
+.sc-unfiltered-chip.is-new {
+  border-color: var(--sc-accent);
+  background: var(--sc-accent);
+  color: var(--sc-on-accent);
+}
+.sc-unfiltered-grid {
+  position: absolute;
+  left: 6cqw;
+  right: 6cqw;
+  top: 30.2cqw;
+  height: 28.6cqw;
+}
+.sc-unfiltered-tile {
+  position: absolute;
+  top: 0;
+  width: 20.2cqw;
+  height: 28.6cqw;
+  border-radius: 1.6cqw;
+  border: 1px solid var(--sc-line);
+  background: var(--sc-raise);
+  overflow: hidden;
+  transform-origin: 50% 100%;
+}
+.sc-unfiltered-img {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 21.4cqw;
+  background: var(--sc-soft);
+  border-bottom: 1px solid var(--sc-line);
+  display: grid;
+  place-items: center;
+}
+.sc-unfiltered-img svg {
+  height: 18cqw;
+  width: auto;
+  overflow: visible;
+}
+.sc-unfiltered-img svg path {
+  stroke: var(--sc-line-2);
+  stroke-width: 0.6;
+  stroke-linejoin: round;
+}
+@container (max-width: 520px) {
+  .sc-unfiltered-chips {
+    font-size: 2.8cqw;
+    gap: 1cqw;
+  }
+  .sc-unfiltered-chip {
+    padding: 0.5cqw 1.2cqw;
+  }
+  .sc-unfiltered-q {
+    font-size: 3.2cqw;
+  }
+  .sc-unfiltered-price {
+    font-size: 3.4cqw;
+  }
+}
+.sc-unfiltered-meta {
+  position: absolute;
+  left: 1.6cqw;
+  right: 1.6cqw;
+  bottom: 0;
+  height: 7.2cqw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sc-unfiltered-price {
+  font-size: 3cqw;
+  color: var(--sc-fg);
+}
+.sc-unfiltered-price.is-low {
+  color: var(--sc-accent);
+}
+[data-scene='dark'] .sc-unfiltered-price.is-low,
+.sc-unfiltered-price.is-low {
+  text-decoration: underline;
+  text-decoration-color: var(--sc-accent);
+  text-decoration-thickness: 0.25cqw;
+  text-underline-offset: 0.6cqw;
+  color: var(--sc-fg);
+}
+.sc-unfiltered-rank {
+  font-size: 2.2cqw;
+  color: var(--sc-muted);
+}
+.sc-unfiltered-tag {
+  position: absolute;
+  right: 6cqw;
+  top: 1.6cqw;
+  padding: 0.8cqw 1.8cqw;
+  border-radius: 1cqw;
+  border: 0.3cqw solid var(--sc-accent);
+  background: var(--sc-bg);
+  color: var(--sc-fg);
+  font-size: 3cqw;
+  z-index: 5;
+  white-space: nowrap;
+}

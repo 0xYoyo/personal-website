@@ -83,7 +83,7 @@ export function Card() {
         }}
       >
         <div className="y-card-show">
-          <Showcase project={p} reducedMotion={reducedMotion} />
+          <Showcase reducedMotion={reducedMotion} />
         </div>
         <div className="y-card-body">
           <div className="y-card-head">

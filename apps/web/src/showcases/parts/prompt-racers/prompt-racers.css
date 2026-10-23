@@ -1,0 +1,50 @@
+.sc-prompt-racers {
+  background: var(--sc-panel);
+}
+.sc-prompt-racers-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* 16:9 footage in the 16:10 frame: letterboxed so the game's own HUD is never cropped */
+  object-fit: contain;
+  display: block;
+}
+/* A solid plate, not a scrim: the footage stays untouched everywhere else. */
+.sc-prompt-racers-plate {
+  position: absolute;
+  right: 2.4cqw;
+  bottom: 5.2cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.7cqw;
+  padding: 1.2cqw 1.8cqw 1.3cqw;
+  border-radius: 1.4cqw;
+  background: rgba(11, 10, 9, 0.92);
+  color: #f4efe6;
+}
+[data-scene='light'] .sc-prompt-racers-plate {
+  background: rgba(237, 234, 227, 0.92);
+  color: #171411;
+}
+.sc-prompt-racers-title {
+  font-family: var(--sc-hebrew);
+  font-weight: 700;
+  font-size: 4.2cqw;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.sc-prompt-racers-tag {
+  font-size: 1.85cqw;
+  opacity: 0.72;
+  white-space: nowrap;
+}
+@container (max-width: 520px) {
+  .sc-prompt-racers-title {
+    font-size: 4.8cqw;
+  }
+  .sc-prompt-racers-tag {
+    font-size: 2.4cqw;
+  }
+}

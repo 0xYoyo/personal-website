@@ -1,0 +1,11 @@
+export { createSwarm } from './swarm';
+export type { Swarm, SwarmOptions, SwarmStats } from './swarm';
+export { detectBackend } from './detect';
+export type { Detected } from './detect';
+export { playEntry } from './entry';
+export type { EntryOptions } from './entry';
+export { registerGlyph, availableGlyphs } from './glyphs';
+export { isEmoji } from './shapes';
+export { tierConfig, initialTier, AdaptiveMonitor, COUNTS } from './tiers';
+export type { Backend, Tier, TierConfig } from './tiers';
+export type { SwarmApi, ShapeSpec, Mood, GlyphId, ProjectId, StoryId, Action } from '@yoyo/protocol';

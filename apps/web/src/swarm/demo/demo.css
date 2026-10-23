@@ -1,0 +1,16 @@
+/* Demo-only styles. Everything is prefixed swarm-demo- so nothing leaks when the part is integrated. */
+.swarm-demo-body { margin: 0; background: #0B0A09; overflow: hidden; font: 12px/1.4 ui-monospace, "Commit Mono", Menlo, monospace; color: #F4EFE6; }
+.swarm-demo-body[data-scene="light"] { background: #EDEAE3; color: #171411; }
+.swarm-demo-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+.swarm-demo-frame { position: fixed; border: 1px dashed rgba(43, 75, 255, 0.5); border-radius: 18px; pointer-events: none; }
+.swarm-demo-panel { position: fixed; top: 12px; right: 12px; width: 268px; max-height: calc(100vh - 24px); overflow: auto; padding: 12px; background: #151311; color: #F4EFE6; border: 1px solid #2a2622; border-radius: 10px; display: grid; gap: 8px; }
+.swarm-demo-panel[data-hidden="true"] { display: none; }
+.swarm-demo-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.swarm-demo-stats { color: #8E877D; white-space: pre-wrap; font-size: 11px; }
+.swarm-demo-panel button, .swarm-demo-panel select, .swarm-demo-panel input[type="text"] { font: inherit; color: inherit; background: #201d1a; border: 1px solid #34302b; border-radius: 6px; padding: 3px 7px; }
+.swarm-demo-panel button:hover { border-color: #2B4BFF; }
+.swarm-demo-panel button:focus-visible, .swarm-demo-panel input:focus-visible, .swarm-demo-panel select:focus-visible { outline: 1px solid #2B4BFF; outline-offset: 1px; }
+.swarm-demo-panel button[aria-pressed="true"] { border-color: #2B4BFF; color: #fff; }
+.swarm-demo-panel input[type="text"] { flex: 1; min-width: 0; }
+.swarm-demo-panel input[type="range"] { flex: 1; accent-color: #2B4BFF; }
+.swarm-demo-label { color: #8E877D; }

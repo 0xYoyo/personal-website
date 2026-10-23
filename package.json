@@ -11,16 +11,23 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "npm run dev -w @yoyo/web",
-    "build": "npm run build -w @yoyo/protocol && npm run build -w @yoyo/web",
+    "dev": "concurrently -k -n mock,web -c gray,blue \"npm:mock\" \"npm run dev:web\"",
+    "dev:web": "npm run dev -w @yoyo/web",
+    "dev:worker": "npm run dev -w @yoyo/worker",
+    "mock": "node tools/mock-worker.mjs",
+    "gen": "node tools/gen-agent-content.mjs && npm run gen -w @yoyo/worker",
+    "build": "npm run build -w @yoyo/protocol && npm run build -w @yoyo/web && npm run build -w @yoyo/worker",
     "preview": "npm run preview -w @yoyo/web",
-    "typecheck": "npm run typecheck -w @yoyo/protocol && npm run typecheck -w @yoyo/web",
+    "typecheck": "npm run typecheck -w @yoyo/protocol && npm run typecheck -w @yoyo/web && npm run typecheck -w @yoyo/worker",
     "lint": "eslint .",
-    "test": "vitest run",
-    "shots": "node tools/shots.mjs"
+    "test": "npm run gen -w @yoyo/worker && vitest run && node --test tools/mock-worker.test.mjs",
+    "deploy:worker": "npm run deploy -w @yoyo/worker",
+    "shots": "node tools/shots.mjs",
+    "og": "node tools/og.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "concurrently": "^9.2.5",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^17.13.0",

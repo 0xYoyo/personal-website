@@ -199,12 +199,12 @@ export function extractActions(text: string): { text: string; actions: Action[] 
 
 export type Role = 'visitor' | 'agent';
 export interface ChatMessage { role: Role; text: string }
-export interface VisitorInfo { name?: string; returning: boolean; device: 'desktop' | 'mobile' }
+export interface VisitorInfo { name?: string; returning: boolean; device: 'desktop' | 'mobile'; /** browser language (BCP 47), optional */ lang?: string }
 
-export interface ChatRequest { messages: ChatMessage[]; visitor: VisitorInfo; mode?: 'live' | 'scripted' }
+export interface ChatRequest { messages: ChatMessage[]; visitor: VisitorInfo }
 export interface BuildRequest { instruction: string; previousHtml?: string }
 export interface ShareRequest { html: string }
-export interface ShareResponse { id: string }
+export interface ShareResponse { id: string; /** absolute permalink (`<worker>/s/<id>`) */ url?: string }
 
 /** `/chat` SSE: `token` events carry raw model text (tags included); then `done`. */
 export type ChatEvent = { type: 'token'; text: string } | { type: 'done' } | { type: 'error'; reason: ErrorReason };

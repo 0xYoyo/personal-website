@@ -1,0 +1,140 @@
+.sc-polybot-stage {
+  position: absolute;
+  inset: 0;
+}
+.sc-polybot-legend {
+  position: absolute;
+  left: 6cqw;
+  top: 4.4cqw;
+  display: flex;
+  gap: 3cqw;
+  font-size: 2.6cqw;
+  white-space: nowrap;
+}
+.sc-polybot-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 1cqw;
+}
+.sc-polybot-legend i {
+  display: inline-block;
+  width: 3.6cqw;
+  height: 0;
+  border-top: 0.42cqw solid var(--sc-fg);
+}
+.sc-polybot-legend i.is-ref {
+  border-top: 0.32cqw dashed var(--sc-muted);
+}
+.sc-polybot-legend span:last-child {
+  color: var(--sc-muted);
+}
+.sc-polybot-edge {
+  position: absolute;
+  right: 6cqw;
+  top: 4.4cqw;
+  font-size: 2.6cqw;
+  color: var(--sc-muted);
+  white-space: nowrap;
+}
+.sc-polybot-edge span {
+  display: inline-block;
+  min-width: 6.4cqw;
+  text-align: right;
+  color: var(--sc-fg);
+  font-variant-numeric: tabular-nums;
+}
+.sc-polybot-chart {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sc-polybot-grid {
+  stroke: var(--sc-line);
+  stroke-width: 1px;
+}
+.sc-polybot-band {
+  fill: var(--sc-accent-soft);
+  stroke: none;
+}
+.sc-polybot-ref,
+.sc-polybot-poly {
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.sc-polybot-ref {
+  stroke: var(--sc-muted);
+  stroke-width: 2px;
+  stroke-dasharray: 5 4;
+}
+.sc-polybot-poly {
+  stroke: var(--sc-fg);
+  stroke-width: 2.6px;
+}
+.sc-polybot-poly.is-flat {
+  stroke-width: 2.6px;
+}
+.sc-polybot-ref.is-flat {
+  stroke-width: 2px;
+}
+.sc-polybot-head {
+  position: absolute;
+  width: 1.6cqw;
+  height: 1.6cqw;
+  margin: -0.8cqw 0 0 -0.8cqw;
+  border-radius: 50%;
+  background: var(--sc-fg);
+}
+.sc-polybot-head.is-ref {
+  width: 1.2cqw;
+  height: 1.2cqw;
+  margin: -0.6cqw 0 0 -0.6cqw;
+  background: var(--sc-muted);
+}
+.sc-polybot-gap {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-size: 2.3cqw;
+  padding: 0.3cqw 1cqw;
+  border-radius: 0.6cqw;
+  background: var(--sc-accent);
+  color: #f4efe6;
+  white-space: nowrap;
+}
+.sc-polybot-axis span {
+  position: absolute;
+  left: 95cqw;
+  transform: translate(-100%, -130%);
+  font-size: 1.8cqw;
+  color: var(--sc-muted);
+}
+.sc-polybot-stamp {
+  position: absolute;
+  left: 50%;
+  top: 85%;
+  padding: 1.6cqw 3cqw;
+  border: 0.5cqw solid var(--sc-accent);
+  border-radius: 1.2cqw;
+  background: var(--sc-panel);
+  color: var(--sc-fg);
+  font-size: 4.2cqw;
+  white-space: nowrap;
+  z-index: 3;
+}
+@container (max-width: 520px) {
+  .sc-polybot-axis {
+    display: none;
+  }
+  .sc-polybot-legend,
+  .sc-polybot-edge {
+    font-size: 3cqw;
+  }
+  .sc-polybot-gap {
+    font-size: 2.8cqw;
+  }
+  .sc-polybot-stamp {
+    font-size: 4.8cqw;
+  }
+}

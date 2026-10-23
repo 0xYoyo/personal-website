@@ -1,0 +1,191 @@
+.sc-availability-monitor-stage {
+  position: absolute;
+  inset: 0;
+}
+.sc-availability-monitor-cal {
+  position: absolute;
+  left: 5cqw;
+  top: 5cqw;
+  width: 50cqw;
+  height: 52.5cqw;
+  border-radius: 1.8cqw;
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-raise);
+  padding: 2.6cqw 2.8cqw;
+}
+.sc-availability-monitor-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 2cqw;
+}
+.sc-availability-monitor-hotel {
+  font-size: 3.4cqw;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.sc-availability-monitor-month {
+  font-size: 2.5cqw;
+  color: var(--sc-muted);
+}
+.sc-availability-monitor-dow,
+.sc-availability-monitor-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.7cqw;
+}
+.sc-availability-monitor-dow {
+  font-size: 1.9cqw;
+  color: var(--sc-muted);
+  text-align: center;
+  margin-bottom: 1cqw;
+}
+.sc-availability-monitor-grid {
+  position: relative;
+  grid-auto-rows: 6.2cqw;
+}
+.sc-availability-monitor-cell {
+  position: relative;
+  border-radius: 0.8cqw;
+  display: grid;
+  place-items: center;
+  font-size: 2.4cqw;
+  color: var(--sc-muted);
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+.sc-availability-monitor-cell.is-blank {
+  visibility: hidden;
+}
+.sc-availability-monitor-cell.is-watched {
+  border-color: var(--sc-line-2);
+  color: var(--sc-fg);
+}
+/* sold out: a single hairline strike, no fill */
+.sc-availability-monitor-cell.is-sold::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  top: 50%;
+  height: 1px;
+  background: var(--sc-muted);
+  transform: rotate(-35deg);
+}
+.sc-availability-monitor-cell.is-sold span {
+  opacity: 0.55;
+}
+.sc-availability-monitor-cell.is-open {
+  border-color: var(--sc-accent);
+  background: var(--sc-accent);
+  color: #f4efe6;
+}
+.sc-availability-monitor-sweep {
+  position: absolute;
+  top: -0.5cqw;
+  bottom: -0.5cqw;
+  width: 0;
+  border-left: 0.3cqw solid var(--sc-accent);
+  pointer-events: none;
+}
+.sc-availability-monitor-ping {
+  position: absolute;
+  left: 58cqw;
+  right: 4cqw;
+  top: 5cqw;
+  display: flex;
+  gap: 1.6cqw;
+  align-items: center;
+  padding: 1.8cqw;
+  border-radius: 2cqw;
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-raise);
+}
+.sc-availability-monitor-avatar {
+  flex: none;
+  width: 6.4cqw;
+  height: 6.4cqw;
+  border-radius: 50%;
+  background: var(--sc-accent);
+  display: grid;
+  place-items: center;
+}
+.sc-availability-monitor-avatar svg {
+  width: 3.6cqw;
+  height: 3.6cqw;
+  fill: none;
+  stroke: #f4efe6;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.sc-availability-monitor-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6cqw;
+  min-width: 0;
+}
+.sc-availability-monitor-from {
+  font-size: 2cqw;
+  color: var(--sc-muted);
+  white-space: nowrap;
+}
+.sc-availability-monitor-from .sc-mono {
+  margin-left: 0.6cqw;
+  font-size: 1.8cqw;
+}
+.sc-availability-monitor-text {
+  font-size: 2.9cqw;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+.sc-availability-monitor-log {
+  position: absolute;
+  left: 58cqw;
+  right: 4cqw;
+  top: 25cqw;
+  display: flex;
+  flex-direction: column;
+  font-size: 2.3cqw;
+}
+.sc-availability-monitor-run {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.25cqw 0;
+  border-top: 1px solid var(--sc-line);
+  color: var(--sc-muted);
+}
+.sc-availability-monitor-run.is-hit {
+  color: var(--sc-fg);
+}
+.sc-availability-monitor-run.is-hit span:last-child {
+  text-decoration: underline;
+  text-decoration-color: var(--sc-accent);
+  text-decoration-thickness: 0.25cqw;
+  text-underline-offset: 0.5cqw;
+}
+.sc-availability-monitor-checking {
+  padding-top: 1.25cqw;
+  border-top: 1px solid var(--sc-line);
+  color: var(--sc-muted);
+}
+@container (max-width: 520px) {
+  .sc-availability-monitor-from {
+    display: none;
+  }
+  .sc-availability-monitor-text {
+    font-size: 3.1cqw;
+    white-space: normal;
+    line-height: 1.15;
+  }
+  .sc-availability-monitor-log {
+    font-size: 2.7cqw;
+  }
+  .sc-availability-monitor-dow {
+    font-size: 2.4cqw;
+  }
+  .sc-availability-monitor-cell {
+    font-size: 2.8cqw;
+  }
+}

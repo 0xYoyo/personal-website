@@ -1,0 +1,205 @@
+.sc-runi-connector-stage {
+  position: absolute;
+  inset: 0;
+}
+.sc-runi-connector-chat {
+  position: absolute;
+  left: 5cqw;
+  top: 5cqw;
+  width: 59.6cqw;
+  height: 52.5cqw;
+  border-radius: 1.8cqw;
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-raise);
+  overflow: hidden;
+}
+.sc-runi-connector-flow {
+  position: absolute;
+  left: 3cqw;
+  right: 3cqw;
+  top: 3cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 2.2cqw;
+}
+.sc-runi-connector-me {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 1.3cqw 2.2cqw;
+  border-radius: 2.4cqw 2.4cqw 0.6cqw 2.4cqw;
+  background: var(--sc-accent);
+  color: #f4efe6;
+  font-size: 3cqw;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.sc-runi-connector-status {
+  font-size: 2.2cqw;
+  color: var(--sc-muted);
+  height: 2.6cqw;
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+  margin-bottom: -2.2cqw;
+}
+.sc-runi-connector-dots {
+  display: inline-flex;
+  gap: 0.5cqw;
+}
+.sc-runi-connector-dots i {
+  width: 0.7cqw;
+  height: 0.7cqw;
+  border-radius: 50%;
+  background: var(--sc-muted);
+}
+.sc-runi-connector-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 1cqw;
+}
+.sc-runi-connector-lead {
+  font-size: 3cqw;
+  font-weight: 600;
+  margin-bottom: 0.3cqw;
+}
+.sc-runi-connector-row {
+  display: grid;
+  grid-template-columns: 6cqw 1fr auto;
+  align-items: baseline;
+  gap: 1.4cqw;
+  padding: 1cqw 0;
+  border-top: 1px solid var(--sc-line);
+  font-size: 2.7cqw;
+}
+.sc-runi-connector-day {
+  font-size: 2.3cqw;
+  color: var(--sc-muted);
+}
+.sc-runi-connector-what {
+  white-space: nowrap;
+}
+.sc-runi-connector-item {
+  color: var(--sc-muted);
+  white-space: nowrap;
+}
+.sc-runi-connector-files {
+  display: flex;
+  gap: 1.2cqw;
+  flex-wrap: nowrap;
+}
+.sc-runi-connector-file {
+  font-size: 2.3cqw;
+  padding: 0.8cqw 1.2cqw;
+  border-radius: 0.8cqw;
+  border: 1px solid var(--sc-line-2);
+  white-space: nowrap;
+  transform-origin: 0 50%;
+}
+.sc-runi-connector-saved {
+  font-size: 2.3cqw;
+  color: var(--sc-muted);
+}
+.sc-runi-connector-wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sc-runi-connector-wire {
+  fill: none;
+  stroke: var(--sc-line-2);
+  stroke-width: 1.5px;
+}
+.sc-runi-connector-packet {
+  position: absolute;
+  width: 1.5cqw;
+  height: 1.5cqw;
+  margin: -0.75cqw 0 0 -0.75cqw;
+  border-radius: 50%;
+  background: var(--sc-accent);
+}
+.sc-runi-connector-src {
+  position: absolute;
+  left: 74cqw;
+  width: 21cqw;
+  height: 8cqw;
+  display: flex;
+  align-items: center;
+  gap: 1.4cqw;
+  padding: 0 1.6cqw;
+  border-radius: 1.4cqw;
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-raise);
+  font-size: 2.5cqw;
+}
+.sc-runi-connector-src.is-lit {
+  border-color: var(--sc-accent);
+}
+.sc-runi-connector-src svg {
+  width: 3.6cqw;
+  height: 3.6cqw;
+  flex: none;
+  fill: none;
+  stroke: var(--sc-fg);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.sc-runi-connector-src svg .is-fill {
+  fill: var(--sc-fg);
+  stroke: none;
+}
+.sc-runi-connector-folder {
+  position: absolute;
+  width: 13cqw;
+  height: 10.5cqw;
+  display: grid;
+  place-items: center;
+}
+.sc-runi-connector-folder svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--sc-raise);
+  stroke: var(--sc-fg);
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+}
+.sc-runi-connector-folder span {
+  position: relative;
+  margin-top: 1.2cqw;
+  font-size: 3cqw;
+}
+.sc-runi-connector-flyer {
+  position: absolute;
+  width: 4.4cqw;
+  height: 5.6cqw;
+  border-radius: 0.6cqw;
+  border: 1px solid var(--sc-fg);
+  background: var(--sc-raise);
+  z-index: 3;
+}
+.sc-runi-connector-flyer::after {
+  content: '';
+  position: absolute;
+  left: 0.9cqw;
+  right: 0.9cqw;
+  top: 1.4cqw;
+  height: 2.4cqw;
+  border-top: 1px solid var(--sc-muted);
+  border-bottom: 1px solid var(--sc-muted);
+}
+@container (max-width: 520px) {
+  .sc-runi-connector-item {
+    display: none;
+  }
+  .sc-runi-connector-row {
+    grid-template-columns: 7cqw 1fr;
+    font-size: 3.1cqw;
+  }
+  .sc-runi-connector-file {
+    font-size: 2.6cqw;
+  }
+}

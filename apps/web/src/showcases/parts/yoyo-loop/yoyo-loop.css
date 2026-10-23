@@ -1,0 +1,223 @@
+.sc-yoyo-loop-stage,
+.sc-yoyo-loop-work {
+  position: absolute;
+  inset: 0;
+}
+.sc-yoyo-loop-lanes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.sc-yoyo-loop-lane {
+  stroke: var(--sc-line-2);
+  stroke-width: 1.5px;
+}
+.sc-yoyo-loop-lane.is-merged {
+  stroke: var(--sc-accent);
+}
+.sc-yoyo-loop-issue,
+.sc-yoyo-loop-pr {
+  position: absolute;
+  height: 12.5cqw;
+  border-radius: 1.4cqw;
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-raise);
+  padding: 1.5cqw 1.8cqw;
+}
+.sc-yoyo-loop-issue {
+  left: 5cqw;
+  width: 30cqw;
+}
+.sc-yoyo-loop-issue-top,
+.sc-yoyo-loop-pr-top {
+  display: flex;
+  align-items: center;
+  gap: 1.2cqw;
+  white-space: nowrap;
+}
+.sc-yoyo-loop-id,
+.sc-yoyo-loop-num {
+  font-size: 2.7cqw;
+  color: var(--sc-fg);
+}
+.sc-yoyo-loop-label {
+  font-size: 2cqw;
+  padding: 0.3cqw 1cqw;
+  border-radius: 2cqw;
+  border: 1px solid var(--sc-accent);
+  color: var(--sc-fg);
+  transform-origin: 0 50%;
+}
+.sc-yoyo-loop-title {
+  margin-top: 1.1cqw;
+  font-size: 2.05cqw;
+  line-height: 1.25;
+  color: var(--sc-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sc-yoyo-loop-commit {
+  position: absolute;
+  width: 1.7cqw;
+  height: 1.7cqw;
+  border-radius: 50%;
+  background: var(--sc-panel);
+  border: 0.35cqw solid var(--sc-fg);
+}
+.sc-yoyo-loop-branch {
+  position: absolute;
+  left: 38.4cqw;
+  font-size: 1.8cqw;
+  color: var(--sc-muted);
+}
+.sc-yoyo-loop-pr {
+  left: 57cqw;
+  width: 38cqw;
+}
+.sc-yoyo-loop-pr.is-merged {
+  border-color: var(--sc-accent);
+}
+.sc-yoyo-loop-br {
+  font-size: 1.7cqw;
+  color: var(--sc-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 18cqw;
+}
+.sc-yoyo-loop-checks {
+  position: absolute;
+  left: 1.8cqw;
+  bottom: 1.6cqw;
+  display: flex;
+  gap: 2cqw;
+  font-size: 2cqw;
+  color: var(--sc-fg);
+  white-space: nowrap;
+}
+.sc-yoyo-loop-checks > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7cqw;
+}
+.sc-yoyo-loop-check {
+  width: 2.6cqw;
+  height: 2.6cqw;
+  overflow: visible;
+}
+.sc-yoyo-loop-ring {
+  fill: none;
+  stroke: var(--sc-line-2);
+  stroke-width: 1.6;
+}
+.sc-yoyo-loop-spin {
+  fill: none;
+  stroke: var(--sc-fg);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  transform-origin: 10px 10px;
+}
+.sc-yoyo-loop-ok {
+  fill: var(--sc-accent);
+}
+.sc-yoyo-loop-tick {
+  fill: none;
+  stroke: var(--sc-on-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sc-yoyo-loop-merge {
+  position: absolute;
+  right: 1.6cqw;
+  top: 50%;
+  min-width: 10.4cqw;
+  padding: 1.1cqw 0;
+  text-align: center;
+  border-radius: 1cqw;
+  border: 1px solid var(--sc-accent);
+  font-size: 2.3cqw;
+  font-weight: 600;
+  color: var(--sc-fg);
+  background: color-mix(in srgb, var(--sc-accent) calc(var(--sc-yl-fill, 0) * 100%), transparent);
+}
+.sc-yoyo-loop-pr.is-merged .sc-yoyo-loop-merge {
+  color: var(--sc-on-accent);
+}
+.sc-yoyo-loop-cursor {
+  position: absolute;
+  width: 3.6cqw;
+  height: 3.6cqw;
+  transform-origin: 15% 10%;
+  z-index: 4;
+}
+.sc-yoyo-loop-cursor path {
+  fill: var(--sc-fg);
+  stroke: var(--sc-panel);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+.sc-yoyo-loop-count {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  padding-top: 26cqw;
+  gap: 2.4cqw;
+  pointer-events: none;
+}
+.sc-yoyo-loop-big {
+  font-size: 15cqw;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+.sc-yoyo-loop-unit {
+  font-size: 0.5em;
+  letter-spacing: -0.02em;
+}
+.sc-yoyo-loop-days {
+  font-family: var(--sc-mono);
+  font-size: 5.4cqw;
+  color: var(--sc-muted);
+}
+.sc-yoyo-loop-short {
+  display: none;
+}
+@container (max-width: 520px) {
+  .sc-yoyo-loop-long {
+    display: none;
+  }
+  .sc-yoyo-loop-checks .sc-yoyo-loop-short {
+    display: inline;
+  }
+  .sc-yoyo-loop-title,
+  .sc-yoyo-loop-br,
+  .sc-yoyo-loop-branch {
+    display: none;
+  }
+  .sc-yoyo-loop-id,
+  .sc-yoyo-loop-num {
+    font-size: 3.4cqw;
+  }
+  .sc-yoyo-loop-label {
+    font-size: 2.6cqw;
+  }
+  .sc-yoyo-loop-checks {
+    font-size: 2.6cqw;
+  }
+  .sc-yoyo-loop-merge {
+    font-size: 3cqw;
+    min-width: 12.6cqw;
+  }
+  .sc-yoyo-loop-issue-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1cqw;
+  }
+}

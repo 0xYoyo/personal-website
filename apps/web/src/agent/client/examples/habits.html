@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Habits</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --surface: #ffffff; --fg: #1a1815; --muted: #6f6a62; --line: #e4e0d8; --accent: #2b4bff; --off: #efece6;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121110; --surface: #1b1a18; --fg: #f1ede6; --muted: #9c958b; --line: #2c2a27; --accent: #4d69ff; --off: #262422; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding: 36px 16px; }
+  main { max-width: 640px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 20px; }
+  h1 { font-size: 38px; letter-spacing: -0.03em; margin: 0; line-height: 1.05; }
+  .today { text-align: right; }
+  .today b { font-size: 28px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; display: block; line-height: 1; }
+  .today span { color: var(--muted); font-size: 14px; }
+  .ring { height: 6px; background: var(--off); border-radius: 3px; overflow: hidden; margin-bottom: 22px; }
+  .ring i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+  .table { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 8px 14px; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(7, 36px) 52px 32px; gap: 6px; align-items: center; min-height: 56px; border-top: 1px solid var(--line); }
+  .row.head { min-height: 36px; border-top: 0; font-size: 12px; color: var(--muted); }
+  .row.head span { text-align: center; }
+  .row.head .is-today { color: var(--fg); font-weight: 700; }
+  .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 550; }
+  .day { width: 36px; height: 36px; border-radius: 10px; border: 0; background: var(--off); cursor: pointer; display: grid; place-items: center; padding: 0; }
+  .day[aria-pressed="true"] { background: var(--accent); }
+  .day[aria-pressed="true"]::after { content: ""; width: 11px; height: 6px; border: 2px solid #fff; border-top: 0; border-right: 0; transform: translateY(-1px) rotate(-45deg); }
+  .day.is-today { box-shadow: inset 0 0 0 1.5px var(--fg); }
+  .streak { text-align: center; font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); }
+  .streak b { color: var(--fg); font-size: 16px; }
+  .del { width: 32px; height: 32px; border: 0; background: none; color: var(--muted); border-radius: 8px; cursor: pointer; font-size: 18px; }
+  .del:hover { background: var(--bg); color: var(--fg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .add { display: flex; gap: 8px; margin-top: 16px; }
+  .add input { flex: 1; min-width: 0; min-height: 48px; padding: 0 14px; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+  .add button { min-height: 48px; padding: 0 18px; border-radius: 12px; border: 0; background: var(--fg); color: var(--bg); font: inherit; font-weight: 600; cursor: pointer; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 12px; }
+  @media (max-width: 560px) {
+    /* Name on its own line, the week below it. */
+    .row { grid-template-columns: repeat(7, minmax(0, 1fr)) 44px 32px; gap: 5px; padding: 8px 0; }
+    .row .name { grid-column: 1 / -1; white-space: normal; }
+    .row.head > span:first-child { display: none; }
+    .day { width: 100%; height: 36px; border-radius: 9px; }
+    .table { padding: 6px 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .ring i { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Habits</h1>
+    <div class="today"><b id="score">0/0</b><span>done today</span></div>
+  </header>
+  <div class="ring" aria-hidden="true"><i id="bar"></i></div>
+  <div class="table" role="table" aria-label="Habits for the last seven days">
+    <div class="row head" role="row" id="head"></div>
+    <div id="rows"></div>
+  </div>
+  <div class="add">
+    <label for="new" style="position:absolute;left:-9999px">New habit</label>
+    <input id="new" placeholder="New habit, e.g. Read 20 pages" maxlength="40" autocomplete="off">
+    <button type="button" id="add">Add</button>
+  </div>
+  <p class="hint">Tap a square to mark a day. The streak counts back from today.</p>
+</main>
+<script>
+(() => {
+  const KEY = 'habits.v1';
+  const DAY = 864e5;
+  const dayKey = (d) => d.toISOString().slice(0, 10);
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const days = Array.from({ length: 7 }, (_, i) => new Date(today.getTime() - (6 - i) * DAY));
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(habits)); } catch (e) { /* optional */ } };
+  const seed = (pattern) => days.filter((_, i) => pattern[i] === '1').map(dayKey);
+  let habits = load() || [
+    { name: 'Walk 8k steps', done: seed('1101111') },
+    { name: 'No phone after 23:00', done: seed('0110110') },
+    { name: 'Practice piano', done: seed('1010100') },
+  ];
+  const $ = (id) => document.getElementById(id);
+
+  function streak(h) {
+    let n = 0;
+    for (let d = new Date(today); ; d = new Date(d.getTime() - DAY)) {
+      if (h.done.includes(dayKey(d))) n++;
+      else if (dayKey(d) === dayKey(today)) continue; // today not done yet doesn't break the streak
+      else break;
+      if (n > 3650) break;
+    }
+    return n;
+  }
+
+  function render() {
+    $('head').innerHTML = '<span role="columnheader" style="text-align:left">Habit</span>' +
+      days.map((d, i) => '<span role="columnheader" class="' + (i === 6 ? 'is-today' : '') + '">' + d.toLocaleDateString(undefined, { weekday: 'narrow' }) + '</span>').join('') +
+      '<span role="columnheader">Streak</span><span></span>';
+    const rows = $('rows');
+    rows.textContent = '';
+    habits.forEach((h, hi) => {
+      const row = document.createElement('div');
+      row.className = 'row'; row.setAttribute('role', 'row');
+      const name = document.createElement('span');
+      name.className = 'name'; name.setAttribute('role', 'rowheader'); name.textContent = h.name; name.title = h.name;
+      row.appendChild(name);
+      days.forEach((d, i) => {
+        const k = dayKey(d);
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'day' + (i === 6 ? ' is-today' : '');
+        b.setAttribute('aria-pressed', String(h.done.includes(k)));
+        b.setAttribute('aria-label', h.name + ', ' + d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }));
+        b.addEventListener('click', () => {
+          h.done = h.done.includes(k) ? h.done.filter((x) => x !== k) : h.done.concat(k);
+          save(); render();
+          const again = document.querySelectorAll('#rows .row')[hi].querySelectorAll('.day')[i];
+          if (again) again.focus();
+        });
+        row.appendChild(b);
+      });
+      const s = streak(h);
+      const st = document.createElement('span');
+      st.className = 'streak'; st.innerHTML = '<b>' + s + '</b>d';
+      st.setAttribute('aria-label', s + ' day streak');
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'del'; del.textContent = '×'; del.setAttribute('aria-label', 'Remove ' + h.name);
+      del.addEventListener('click', () => { habits.splice(hi, 1); save(); render(); });
+      row.append(st, del);
+      rows.appendChild(row);
+    });
+    const k = dayKey(today);
+    const doneToday = habits.filter((h) => h.done.includes(k)).length;
+    $('score').textContent = doneToday + '/' + habits.length;
+    $('bar').style.width = (habits.length ? (doneToday / habits.length) * 100 : 0) + '%';
+  }
+
+  function add() {
+    const v = $('new').value.trim();
+    if (!v) return;
+    habits.push({ name: v.slice(0, 40), done: [] });
+    $('new').value = '';
+    save(); render();
+  }
+  $('add').addEventListener('click', add);
+  $('new').addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
+  render();
+})();
+</script>
+</body>
+</html>

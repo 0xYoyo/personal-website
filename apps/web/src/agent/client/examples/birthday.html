@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Happy birthday</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --surface: #ffffff; --fg: #1a1815; --muted: #6f6a62; --line: #e4e0d8; --accent: #2b4bff; --warm: #e2553d; --gold: #e8a317;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121110; --surface: #1b1a18; --fg: #f1ede6; --muted: #9c958b; --line: #2c2a27; --accent: #4d69ff; --warm: #f07a63; --gold: #f2b84b; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: grid; place-items: center; padding: 24px 16px; overflow-x: hidden; }
+  canvas { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
+  main { width: 100%; max-width: 420px; }
+  .stage { perspective: 1400px; }
+  .card { position: relative; aspect-ratio: 4 / 5; transform-style: preserve-3d; transition: transform .9s cubic-bezier(.2, .7, .2, 1); }
+  .card.open { transform: rotateY(-180deg); }
+  .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px; display: flex; flex-direction: column; }
+  .front { align-items: center; justify-content: center; text-align: center; gap: 10px; }
+  .front svg { width: 62%; max-width: 220px; height: auto; }
+  .front h1 { font-size: clamp(28px, 8vw, 38px); letter-spacing: -0.03em; line-height: 1.08; margin: 8px 0 0; }
+  .front p { color: var(--muted); margin: 0; }
+  .back { transform: rotateY(180deg); justify-content: space-between; }
+  .back .to { color: var(--muted); font-size: 14px; }
+  .back .msg { font-size: clamp(22px, 6vw, 28px); line-height: 1.3; letter-spacing: -0.015em; font-weight: 550; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .back .from { font-size: 18px; }
+  .back .from span { color: var(--muted); display: block; font-size: 14px; }
+  .controls { display: flex; gap: 8px; margin-top: 18px; }
+  button { font: inherit; font-weight: 600; min-height: 48px; padding: 0 18px; border-radius: 12px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+  .primary { flex: 1; background: var(--accent); border-color: var(--accent); color: #fff; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .edit { margin-top: 18px; display: none; gap: 10px; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .edit.show { display: flex; }
+  .edit label { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+  .edit input, .edit textarea { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px; }
+  .edit textarea { min-height: 90px; resize: vertical; }
+  @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<main>
+  <div class="stage">
+    <div class="card" id="card">
+      <section class="face front" aria-label="Card front">
+        <svg viewBox="0 0 200 180" aria-hidden="true">
+          <rect x="94" y="22" width="12" height="34" rx="4" fill="var(--accent)"/>
+          <path d="M100 2c7 8 9 13 0 20-9-7-7-12 0-20z" fill="var(--gold)"/>
+          <rect x="30" y="56" width="140" height="44" rx="12" fill="var(--warm)"/>
+          <path d="M30 78c12 10 23 10 35 0s23-10 35 0 23 10 35 0 23-10 35 0" stroke="var(--surface)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <rect x="18" y="100" width="164" height="60" rx="14" fill="var(--fg)"/>
+          <g fill="var(--gold)"><circle cx="50" cy="130" r="5"/><circle cx="80" cy="122" r="5"/><circle cx="110" cy="134" r="5"/><circle cx="140" cy="124" r="5"/><circle cx="160" cy="138" r="5"/></g>
+          <rect x="6" y="160" width="188" height="10" rx="5" fill="var(--line)"/>
+        </svg>
+        <h1 id="title">Happy birthday, Maya</h1>
+        <p>Tap open.</p>
+      </section>
+      <section class="face back" aria-label="Card inside" aria-live="polite">
+        <div class="to" id="to">For Maya</div>
+        <div class="msg" id="msg"></div>
+        <div class="from"><span>with love,</span><b id="from"></b></div>
+      </section>
+    </div>
+  </div>
+  <div class="controls">
+    <button type="button" class="primary" id="open">Open the card</button>
+    <button type="button" id="toggle-edit" aria-expanded="false" aria-controls="edit">Edit</button>
+  </div>
+  <div class="edit" id="edit">
+    <label>Their name<input id="in-name" maxlength="24" value="Maya"></label>
+    <label>Message<textarea id="in-msg" maxlength="220">Another lap around the sun, and you made it look easy. Here's to the best one yet.</textarea></label>
+    <label>From<input id="in-from" maxlength="24" value="Noam"></label>
+  </div>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const card = $('card');
+
+  function sync() {
+    const name = $('in-name').value.trim() || 'friend';
+    $('title').textContent = 'Happy birthday, ' + name;
+    $('to').textContent = 'For ' + name;
+    $('msg').textContent = $('in-msg').value.trim() || 'Happy birthday.';
+    $('from').textContent = $('in-from').value.trim() || 'me';
+    document.title = 'Happy birthday, ' + name;
+  }
+  ['in-name', 'in-msg', 'in-from'].forEach((id) => $(id).addEventListener('input', sync));
+
+  $('open').addEventListener('click', () => {
+    const open = !card.classList.contains('open');
+    card.classList.toggle('open', open);
+    $('open').textContent = open ? 'Close the card' : 'Open the card';
+    if (open) burst();
+  });
+  $('toggle-edit').addEventListener('click', () => {
+    const show = !$('edit').classList.contains('show');
+    $('edit').classList.toggle('show', show);
+    $('toggle-edit').setAttribute('aria-expanded', String(show));
+  });
+  card.addEventListener('click', () => $('open').click());
+
+  // Confetti: a few hundred paper bits with gravity and drag. Skipped for reduced motion.
+  const cv = $('fx');
+  const ctx = cv.getContext('2d');
+  let bits = [], raf = 0;
+  function size() { const r = devicePixelRatio || 1; cv.width = innerWidth * r; cv.height = innerHeight * r; ctx.setTransform(r, 0, 0, r, 0, 0); }
+  addEventListener('resize', size); size();
+  function burst() {
+    if (reduce) return;
+    const css = getComputedStyle(document.documentElement);
+    const colors = ['--accent', '--warm', '--gold', '--fg'].map((v) => css.getPropertyValue(v).trim());
+    const rect = card.getBoundingClientRect();
+    for (let i = 0; i < 220; i++) {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.6;
+      const s = 7 + Math.random() * 9;
+      bits.push({
+        x: rect.left + rect.width / 2, y: rect.top + rect.height * 0.35,
+        vx: Math.cos(a) * s, vy: Math.sin(a) * s, r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4,
+        w: 6 + Math.random() * 6, h: 3 + Math.random() * 4, c: colors[i % colors.length], life: 0,
+      });
+    }
+    if (!raf) raf = requestAnimationFrame(step);
+  }
+  function step() {
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    bits = bits.filter((b) => b.y < innerHeight + 20 && b.life < 400);
+    for (const b of bits) {
+      b.vy += 0.25; b.vx *= 0.985; b.vy *= 0.985; b.x += b.vx; b.y += b.vy; b.r += b.vr; b.life++;
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.r); ctx.scale(1, Math.cos(b.life * 0.15));
+      ctx.fillStyle = b.c; ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h); ctx.restore();
+    }
+    raf = bits.length ? requestAnimationFrame(step) : 0;
+  }
+  sync();
+})();
+</script>
+</body>
+</html>

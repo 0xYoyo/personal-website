@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pomodoro</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --surface: #ffffff; --fg: #1a1815; --muted: #6f6a62; --line: #e4e0d8;
+    --accent: #2b4bff; --rest: #1f8a5b; --track: #ebe7df;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121110; --surface: #1b1a18; --fg: #f1ede6; --muted: #9c958b; --line: #2c2a27; --accent: #4d69ff; --rest: #4cc38a; --track: #262422; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: grid; place-items: center; padding: 24px 16px;
+  }
+  main { width: 100%; max-width: 420px; text-align: center; }
+  .tabs { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+  .tabs button {
+    border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px;
+    padding: 10px 16px; min-height: 44px; border-radius: 999px; cursor: pointer;
+  }
+  .tabs button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+  .dial { position: relative; width: min(78vw, 320px); aspect-ratio: 1; margin: 28px auto 24px; }
+  .dial svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .dial circle { fill: none; stroke-width: 6; }
+  .dial .track { stroke: var(--track); }
+  .dial .bar { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .25s linear, stroke .3s; }
+  body.rest .dial .bar { stroke: var(--rest); }
+  .readout { position: absolute; inset: 0; display: grid; place-content: center; gap: 4px; }
+  .time { font-size: clamp(56px, 18vw, 84px); font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .phase { color: var(--muted); font-size: 15px; }
+  .controls { display: flex; gap: 10px; justify-content: center; }
+  .controls button {
+    font: inherit; font-weight: 600; min-width: 120px; min-height: 48px; padding: 0 20px;
+    border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer;
+  }
+  .controls .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  body.rest .controls .primary { background: var(--rest); border-color: var(--rest); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .dots { display: flex; gap: 8px; justify-content: center; margin: 24px 0 8px; }
+  .dots span { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--muted); }
+  .dots span.done { background: var(--fg); border-color: var(--fg); }
+  .meta { color: var(--muted); font-size: 14px; margin: 0; }
+  kbd { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; background: var(--surface); }
+  .keys { margin-top: 20px; color: var(--muted); font-size: 13px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  @media (prefers-reduced-motion: reduce) { .dial .bar { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="tabs" role="group" aria-label="Mode">
+    <button type="button" data-mode="focus" aria-pressed="true">Focus 25</button>
+    <button type="button" data-mode="short" aria-pressed="false">Break 5</button>
+    <button type="button" data-mode="long" aria-pressed="false">Long 15</button>
+  </div>
+  <div class="dial">
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <circle class="track" cx="60" cy="60" r="54"></circle>
+      <circle class="bar" cx="60" cy="60" r="54" stroke-dasharray="339.292" stroke-dashoffset="0"></circle>
+    </svg>
+    <div class="readout">
+      <div class="time" id="time" role="timer" aria-live="off">25:00</div>
+      <div class="phase" id="phase">Focus</div>
+    </div>
+  </div>
+  <div class="controls">
+    <button type="button" class="primary" id="toggle">Start</button>
+    <button type="button" id="reset">Reset</button>
+  </div>
+  <div class="dots" id="dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+  <p class="meta" id="meta" aria-live="polite">Round 1 of 4</p>
+  <div class="keys"><span><kbd>Space</kbd> start / pause</span><span><kbd>R</kbd> reset</span><span><kbd>S</kbd> skip</span></div>
+</main>
+<script>
+(() => {
+  const LENGTHS = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 };
+  const LABELS = { focus: 'Focus', short: 'Short break', long: 'Long break' };
+  const C = 2 * Math.PI * 54;
+  const $ = (id) => document.getElementById(id);
+  const bar = document.querySelector('.bar');
+  let mode = 'focus', remaining = LENGTHS.focus, running = false, endAt = 0, timer = 0, round = 1, completed = 0;
+
+  const fmt = (s) => {
+    const m = Math.floor(s / 60), r = Math.floor(s % 60);
+    return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+  };
+
+  function render() {
+    $('time').textContent = fmt(Math.ceil(remaining));
+    $('phase').textContent = !running && remaining < LENGTHS[mode] ? 'Paused' : LABELS[mode];
+    $('toggle').textContent = running ? 'Pause' : remaining < LENGTHS[mode] ? 'Resume' : 'Start';
+    bar.style.strokeDashoffset = String(C * (1 - remaining / LENGTHS[mode]));
+    document.body.classList.toggle('rest', mode !== 'focus');
+    document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    document.querySelectorAll('#dots span').forEach((d, i) => d.classList.toggle('done', i < completed % 4 || (completed > 0 && completed % 4 === 0 && mode === 'long')));
+    $('meta').textContent = mode === 'focus' ? 'Round ' + round + ' of 4' : completed + (completed === 1 ? ' focus session done' : ' focus sessions done');
+    document.title = running ? fmt(Math.ceil(remaining)) + ' ' + LABELS[mode] : 'Pomodoro';
+  }
+
+  function chime() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [660, 880].forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = f; o.type = 'sine';
+        g.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.18);
+        g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + i * 0.18 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.18 + 0.5);
+        o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + i * 0.18); o.stop(ctx.currentTime + i * 0.18 + 0.55);
+      });
+    } catch (e) { /* audio is optional */ }
+  }
+
+  function tick() {
+    remaining = Math.max(0, (endAt - Date.now()) / 1000);
+    if (remaining <= 0) { chime(); next(true); return; }
+    render();
+  }
+
+  function start() { if (running) return; running = true; endAt = Date.now() + remaining * 1000; timer = setInterval(tick, 250); render(); }
+  function pause() { running = false; clearInterval(timer); render(); }
+  function setMode(m, autostart) {
+    pause(); mode = m; remaining = LENGTHS[m]; render();
+    if (autostart) start();
+  }
+  function next(auto) {
+    if (mode === 'focus') {
+      completed++;
+      setMode(completed % 4 === 0 ? 'long' : 'short', auto);
+    } else {
+      if (mode === 'long') round = 1; else round = Math.min(4, round + 1);
+      setMode('focus', auto);
+    }
+  }
+  function reset() { setMode(mode, false); }
+
+  $('toggle').addEventListener('click', () => (running ? pause() : start()));
+  $('reset').addEventListener('click', reset);
+  document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode, false)));
+  document.addEventListener('keydown', (e) => {
+    if (e.target instanceof HTMLButtonElement && (e.key === ' ' || e.key === 'Enter')) return;
+    if (e.key === ' ') { e.preventDefault(); running ? pause() : start(); }
+    else if (e.key === 'r' || e.key === 'R') reset();
+    else if (e.key === 's' || e.key === 'S') next(false);
+  });
+  render();
+})();
+</script>
+</body>
+</html>

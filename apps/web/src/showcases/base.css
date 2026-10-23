@@ -1,0 +1,88 @@
+/* Shared tokens for every showcase. Scoped to .sc-root / .sc-frame; scene-aware via any ancestor [data-scene] (html included). */
+.sc-root,
+.sc-frame {
+  --sc-bg: #0b0a09;
+  --sc-panel: #12100e;
+  --sc-raise: #1a1815;
+  --sc-fg: #f4efe6;
+  --sc-muted: #8e877d;
+  --sc-line: rgba(244, 239, 230, 0.13);
+  --sc-line-2: rgba(244, 239, 230, 0.26);
+  --sc-soft: rgba(244, 239, 230, 0.05);
+  --sc-accent: #2b4bff;
+  --sc-on-accent: #f4efe6;
+  --sc-accent-soft: rgba(43, 75, 255, 0.16);
+  --sc-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', 'Heebo', system-ui, sans-serif;
+  --sc-mono: 'Commit Mono', 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --sc-hebrew: 'Heebo', 'Bricolage Grotesque Variable', system-ui, sans-serif;
+}
+[data-scene='light'] .sc-root,
+[data-scene='light'] .sc-frame {
+  --sc-bg: #edeae3;
+  --sc-panel: #e6e2d9;
+  --sc-raise: #f4f1eb;
+  --sc-fg: #171411;
+  --sc-muted: #6e675d;
+  --sc-line: rgba(23, 20, 17, 0.14);
+  --sc-line-2: rgba(23, 20, 17, 0.3);
+  --sc-soft: rgba(23, 20, 17, 0.045);
+  --sc-accent: #2b4bff;
+  --sc-on-accent: #f4f1eb;
+  --sc-accent-soft: rgba(43, 75, 255, 0.12);
+}
+
+/* A showcase fills its parent; its children size in container units (cqw) of this root. */
+.sc-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 16 / 10;
+  container-type: inline-size;
+  overflow: hidden;
+  color: var(--sc-fg);
+  background: var(--sc-panel);
+  font-family: var(--sc-display);
+  font-weight: 500;
+  line-height: 1.2;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  contain: layout paint;
+}
+.sc-root *,
+.sc-root *::before,
+.sc-root *::after {
+  box-sizing: border-box;
+}
+.sc-abs {
+  position: absolute;
+}
+.sc-mono {
+  font-family: var(--sc-mono);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.sc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* The abstract device: a 16:10 rounded rectangle with a hairline. No shadow, no gradient. */
+.sc-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: clamp(8px, 1.8%, 18px);
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-panel);
+  overflow: hidden;
+  isolation: isolate;
+}
+.sc-frame > .sc-root {
+  position: absolute;
+  inset: 0;
+}

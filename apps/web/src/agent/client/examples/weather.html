@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weather</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --surface: #ffffff; --fg: #1a1815; --muted: #6f6a62; --line: #e4e0d8; --accent: #2b4bff; --sun: #e8a317; --rain: #2b4bff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121110; --surface: #1b1a18; --fg: #f1ede6; --muted: #9c958b; --line: #2c2a27; --accent: #4d69ff; --sun: #f2b84b; --rain: #7088ff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-items: center; padding: 24px 16px; }
+  .card { width: 100%; min-width: 0; max-width: 440px; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 22px; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  select, .unit button { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; min-height: 44px; }
+  select { padding: 0 12px; font-weight: 600; max-width: 60%; }
+  .unit { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .unit button { border: 0; border-radius: 0; background: transparent; padding: 0 14px; color: var(--muted); cursor: pointer; }
+  .unit button[aria-pressed="true"] { background: var(--fg); color: var(--surface); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .now { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; margin: 22px 0 6px; }
+  .temp { font-size: 88px; font-weight: 650; letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .temp sup { font-size: 34px; font-weight: 500; vertical-align: 38px; margin-left: 2px; color: var(--muted); }
+  .big svg { width: 96px; height: 96px; }
+  @media (max-width: 380px) { .temp { font-size: 72px; } .big svg { width: 72px; height: 72px; } .card { padding: 18px; } }
+  .cond { font-size: 20px; font-weight: 600; margin: 4px 0 2px; }
+  .range { color: var(--muted); margin: 0; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; }
+  .stat { background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+  .stat b { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 13px; color: var(--muted); }
+  h2 { font-size: 13px; font-weight: 600; color: var(--muted); margin: 18px 0 8px; }
+  .hours { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(52px, 1fr); gap: 4px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+  .hour { text-align: center; font-size: 13px; color: var(--muted); padding: 6px 0; }
+  .hour b { display: block; color: var(--fg); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .hour svg { width: 26px; height: 26px; margin: 4px auto; display: block; }
+  .days { list-style: none; margin: 0; padding: 0; }
+  .days li { display: grid; grid-template-columns: 56px 30px 1fr; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .days li:first-child { border-top: 0; }
+  .days svg { width: 26px; height: 26px; }
+  .span { display: grid; grid-template-columns: 34px 1fr 34px; gap: 8px; align-items: center; font-size: 15px; }
+  .span .lo { color: var(--muted); text-align: right; }
+  .track { height: 6px; border-radius: 3px; background: var(--bg); position: relative; }
+  .track i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--fg); opacity: .75; }
+  .sample { margin: 16px 0 0; font-size: 12px; color: var(--muted); text-align: center; }
+  .ic-sun { fill: var(--sun); }
+  .ic-cloud { fill: var(--muted); opacity: .55; }
+  .ic-rain { stroke: var(--rain); stroke-width: 2; stroke-linecap: round; }
+</style>
+</head>
+<body>
+<article class="card" aria-label="Weather">
+  <div class="top">
+    <label for="city" style="position:absolute;left:-9999px">City</label>
+    <select id="city"></select>
+    <div class="unit" role="group" aria-label="Units">
+      <button type="button" data-u="c" aria-pressed="true">°C</button>
+      <button type="button" data-u="f" aria-pressed="false">°F</button>
+    </div>
+  </div>
+  <div class="now">
+    <div>
+      <div class="temp" id="temp" aria-live="polite"></div>
+      <p class="cond" id="cond"></p>
+      <p class="range" id="range"></p>
+    </div>
+    <div class="big" id="bigicon" aria-hidden="true"></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="feels"></b><span>Feels like</span></div>
+    <div class="stat"><b id="wind"></b><span>Wind</span></div>
+    <div class="stat"><b id="hum"></b><span>Humidity</span></div>
+  </div>
+  <h2>Next hours</h2>
+  <div class="hours" id="hours"></div>
+  <h2>Five days</h2>
+  <ul class="days" id="days"></ul>
+  <p class="sample">Sample data for a demo. No live weather was fetched.</p>
+</article>
+<script>
+(() => {
+  const ICONS = {
+    sun: '<svg viewBox="0 0 32 32"><circle class="ic-sun" cx="16" cy="16" r="7"/><g class="ic-sun">' +
+      [0, 45, 90, 135, 180, 225, 270, 315].map((a) => '<rect x="15" y="2" width="2" height="5" rx="1" transform="rotate(' + a + ' 16 16)"/>').join('') + '</g></svg>',
+    cloud: '<svg viewBox="0 0 32 32"><path class="ic-cloud" d="M9 25a6 6 0 0 1-.6-12 8 8 0 0 1 15.3 2.2A5 5 0 0 1 23 25z"/></svg>',
+    partly: '<svg viewBox="0 0 32 32"><circle class="ic-sun" cx="12" cy="11" r="6"/><path class="ic-cloud" style="opacity:.8" d="M11 27a5.5 5.5 0 0 1-.5-11 7.5 7.5 0 0 1 14.3 2A4.5 4.5 0 0 1 24.5 27z"/></svg>',
+    rain: '<svg viewBox="0 0 32 32"><path class="ic-cloud" d="M9 20a6 6 0 0 1-.6-12 8 8 0 0 1 15.3 2.2A5 5 0 0 1 23 20z"/><path class="ic-rain" d="M11 23l-1.5 4M16 23l-1.5 4M21 23l-1.5 4"/></svg>',
+  };
+  const LABEL = { sun: 'Sunny', cloud: 'Cloudy', partly: 'Partly cloudy', rain: 'Light rain' };
+  const CITIES = {
+    'Tel Aviv': { t: 27, feels: 29, wind: 14, hum: 64, k: 'sun', hours: [27, 28, 28, 27, 26, 24, 23, 22], hk: 'sssspppp', days: [[29, 21, 'sun'], [30, 22, 'sun'], [28, 21, 'partly'], [27, 20, 'partly'], [29, 21, 'sun']] },
+    Lisbon: { t: 19, feels: 18, wind: 22, hum: 71, k: 'partly', hours: [19, 20, 20, 19, 18, 17, 16, 15], hk: 'ppcccrrc', days: [[21, 14, 'partly'], [18, 13, 'rain'], [17, 12, 'rain'], [19, 13, 'cloud'], [22, 14, 'sun']] },
+    Tokyo: { t: 14, feels: 12, wind: 11, hum: 58, k: 'cloud', hours: [14, 15, 15, 14, 13, 12, 11, 10], hk: 'ccppcccc', days: [[16, 9, 'cloud'], [17, 10, 'partly'], [13, 8, 'rain'], [15, 8, 'partly'], [18, 10, 'sun']] },
+    'Reykjavík': { t: 4, feels: -1, wind: 31, hum: 82, k: 'rain', hours: [4, 4, 5, 5, 4, 3, 2, 2], hk: 'rrrccccc', days: [[6, 1, 'rain'], [5, 0, 'cloud'], [3, -2, 'cloud'], [4, -1, 'partly'], [6, 1, 'rain']] },
+  };
+  const KMAP = { s: 'sun', p: 'partly', c: 'cloud', r: 'rain' };
+  let unit = 'c';
+  let city = 'Tel Aviv';
+  const $ = (id) => document.getElementById(id);
+  const conv = (c) => Math.round(unit === 'c' ? c : c * 9 / 5 + 32);
+  const deg = (c) => conv(c) + '°';
+
+  Object.keys(CITIES).forEach((name) => {
+    const o = document.createElement('option'); o.value = name; o.textContent = name; $('city').appendChild(o);
+  });
+
+  function render() {
+    const d = CITIES[city];
+    const hi = Math.max(...d.days.map((x) => x[0])), lo = Math.min(...d.days.map((x) => x[1]));
+    $('temp').innerHTML = conv(d.t) + '<sup>°' + unit.toUpperCase() + '</sup>';
+    $('cond').textContent = LABEL[d.k];
+    $('range').textContent = 'High ' + deg(d.days[0][0]) + '  Low ' + deg(d.days[0][1]);
+    $('bigicon').innerHTML = ICONS[d.k];
+    $('feels').textContent = deg(d.feels);
+    $('wind').textContent = (unit === 'c' ? d.wind + ' km/h' : Math.round(d.wind * 0.621) + ' mph');
+    $('hum').textContent = d.hum + '%';
+    const nowH = new Date().getHours();
+    $('hours').innerHTML = d.hours.map((t, i) => {
+      const h = (nowH + i) % 24;
+      return '<div class="hour">' + (i === 0 ? 'Now' : String(h).padStart(2, '0')) + ICONS[KMAP[d.hk[i]]] + '<b>' + deg(t) + '</b></div>';
+    }).join('');
+    const names = ['Today'];
+    for (let i = 1; i < 5; i++) names.push(new Date(Date.now() + i * 864e5).toLocaleDateString(undefined, { weekday: 'short' }));
+    $('days').innerHTML = d.days.map((x, i) => {
+      const left = ((x[1] - lo) / (hi - lo || 1)) * 100, width = ((x[0] - x[1]) / (hi - lo || 1)) * 100;
+      return '<li><span>' + names[i] + '</span>' + ICONS[x[2]] +
+        '<span class="span"><span class="lo">' + deg(x[1]) + '</span><span class="track"><i style="left:' + left + '%;width:' + width + '%"></i></span><span>' + deg(x[0]) + '</span></span></li>';
+    }).join('');
+    document.querySelectorAll('.unit button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.u === unit)));
+  }
+  $('city').addEventListener('change', (e) => { city = e.target.value; render(); });
+  document.querySelectorAll('.unit button').forEach((b) => b.addEventListener('click', () => { unit = b.dataset.u; render(); }));
+  render();
+})();
+</script>
+</body>
+</html>

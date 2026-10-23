@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quietly — a calendar that guards your focus</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --surface: #ffffff; --fg: #1a1815; --muted: #6f6a62; --line: #e4e0d8;
+    --accent: #2b4bff; --accent-soft: #e6eaff; --block: #efece6;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121110; --surface: #1b1a18; --fg: #f1ede6; --muted: #9c958b; --line: #2c2a27; --accent: #4d69ff; --accent-soft: #232a4d; --block: #262422; }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: inherit; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; }
+  .logo i { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--fg); position: relative; }
+  .logo i::after { content: ""; position: absolute; left: 4px; right: 4px; top: 8px; height: 2px; background: var(--fg); }
+  nav ul { display: flex; gap: 22px; list-style: none; margin: 0; padding: 0; font-size: 15px; color: var(--muted); }
+  nav a { text-decoration: none; padding: 10px 0; display: inline-block; }
+  nav a:hover { color: var(--fg); }
+  .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; padding: 56px 0 72px; }
+  h1 { font-size: clamp(38px, 6vw, 60px); line-height: 1.03; letter-spacing: -0.035em; margin: 0 0 18px; font-weight: 750; }
+  .lede { font-size: 19px; color: var(--muted); margin: 0 0 28px; max-width: 30em; }
+  .signup { display: flex; gap: 8px; max-width: 440px; }
+  .signup input {
+    flex: 1; min-width: 0; min-height: 48px; padding: 0 14px; font: inherit; color: var(--fg);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  }
+  .btn { min-height: 48px; padding: 0 20px; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn.ghost { background: transparent; color: var(--fg); border-color: var(--line); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .note { font-size: 14px; color: var(--muted); margin: 12px 0 0; min-height: 1.5em; }
+  .note.ok { color: var(--fg); }
+  .mock { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+  .mock header { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: 38px repeat(5, 1fr); gap: 6px; font-size: 12px; }
+  .grid .h { color: var(--muted); text-align: center; padding-bottom: 4px; }
+  .grid .t { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cell { height: 26px; border-radius: 6px; background: var(--block); }
+  .cell.focus { background: var(--accent-soft); border: 1px solid var(--accent); }
+  .cell.meet { background: var(--fg); opacity: .85; }
+  .legend { display: flex; gap: 16px; margin-top: 14px; font-size: 12px; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--block); }
+  .legend .f::before { background: var(--accent-soft); border: 1px solid var(--accent); }
+  .legend .m::before { background: var(--fg); }
+  section { padding: 64px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(28px, 4vw, 38px); letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 28px; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .card h3 { margin: 14px 0 6px; font-size: 18px; letter-spacing: -0.01em; }
+  .card p { margin: 0; color: var(--muted); }
+  .card svg { width: 28px; height: 28px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; counter-reset: s; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: start; }
+  .steps li::before { content: counter(s); width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: 14px; font-weight: 600; background: var(--surface); }
+  .steps b { display: block; }
+  .steps span { color: var(--muted); }
+  .pricing { display: grid; grid-template-columns: repeat(2, minmax(0, 360px)); gap: 20px; }
+  .price { font-size: 40px; font-weight: 750; letter-spacing: -0.03em; margin: 8px 0 4px; }
+  .price small { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+  .card ul { padding: 0; margin: 16px 0 20px; list-style: none; display: grid; gap: 8px; }
+  .card li::before { content: "✓"; color: var(--accent); margin-right: 8px; font-weight: 700; }
+  .card.pro { border-color: var(--accent); }
+  details { border-bottom: 1px solid var(--line); padding: 16px 0; }
+  summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 16px; min-height: 28px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--muted); font-weight: 400; font-size: 20px; line-height: 1; }
+  details[open] summary::after { content: "–"; }
+  details p { margin: 10px 0 0; color: var(--muted); max-width: 46em; }
+  footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; padding-top: 28px; gap: 36px; }
+    .features { grid-template-columns: 1fr; }
+    .pricing { grid-template-columns: 1fr; }
+    nav ul { display: none; }
+  }
+  @media (max-width: 420px) { .signup { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav aria-label="Main">
+    <div class="logo"><i aria-hidden="true"></i>Quietly</div>
+    <ul><li><a href="#how">How it works</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#faq">FAQ</a></li></ul>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <h1>A calendar that guards your focus.</h1>
+      <p class="lede">Quietly finds the deep-work hours hiding between your meetings and protects them, so your week has room for the work that matters.</p>
+      <div class="signup" id="signup">
+        <label for="email" class="sr" style="position:absolute;left:-9999px">Email address</label>
+        <input id="email" type="email" placeholder="you@company.com" autocomplete="email" required>
+        <button class="btn" type="button" id="join">Join the waitlist</button>
+      </div>
+      <p class="note" id="note" aria-live="polite">Free during the beta. No credit card.</p>
+    </div>
+    <div class="mock" aria-label="Example week in Quietly">
+      <header><span>Week of June 9</span><span>11h of focus protected</span></header>
+      <div class="grid" id="grid"></div>
+      <div class="legend"><span class="f">Focus</span><span class="m">Meetings</span><span>Open</span></div>
+    </div>
+  </header>
+
+  <section aria-labelledby="why">
+    <h2 id="why">Less shuffling. More doing.</h2>
+    <div class="features">
+      <div class="card">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <h3>Finds the gaps</h3>
+        <p>Reads your week and turns scattered half-hours into two-hour focus blocks.</p>
+      </div>
+      <div class="card">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z"/></svg>
+        <h3>Defends them</h3>
+        <p>Suggests other times when someone books over your focus, before you have to.</p>
+      </div>
+      <div class="card">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4"/></svg>
+        <h3>Shows the trend</h3>
+        <p>A Friday summary of hours protected, meetings moved, and where the week went.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-h">
+    <h2 id="how-h">Set up in three minutes.</h2>
+    <ol class="steps">
+      <li><div><b>Connect your calendar</b><span>Read access to start; Quietly never moves anything without asking.</span></div></li>
+      <li><div><b>Pick your best hours</b><span>Morning person, night owl, or somewhere in between.</span></div></li>
+      <li><div><b>Get your week back</b><span>Focus blocks appear, and stay put.</span></div></li>
+    </ol>
+  </section>
+
+  <section id="pricing" aria-labelledby="pricing-h">
+    <h2 id="pricing-h">Simple pricing.</h2>
+    <div class="pricing">
+      <div class="card">
+        <b>Personal</b>
+        <div class="price">$0 <small>during beta</small></div>
+        <ul><li>One calendar</li><li>Focus blocks</li><li>Weekly summary</li></ul>
+        <button class="btn ghost" type="button" data-plan="Personal">Choose Personal</button>
+      </div>
+      <div class="card pro">
+        <b>Team</b>
+        <div class="price">$6 <small>per person / month</small></div>
+        <ul><li>Everything in Personal</li><li>Shared no-meeting days</li><li>Team focus report</li></ul>
+        <button class="btn" type="button" data-plan="Team">Choose Team</button>
+      </div>
+    </div>
+    <p class="note" id="plan-note" aria-live="polite"></p>
+  </section>
+
+  <section id="faq" aria-labelledby="faq-h">
+    <h2 id="faq-h">Questions.</h2>
+    <details><summary>Which calendars work?</summary><p>Any calendar that speaks the standard calendar format. Quietly reads free and busy times; event titles stay private.</p></details>
+    <details><summary>Will it move my meetings?</summary><p>Never on its own. It suggests a new time and you decide with one tap.</p></details>
+    <details><summary>Can I pause it?</summary><p>Yes. One switch turns protection off for a day, a week, or until you turn it back on.</p></details>
+  </section>
+
+  <footer><span>Quietly is a sample product made for this demo.</span><span>Built in one page, no network.</span></footer>
+</div>
+<script>
+(() => {
+  const grid = document.getElementById('grid');
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const plan = [
+    'mf.fm.', 'mffmf', '.mf.f', 'mmf.m', '.ffm.', 'ffmff', '..m..', 'fm.mf',
+  ];
+  grid.appendChild(document.createElement('div'));
+  days.forEach((d) => { const h = document.createElement('div'); h.className = 'h'; h.textContent = d; grid.appendChild(h); });
+  plan.forEach((row, i) => {
+    const t = document.createElement('div'); t.className = 't'; t.textContent = String(9 + i).padStart(2, '0') + ':00'; grid.appendChild(t);
+    for (let d = 0; d < 5; d++) {
+      const c = document.createElement('div');
+      const k = row[d] || '.';
+      c.className = 'cell' + (k === 'f' ? ' focus' : k === 'm' ? ' meet' : '');
+      grid.appendChild(c);
+    }
+  });
+
+  const email = document.getElementById('email');
+  const note = document.getElementById('note');
+  const join = () => {
+    const v = email.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { note.textContent = 'That email looks off. Try again?'; note.classList.remove('ok'); return; }
+    note.textContent = "You're on the list. (Demo page: nothing was sent anywhere.)";
+    note.classList.add('ok');
+    email.value = '';
+  };
+  document.getElementById('join').addEventListener('click', join);
+  email.addEventListener('keydown', (e) => { if (e.key === 'Enter') join(); });
+  document.querySelectorAll('[data-plan]').forEach((b) => b.addEventListener('click', () => {
+    document.getElementById('plan-note').textContent = b.dataset.plan + ' selected. This is a demo, so that is as far as checkout goes.';
+  }));
+})();
+</script>
+</body>
+</html>

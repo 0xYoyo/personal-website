@@ -1,18 +1,12 @@
-// Showcase registry. Integration replaces each entry with the real component
-// from the showcases part (same props: `{ project, reducedMotion }`).
-import { PlaceholderShowcase } from './Placeholder';
+// Showcase registry: the seven live motion pieces (SPEC §3.4), one per carded
+// project. Each fills its slot, loops on its own, pauses offscreen / in hidden
+// tabs, and shows a static key frame when `reducedMotion` is true.
+import { showcases as parts } from './parts';
 import type { Showcase, ShowcaseRegistry } from './types';
 import type { ShowcaseId } from '../content/projects';
 
-export const showcases: ShowcaseRegistry = {
-  'prompt-racers': PlaceholderShowcase,
-  unfiltered: PlaceholderShowcase,
-  'yoyo-loop': PlaceholderShowcase,
-  'runi-connector': PlaceholderShowcase,
-  'availability-monitor': PlaceholderShowcase,
-  'pnl-bot': PlaceholderShowcase,
-  polybot: PlaceholderShowcase,
-};
+export const showcases: ShowcaseRegistry = parts;
 
-export const getShowcase = (id: ShowcaseId): Showcase => showcases[id] ?? PlaceholderShowcase;
+export const getShowcase = (id: ShowcaseId): Showcase => showcases[id];
+export { showcaseOrder, showcaseTiming, ShowcaseFrame, configureShowcases } from './parts';
 export type { ShowcaseProps, Showcase } from './types';

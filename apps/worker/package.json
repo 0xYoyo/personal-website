@@ -1,0 +1,22 @@
+{
+  "name": "@yoyo/worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "gen": "node scripts/gen-prompt.mjs",
+    "dev": "npm run gen && wrangler dev",
+    "typecheck": "npm run gen && tsc --noEmit -p tsconfig.json",
+    "test": "npm run gen && vitest run",
+    "build": "npm run gen && tsc --noEmit -p tsconfig.json && wrangler deploy --dry-run --outdir dist",
+    "deploy": "npm run gen && wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260702.1",
+    "wrangler": "^4.152.0"
+  },
+  "dependencies": {
+    "@yoyo/protocol": "^0.1.0"
+  }
+}
