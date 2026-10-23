@@ -238,7 +238,7 @@ export class CpuEngine implements Engine {
     const D = this.h / 2 / Math.tan((30 * Math.PI) / 360);
     const cx = this.w / 2, cy = this.h / 2, dpr = this.dpr;
     const P = this.pos, V = this.vel, C = this.col, S = this.seed;
-    const bright = (1 + p.pulse * 0.8) * p.brightness;
+    const bright = (1 + p.pulse * 0.15) * p.brightness;
     ctx.lineCap = 'round';
     // 4 speed buckets for uncoloured particles, batched into one path each
     const buckets: number[][] = [[], [], [], []];

@@ -304,7 +304,7 @@ export class GpuEngine implements Engine {
     const fu = P.xy.sub(this.uField.min).div(this.uField.size);
     const fd = texture(this.fieldRT.texture, vec2(fu.x, float(1).sub(fu.y))).w.div(this.uField.densRef);
     const expo = mix(clamp(float(1.5).div(fd.add(0.4).sqrt()), 0.3, 1), float(1), clamp(V.w, 0, 1));
-    const bright = mix(0.5, 1.0, S.z).mul(U.pulse.mul(0.8).add(1)).mul(U.brightness).mul(mix(float(1), expo, this.uLook.dark));
+    const bright = mix(0.5, 1.0, S.z).mul(U.pulse.mul(0.15).add(1)).mul(U.brightness).mul(mix(float(1), expo, this.uLook.dark));
     // dark: additive, brightness in colour; light: ink over paper, brightness only nudges opacity
     m.fragmentNode = vec4(color.mul(mix(float(1), bright, L.dark)), disc.mul(L.alpha).mul(mix(mix(0.8, 1.0, S.z), float(1), L.dark)));
     this.material = m;

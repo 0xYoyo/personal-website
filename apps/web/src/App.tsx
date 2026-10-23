@@ -38,20 +38,23 @@ const typingTarget = (t: EventTarget | null) =>
   t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable);
 
 export function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const overlay = useStore((s) => s.overlay);
   const phase = useStore((s) => s.phase);
   const [voiceSupported] = useState(() => typeof window !== 'undefined' && 'speechSynthesis' in window);
 
   // ---- boot: swarm, brain, sound, voice; then the entry -------------------
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = bodyRef.current;
+    if (!container) return;
     const st = useStore.getState();
     const reduced = prefersReducedMotion();
     st.setReducedMotion(reduced);
     const params = new URLSearchParams(location.search);
     const speed = Number(params.get('speed') ?? '1') || 1; // QA only: ?speed=0.2 runs timings 5× faster
+    const tierParam = params.get('tier'); // QA only: ?tier=0..3 forces a quality tier (no adaptive drop)
+    const tier = tierParam !== null && /^[0-3]$/.test(tierParam) ? (Number(tierParam) as 0 | 1 | 2 | 3) : undefined;
+    const scene = params.get('scene') === 'light' ? 'light' : 'dark';
     const brain = createBrain({ agentUrl: import.meta.env.VITE_AGENT_URL as string | undefined, speed });
     const sound = createSound();
     const voice = createVoice();
@@ -59,13 +62,14 @@ export function App() {
     let swarm: Awaited<ReturnType<typeof createSwarm>> | null = null;
 
     void (async () => {
-      swarm = await Promise.resolve(createSwarm(canvas));
+      swarm = await createSwarm(container, { scene, reducedMotion: reduced, ...(tier !== undefined ? { tier, adaptive: false } : {}) });
       if (cancelled) {
         swarm.destroy();
         return;
       }
       ctl.init({ swarm, brain, sound, voice });
-      const scene = params.get('scene') === 'light' ? 'light' : 'dark';
+      // QA hook (dev server, or ?qa=1 on a build): tools/shots.mjs and tools/og.mjs drive the page through it
+      if (import.meta.env.DEV || params.has('qa')) Object.assign(window, { __yoyo: { ctl, swarm, brain, store: useStore } });
       ctl.setScene(scene);
       swarm.setStage?.(stageRect());
       if (reduced) swarm.mood('asleep');
@@ -132,24 +136,52 @@ export function App() {
   }, []);
 
   // ---- pointer → swarm (and sound energy) ----------------------------------
+  // Window-level, so mouse, pen and touch all reach the swarm through any layer.
+  // Velocity in CSS px/s, smoothed over ~30 ms and clamped; a new touch or a
+  // long pause restarts the estimate instead of reporting a jump as a fling.
   useEffect(() => {
+    const MAX_V = 6000;
     let lx = 0;
     let ly = 0;
-    let lt = performance.now();
+    let lt = 0;
+    let vx = 0;
+    let vy = 0;
+    const clamp = (v: number) => Math.max(-MAX_V, Math.min(MAX_V, v));
+    const reset = (e: PointerEvent) => {
+      lx = e.clientX;
+      ly = e.clientY;
+      lt = performance.now();
+      vx = 0;
+      vy = 0;
+      ctl.swarm?.pointer(e.clientX, e.clientY, 0, 0);
+    };
     const move = (e: PointerEvent) => {
       const t = performance.now();
-      const dt = Math.max(1, t - lt) / 1000;
-      const vx = (e.clientX - lx) / dt;
-      const vy = (e.clientY - ly) / dt;
+      const dtMs = t - lt;
+      if (!lt || dtMs > 250) return reset(e);
+      const dt = Math.max(4, dtMs) / 1000;
+      const k = Math.min(1, dtMs / 30);
+      vx += (clamp((e.clientX - lx) / dt) - vx) * k;
+      vy += (clamp((e.clientY - ly) / dt) - vy) * k;
       lx = e.clientX;
       ly = e.clientY;
       lt = t;
       ctl.swarm?.pointer(e.clientX, e.clientY, vx, vy);
       ctl.energy(Math.min(1, Math.hypot(vx, vy) / 3000));
     };
+    addEventListener('pointerdown', reset, { passive: true });
     addEventListener('pointermove', move, { passive: true });
-    return () => removeEventListener('pointermove', move);
+    return () => {
+      removeEventListener('pointerdown', reset);
+      removeEventListener('pointermove', move);
+    };
   }, []);
+
+  // ---- idle the swarm while the game is up (the tab-hidden pause is the engine's own)
+  useEffect(() => {
+    if (overlay === 'game') ctl.swarm?.pause?.();
+    else ctl.swarm?.resume?.();
+  }, [overlay]);
 
   // ---- idle → "or just watch." → tour (SPEC §2.2) ---------------------------
   useEffect(() => {
@@ -243,7 +275,7 @@ export function App() {
       <a className="y-skip" href="#y-input" onClick={(e) => { e.preventDefault(); document.getElementById('y-input')?.focus(); }}>
         {copy.a11y.skip}
       </a>
-      <canvas ref={canvasRef} className="y-canvas" aria-label={copy.a11y.swarm} role="img" />
+      <div ref={bodyRef} className="y-canvas" aria-label={copy.a11y.swarm} role="img" />
       <TopBar voiceSupported={voiceSupported} />
       <main className="y-main">
         <Conversation />

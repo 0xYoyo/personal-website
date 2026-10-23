@@ -2,7 +2,7 @@ import type { Mood, ShapeSpec } from '@yoyo/protocol';
 import type { SimParams } from './params';
 import { defaultParams } from './params';
 import type { Targets, Viewport } from '../shapes';
-import { emptyTargets, frameTargets, ringTargets, shapeTargets } from '../shapes';
+import { emptyTargets, frameTargets, ringTargets, shapeTargets, stageCentre } from '../shapes';
 import { hash01 } from '../hash';
 import type { Scheduler } from './scheduler';
 
@@ -46,6 +46,12 @@ export class Controller {
   private burstPending = 0;
   private hooks: ControllerHooks;
   private ringActive = false;
+  /** Where shapes form (CSS px, viewport); null = the whole viewport. */
+  private stage: Rect | null = null;
+  /** Entry beat: shapes use the whole viewport even when a stage is set. */
+  private fullFrame = false;
+  /** Murmuration roost centre (world px), eased toward the stage centre. */
+  private roostX = 0; private roostY = 0;
 
   constructor(n: number, hooks: ControllerHooks, sched: Scheduler) {
     this.n = n; this.hooks = hooks; this.sched = sched;
@@ -57,14 +63,38 @@ export class Controller {
     this.vp = { w, h };
     this.p.halfW = w / 2; this.p.halfH = h / 2;
     this.p.pointerR = 90;
-    if (changed && this.holding && this.lastSpec && !this.frame && !this.ringActive) {
-      // re-layout the held shape for the new viewport, without a re-knit
-      const spec = this.lastSpec;
-      void shapeTargets(spec, this.n, this.vp, this.lastDepth).then((t) => {
-        if (!t || this.lastSpec !== spec) return;
-        this.A = t; this.B = t; this.applyShapeMeta(t); this.hooks.upload(this.A, this.B);
-      });
-    }
+    if (changed) this.relayout();
+  }
+
+  /** The free area where shapes form (CSS px, viewport). A held shape moves there without a re-knit. */
+  setStage(rect: Rect | null): void {
+    const r = rect && rect.w > 0 && rect.h > 0 ? { ...rect } : null;
+    const s = this.stage;
+    if (s && r && Math.abs(s.x - r.x) + Math.abs(s.y - r.y) + Math.abs(s.w - r.w) + Math.abs(s.h - r.h) < 1) return;
+    this.stage = r;
+    this.relayout();
+  }
+
+  /** While on, shapes use the whole viewport (the entry's YOYO / name beat). */
+  setFullFrame(on: boolean): void {
+    if (this.fullFrame === on) return;
+    this.fullFrame = on;
+    this.relayout();
+  }
+
+  /** The layout shapes are fitted into: the viewport plus the stage (unless full-frame). */
+  private layout(): Viewport {
+    return this.stage && !this.fullFrame ? { ...this.vp, stage: this.stage } : this.vp;
+  }
+
+  private relayout(): void {
+    if (!this.holding || !this.lastSpec || this.frame || this.ringActive) return;
+    // re-layout the held shape for the new viewport/stage, without a re-knit
+    const spec = this.lastSpec;
+    void shapeTargets(spec, this.n, this.layout(), this.lastDepth).then((t) => {
+      if (!t || this.lastSpec !== spec) return;
+      this.A = t; this.B = t; this.applyShapeMeta(t); this.hooks.upload(this.A, this.B);
+    });
   }
 
   get now(): number { return this.p.time; }
@@ -101,7 +131,7 @@ export class Controller {
     if (spec.kind !== 'frame') this.frame = null;
     this.p.selectFrac = 1.01;
     const depth = opts?.depth ?? 1;
-    void shapeTargets(spec, this.n, this.vp, depth).then((t) => {
+    void shapeTargets(spec, this.n, this.layout(), depth).then((t) => {
       if (tok !== this.token || !t) return;
       this.lastSpec = spec; this.lastDepth = depth;
       this.knit(t);
@@ -173,7 +203,10 @@ export class Controller {
         if (this.holding && !this.frame) this.release();
         break;
       case 'listening': {
-        const t = ringTargets(this.n, Math.min(this.vp.w, this.vp.h) * 0.16, 18, 5, 0, this.vp.h * 0.04);
+        const L = this.layout();
+        const c = L.stage ? stageCentre(L) : { x: 0, y: this.vp.h * 0.04 };
+        const rr = L.stage ? Math.min(L.stage.w, L.stage.h) * 0.3 : Math.min(this.vp.w, this.vp.h) * 0.16;
+        const t = ringTargets(this.n, Math.min(rr, Math.min(this.vp.w, this.vp.h) * 0.16), 18, 5, c.x, c.y);
         this.token++;
         this.frame = null;
         this.knit(t, { transit: true });
@@ -276,9 +309,15 @@ export class Controller {
     // leader wander (murmuration centre of mass drifts around the viewport)
     const t = p.time;
     // leader sweeps a slow Lissajous (~150 px/s): the flock streams after it instead of milling in place
-    p.leaderX = Math.sin(t * 0.47) * p.halfW * 0.3 + Math.sin(t * 0.83 + 2) * p.halfW * 0.08;
-    p.leaderY = Math.sin(t * 0.61 + 1) * p.halfH * 0.32 + Math.cos(t * 1.07) * p.halfH * 0.06;
-    if (this.mood === 'celebrate') { p.leaderX *= 0.3; p.leaderY *= 0.3; }
+    // the roost eases toward the stage centre (≈ 99 % there after 4 s), and its sweep shrinks to the stage
+    const L = this.layout();
+    const rc = stageCentre(L);
+    const re = 1 - Math.exp(-dt / 0.9);
+    this.roostX += (rc.x - this.roostX) * re; this.roostY += (rc.y - this.roostY) * re;
+    const ax = L.stage ? Math.min(p.halfW, L.stage.w * 0.6) : p.halfW, ay = L.stage ? Math.min(p.halfH, L.stage.h * 0.6) : p.halfH;
+    p.leaderX = this.roostX + Math.sin(t * 0.47) * ax * 0.3 + Math.sin(t * 0.83 + 2) * ax * 0.08;
+    p.leaderY = this.roostY + Math.sin(t * 0.61 + 1) * ay * 0.32 + Math.cos(t * 1.07) * ay * 0.06;
+    if (this.mood === 'celebrate') { p.leaderX = this.roostX + (p.leaderX - this.roostX) * 0.3; p.leaderY = this.roostY + (p.leaderY - this.roostY) * 0.3; }
     p.flowFreq = (1 / 900) * (1 + 4 * p.wild); // wild = small-scale turbulence, not a coherent gust
     // frame / vortex centre
     if (this.frame) {
@@ -286,9 +325,10 @@ export class Controller {
       p.vortexCx = r.x + r.w / 2 - this.vp.w / 2; p.vortexCy = this.vp.h / 2 - (r.y + r.h / 2);
       p.selectFrac += (Math.max(this.frame.progress, 0.0) - p.selectFrac) * (1 - Math.exp(-dt * 8));
       if (this.frame.progress >= 1) p.selectFrac = 1.01;
-    } else { p.vortexCx = 0; p.vortexCy = this.vp.h * 0.04; }
+    } else if (L.stage) { p.vortexCx = rc.x; p.vortexCy = rc.y; } else { p.vortexCx = 0; p.vortexCy = this.vp.h * 0.04; }
     // speaking breathing + listening ring
-    p.targetScale = this.mood === 'speaking' && !this.reduced ? 1 + 0.012 * Math.sin(t * 2.4) : 1;
+    // breathing while speaking, plus the per-word pulse (~6 % scale, decays in ~120 ms)
+    p.targetScale = this.reduced ? 1 : (this.mood === 'speaking' ? 1 + 0.012 * Math.sin(t * 2.4) : 1) * (1 + 0.1 * p.pulse);
     if (this.ringActive) p.ringLevel += (this.listenLevel - p.ringLevel) * (1 - Math.exp(-dt * 14));
     // 3D sway while held
     p.rotY = p.spinOn ? Math.sin(t * 0.7) * 0.32 : 0;
@@ -300,7 +340,7 @@ export class Controller {
     const ce = 1 - Math.exp(-dt * 2);
     p.camX += (this.camTX * 16 * par - p.camX) * ce; p.camY += (this.camTY * 10 * par - p.camY) * ce;
     // pulses and bursts
-    p.pulse *= Math.exp(-dt * 5);
+    p.pulse *= Math.exp(-dt * 14);
     p.burst = this.burstPending; this.burstPending = 0;
     p.burstX = p.shapeCx; p.burstY = p.shapeCy;
     return p;

@@ -1,4 +1,4 @@
-import type { Mood, ShapeSpec, SwarmApi } from '@yoyo/protocol';
+import type { Mood, Rect, ShapeSpec, SwarmApi, SwarmEntry, SwarmStage } from '@yoyo/protocol';
 import type { Backend, Caps, Tier, TierConfig } from './tiers';
 import { AdaptiveMonitor, initialTier, nextLowerTier, tierConfig } from './tiers';
 import { detectBackend } from './detect';
@@ -8,6 +8,7 @@ import { CpuEngine } from './backend/cpu';
 import { loadDisplayFont } from './font';
 import { Scheduler } from './backend/scheduler';
 import { yoyo3dTargets } from './shapes';
+import { playEntry as runEntry } from './entry';
 
 export interface SwarmOptions {
   scene?: Scene;
@@ -31,8 +32,12 @@ export interface SwarmOptions {
 
 export type SwarmStats = ReturnType<SwarmApi['stats']>;
 
-/** SwarmApi plus a few integration extras (all optional to use). */
-export interface Swarm extends SwarmApi {
+/** SwarmApi plus the stage / entry / pause extensions and a few QA extras. */
+export interface Swarm extends SwarmApi, SwarmEntry, SwarmStage {
+  /** Idle the render loop (e.g. while the game modal is open); state is kept. */
+  pause(): void;
+  /** Resume after pause() (no-op while the tab is hidden; it resumes when visible). */
+  resume(): void;
   /** The canvas currently drawn into (replaced when the context type has to change, e.g. GPU → 2D). */
   readonly canvas: HTMLCanvasElement;
   /** @internal QA hook: the active engine. */
@@ -102,6 +107,8 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
   };
 
   let ro: ResizeObserver | null = null;
+  let stage: Rect | null = null;
+  let fullFrame = false;
 
   // Build (or rebuild) the engine for a tier config; keeps behaviour state where it can.
   const build = async (c: TierConfig, spawn: 'edges' | 'scatter' | 'center'): Promise<void> => {
@@ -130,6 +137,8 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     const prev = ctrl as Controller | undefined;
     ctrl = new Controller(c.count, { upload: (a, b) => engine?.setTargets(a, b) }, sched);
     ctrl.setReduced(reduced);
+    ctrl.setStage(stage);
+    ctrl.setFullFrame(fullFrame);
     const { w, h } = cssSize();
     ctrl.setViewport(w, h);
     e.resize(w, h);
@@ -152,7 +161,7 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
   };
 
   // ---------------------------------------------------------------- loop
-  let raf = 0, last = performance.now(), running = true, manual = false;
+  let raf = 0, last = performance.now(), running = true, manual = false, paused = false;
   const frameMs: number[] = [], cpuMs: number[] = [];
   let fpsEma = 60;
   let waiters: (() => void)[] = [];
@@ -185,10 +194,11 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     }
   };
 
-  const onVis = (): void => {
-    if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
-    else if (running && !raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
+  const startLoop = (): void => {
+    if (running && !paused && !document.hidden && !raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
   };
+  const stopLoop = (): void => { cancelAnimationFrame(raf); raf = 0; };
+  const onVis = (): void => { if (document.hidden) stopLoop(); else startLoop(); };
 
   const api: Swarm = {
     get canvas() { return canvas; },
@@ -206,6 +216,24 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
       switching = switching.then(() => build(next, 'scatter'));
     },
     setListeningLevel(l) { ctrl.setListeningLevel(l); },
+    setStage(rect) { stage = { ...rect }; ctrl.setStage(stage); },
+    async playEntry(o = {}) {
+      fullFrame = true; ctrl.setFullFrame(true);
+      try {
+        if (o.reducedMotion ?? reduced) {
+          // reduced motion: the shape appears, holds, and goes; no pour-in
+          api.become(o.name ? { kind: 'text', text: o.name } : { kind: 'yoyo3d' });
+          await api.wait(1600);
+          api.release();
+        } else {
+          await runEntry(api, o.name ? { name: o.name } : {});
+        }
+      } finally {
+        fullFrame = false; ctrl.setFullFrame(false);
+      }
+    },
+    pause() { paused = true; stopLoop(); },
+    resume() { if (!paused) return; paused = false; startLoop(); },
     pulse(s) { ctrl.pulse(s ?? 0.6); },
     async screenshot() {
       await switching;
@@ -256,6 +284,6 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
   }
   reducedQuery?.addEventListener?.('change', (e) => { if (opts.reducedMotion === undefined) api.setReducedMotion(e.matches); });
   document.addEventListener('visibilitychange', onVis);
-  raf = requestAnimationFrame(loop);
+  startLoop();
   return api;
 }

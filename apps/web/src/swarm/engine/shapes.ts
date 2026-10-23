@@ -15,7 +15,20 @@ export interface Targets {
   spin: boolean;
 }
 
-export interface Viewport { w: number; h: number }
+export interface Viewport {
+  w: number; h: number;
+  /**
+   * Optional stage (CSS px, viewport coords): shapes are fitted into this box (minus a margin) instead of the
+   * whole viewport, so they never sit under the agent's words. Frames ignore it (they have their own rect).
+   */
+  stage?: { x: number; y: number; w: number; h: number } | null;
+}
+
+/** World-space centre (origin = viewport centre, y up) of the stage, or of the viewport when there is none. */
+export function stageCentre(vp: Viewport): { x: number; y: number } {
+  const s = vp.stage;
+  return s ? { x: s.x + s.w / 2 - vp.w / 2, y: vp.h / 2 - (s.y + s.h / 2) } : { x: 0, y: 0 };
+}
 
 export const DISPLAY_FONT = 'Bricolage Grotesque Swarm';
 const EMOJI_FONT = '"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji","Twemoji Mozilla",sans-serif';
@@ -214,6 +227,19 @@ function wrapText(text: string): string[] {
 export function fitFor(kind: 'text' | 'emoji' | 'glyph' | 'yoyo3d', vp: Viewport, lines = 1): Fit {
   const portrait = vp.h > vp.w;
   const depth = 18;
+  const st = vp.stage;
+  if (st && st.w > 40 && st.h > 40) {
+    // map the shape's bounding box into the stage, inset by a margin
+    const m = Math.min(st.w, st.h) * 0.07 + 8;
+    const w = st.w - 2 * m, h = st.h - 2 * m;
+    const { x: cx, y: cy } = stageCentre(vp);
+    switch (kind) {
+      case 'text': return { maxW: w, maxH: h * (lines > 1 ? 0.8 : 0.5), cx, cy, depth };
+      case 'emoji': return { maxW: w * 0.9, maxH: h * 0.8, cx, cy, depth };
+      case 'glyph': return { maxW: w * 0.9, maxH: h * 0.8, cx, cy, depth };
+      case 'yoyo3d': return { maxW: w, maxH: h * 0.55, cx, cy, depth };
+    }
+  }
   switch (kind) {
     case 'text': return { maxW: vp.w * (portrait ? 0.86 : 0.74), maxH: vp.h * (lines > 1 ? 0.46 : 0.3), cx: 0, cy: vp.h * 0.06, depth };
     case 'emoji': return { maxW: vp.w * 0.6, maxH: vp.h * 0.46, cx: 0, cy: vp.h * 0.05, depth };
@@ -293,11 +319,12 @@ function loadTypeface(): Promise<unknown> {
   return typeface;
 }
 
-let yoyoCache: { n: number; w: number; h: number; t: Targets } | null = null;
+let yoyoCache: { n: number; key: string; t: Targets } | null = null;
+const vpKey = (vp: Viewport): string => `${vp.w}x${vp.h}:${vp.stage ? `${vp.stage.x},${vp.stage.y},${vp.stage.w},${vp.stage.h}` : '-'}`;
 
 /** Extruded "YOYO" (Bricolage Grotesque 800 typeface) sampled on its surface with MeshSurfaceSampler. */
 export async function yoyo3dTargets(n: number, vp: Viewport): Promise<Targets> {
-  if (yoyoCache && yoyoCache.n === n && yoyoCache.w === vp.w && yoyoCache.h === vp.h) return yoyoCache.t;
+  if (yoyoCache && yoyoCache.n === n && yoyoCache.key === vpKey(vp)) return yoyoCache.t;
   const [THREE, { FontLoader }, { TextGeometry }, { MeshSurfaceSampler }, fontJson] = await Promise.all([
     import('three/webgpu'),
     import('three/addons/loaders/FontLoader.js'),
@@ -328,7 +355,7 @@ export async function yoyo3dTargets(n: number, vp: Viewport): Promise<Targets> {
   }
   geo.dispose();
   t.cx = fit.cx; t.cy = fit.cy; t.spin = true;
-  yoyoCache = { n, w: vp.w, h: vp.h, t };
+  yoyoCache = { n, key: vpKey(vp), t };
   return t;
 }
 

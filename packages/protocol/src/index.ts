@@ -49,8 +49,14 @@ export interface SwarmStage {
   setStage(rect: Rect): void;
 }
 
+/** An engine may idle its render loop on request (game modal open); state is kept. */
+export interface SwarmPause {
+  pause(): void;
+  resume(): void;
+}
+
 /** What the UI holds: the required API plus the optional extensions. */
-export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage>;
+export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage> & Partial<SwarmPause>;
 
 // ---------------------------------------------------------------------------
 // Id lists (the single source the guards and pickers use)
