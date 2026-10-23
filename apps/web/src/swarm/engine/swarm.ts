@@ -42,6 +42,8 @@ export interface Swarm extends SwarmApi, SwarmEntry, SwarmStage {
   readonly canvas: HTMLCanvasElement;
   /** @internal QA hook: the active engine. */
   readonly _engine: Engine | null;
+  /** @internal QA hook: simulation time (s) and the 3D sway angle of a held YOYO. */
+  readonly _time: number;
   readonly mood_: Mood;
   /** Re-seed particle positions (entry pour-in). */
   respawn(kind: 'edges' | 'scatter' | 'center'): void;
@@ -204,6 +206,7 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     get canvas() { return canvas; },
     /** @internal QA hook */
     get _engine() { return engine; },
+    get _time() { return ctrl.p.time; },
     get mood_() { return ctrl.mood; },
     become(shape, o) { ctrl.become(shape, o); },
     release() { ctrl.release(); },
