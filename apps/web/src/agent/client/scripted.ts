@@ -2,6 +2,7 @@
 // over quota, or slow. Replies carry the same inline actions as live replies and
 // are streamed word by word with live-like timing.
 
+import { EXTRA_INTENTS } from './extras';
 import { EMOJI_BEATS, FAQ_INTENTS, FAQ_UNKNOWN } from './faq';
 import { classify, type Classification } from './intents';
 import { PROJECT_IDS, type ProjectId } from '@yoyo/protocol';
@@ -75,6 +76,8 @@ export function replyFor(c: Classification, ctx: ScriptedContext): string {
           return reply('build');
       }
       return FAQ_UNKNOWN;
+    case 'extra':
+      return EXTRA_INTENTS.find((x) => x.id === c.id)?.reply ?? FAQ_UNKNOWN;
     case 'unknown':
       return FAQ_UNKNOWN;
   }

@@ -71,7 +71,8 @@
   left: var(--gutter);
   top: 50%;
   transform: translateY(-56%);
-  width: min(58vw, 900px);
+  /* stays left of the swarm's stage (x ≥ 60vw, App.tsx stageRect) */
+  width: min(calc(60vw - var(--gutter) - 48px), 900px);
   transition: opacity var(--dur-2) var(--ease);
 }
 .y-convo[data-hidden='true'] {

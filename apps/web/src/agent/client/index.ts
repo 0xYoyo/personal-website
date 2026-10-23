@@ -14,6 +14,8 @@ export type { TagStream, ParseOut, ResolveOptions } from './tags';
 export { classify, rankIntents, captureName, tokenize } from './intents';
 export type { Classification } from './intents';
 export { scriptedReply, RESTING_LINE, ADDED_LINES } from './scripted';
+export { EXTRA_INTENTS } from './extras';
+export type { ExtraIntent } from './extras';
 export { FAQ_INTENTS, FAQ_UNKNOWN, EMOJI_BEATS } from './faq';
 export type { FaqIntent } from './faq';
 

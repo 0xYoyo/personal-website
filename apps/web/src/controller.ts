@@ -31,6 +31,8 @@ let buildAbort: AbortController | null = null;
 let runner: Runner | null = null;
 let deferred: Action[] = [];
 let lastBuildRect: Rect | null = null;
+/** Bumped by every turn; a pending "let the shape go" from an older turn checks it. */
+let settleSeq = 0;
 
 /** Overlay-opening actions wait until the line has been said. */
 const DEFERRED = new Set<Action['type']>(['show', 'play', 'story', 'tour', 'build', 'contact']);
@@ -187,6 +189,8 @@ export const ctl = {
     const ac = new AbortController();
     turn = ac;
     st.pushVisitor(clean);
+    settleSeq++;
+    const startedAt = performance.now();
     swarm()?.mood('thinking');
     st.setMood('thinking');
     let started = false;
@@ -223,8 +227,15 @@ export const ctl = {
       );
       if (turn !== ac) return;
       S().finishAgent();
-      swarm()?.mood('idle');
       S().setMood('idle');
+      // The words are shown in ≤ 2-line beats that outlast the stream (ui/beats.ts holds each
+      // beat ~170 ms per word): keep the shape until the last beat has been read, then let go.
+      const readMs = Math.max(0, startedAt + reply.text.split(/\s+/).length * 170 - performance.now()) + 1200;
+      const seq = ++settleSeq;
+      setTimeout(() => {
+        if (seq !== settleSeq || turn || S().overlay !== 'none' || runner?.running()) return;
+        swarm()?.mood('idle');
+      }, S().reducedMotion ? 0 : readMs);
       if (reply.text && S().voice) rt.voice?.speak(reply.text, pulseWord);
       if (!chipsSet) {
         if (opened) S().setChips(projectChips(opened));

@@ -2,6 +2,7 @@
 // fuzzy match over the hints in faq.md, plus the special rules faq.md describes
 // (name capture, emoji, "spell X") and a few chip follow-ups.
 
+import { EXTRA_INTENTS } from './extras';
 import { FAQ_INTENTS, type FaqIntent } from './faq';
 import { leadingEmoji } from './tags';
 import type { StoryId } from '@yoyo/protocol';
@@ -13,6 +14,7 @@ export type Classification =
   | { kind: 'spell'; text: string }
   | { kind: 'spell-my-name' }
   | { kind: 'command'; id: 'play-it' | 'next-one' | 'rocket' | 'another-build' }
+  | { kind: 'extra'; id: string }
   | { kind: 'unknown' };
 
 /** Hints too common to carry much signal on their own. */
@@ -142,6 +144,8 @@ export function classify(text: string): Classification {
   if (name) return { kind: 'name', name };
 
   const n = norm(raw);
+  const extra = EXTRA_INTENTS.find((x) => x.match.test(n));
+  if (extra) return { kind: 'extra', id: extra.id };
   if (/^(play it|play now|lets play|play the game)$/.test(n)) return { kind: 'command', id: 'play-it' };
   if (/^(next|next one|next project|another one|show me another)$/.test(n)) return { kind: 'command', id: 'next-one' };
   if (/^(now )?a rocket$|^rocket$/.test(n)) return { kind: 'command', id: 'rocket' };
