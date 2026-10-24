@@ -53,19 +53,20 @@ const pacers = new Set<Pacer>();
  * last turn is on screen.
  */
 function turnPacer(opts: { onBegin?: () => void } = {}): Pacer {
+  let id = -1; // this pacer's line: two pacers never write into each other's turn
   const p = createPacer(
     {
       begin(t) {
         opts.onBegin?.();
-        S().startAgent({ ...(t.px ? { size: t.px } : {}), full: t.text });
+        id = S().startAgent({ ...(t.px ? { size: t.px } : {}), full: t.text });
         if (S().voice) rt.voice?.speak(t.text, pulseWord);
       },
       word(w) {
-        S().appendAgentWord(w);
+        S().appendAgentWord(w, id);
         pulseWord();
       },
       end() {
-        S().finishAgent({ keepStreaming: true });
+        S().finishAgent({ keepStreaming: true, id });
       },
     },
     {
@@ -241,6 +242,7 @@ export const ctl = {
     if (runner?.running()) runner.skip();
     turn?.abort();
     for (const p of pacers) p.cancel();
+    S().finishAgent({ keepStreaming: true }); // a turn cut short rests as far as it got
     // the visitor moved on: the next turn does not wait for the one on screen
     channel.last = null;
     deferred = [];

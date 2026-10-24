@@ -86,9 +86,10 @@ export interface Actions {
   setPhase(p: Phase): void;
   pushVisitor(text: string): number;
   startAgent(turn?: { size?: number; full?: string }): number;
-  appendAgentWord(word: string): void;
-  /** `keepStreaming`: a turn ended but the reply goes on */
-  finishAgent(opts?: { keepStreaming?: boolean }): void;
+  /** `id`: the line to append to (a turn); else the last streaming agent line */
+  appendAgentWord(word: string, id?: number): void;
+  /** `keepStreaming`: a turn ended but the reply goes on; `id`: finish only that line */
+  finishAgent(opts?: { keepStreaming?: boolean; id?: number }): void;
   setStreaming(on: boolean): void;
   setSettling(on: boolean): void;
   agentLine(text: string, opts?: { quiet?: boolean }): number;
@@ -154,12 +155,12 @@ export const useStore = create<State & Actions>()((set, get) => ({
     set((s) => ({ lines: [...s.lines, line].slice(-MAX_LINES), streaming: true }));
     return id;
   },
-  appendAgentWord(word) {
+  appendAgentWord(word, id) {
     set((s) => {
       const lines = s.lines.slice();
       for (let i = lines.length - 1; i >= 0; i--) {
         const l = lines[i]!;
-        if (l.role === 'agent' && l.streaming) {
+        if (id !== undefined ? l.id === id : l.role === 'agent' && l.streaming) {
           lines[i] = { ...l, text: l.text ? `${l.text} ${word}` : word };
           break;
         }
@@ -170,7 +171,9 @@ export const useStore = create<State & Actions>()((set, get) => ({
   finishAgent(opts) {
     set((s) => ({
       // drop an agent line that never received text (action-only replies)
-      lines: s.lines.filter((l) => !(l.role === 'agent' && l.streaming && !l.text)).map((l) => (l.streaming ? { ...l, streaming: false } : l)),
+      lines: s.lines
+        .filter((l) => !(l.role === 'agent' && l.streaming && !l.text && (opts?.id === undefined || l.id === opts.id)))
+        .map((l) => (l.streaming && (opts?.id === undefined || l.id === opts.id) ? { ...l, streaming: false } : l)),
       streaming: !!opts?.keepStreaming,
     }));
   },
