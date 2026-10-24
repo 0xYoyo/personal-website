@@ -57,19 +57,27 @@ const CLAUSE_END = /[,;:—–]$/;
 
 /**
  * Split a turn in two: at the last sentence boundary whose first part fits
- * (else the first sentence boundary, and the parts split again); with no
- * sentence boundary, the same at a clause boundary; else in the middle.
+ * (unless that leaves a stub under a third of the turn and a later clause
+ * boundary fits); with none that fits, the last clause boundary that fits,
+ * else the first boundary (and the parts split again); else in the middle.
  */
 export function splitTurn(text: string, measure: MeasureTurn): [string, string] | null {
   const words = wordsOf(text);
   if (words.length < 2) return null;
-  for (const re of [SENTENCE_END, CLAUSE_END]) {
-    const cuts = cutsAfter(words, re);
-    if (!cuts.length) continue;
-    const head = (i: number) => words.slice(0, i).join(' ');
-    const fit = [...cuts].reverse().find((i) => measure(head(i)).fits) ?? cuts[0]!;
-    return [head(fit), words.slice(fit).join(' ')];
+  const head = (i: number) => words.slice(0, i).join(' ');
+  /** the latest cut whose head fits */
+  const best = (cuts: number[]) => [...cuts].reverse().find((i) => measure(head(i)).fits);
+  const sentences = cutsAfter(words, SENTENCE_END);
+  const clauses = cutsAfter(words, CLAUSE_END);
+  let cut = best(sentences);
+  // a sentence boundary that leaves a stub of a turn ("Yoav Zrihan." alone) gives way to a
+  // later clause boundary that still fits
+  if (cut !== undefined && cut < words.length / 3) {
+    const clause = best(clauses);
+    if (clause !== undefined && clause > cut) cut = clause;
   }
+  cut ??= best(clauses) ?? sentences[0] ?? clauses[0];
+  if (cut !== undefined) return [head(cut), words.slice(cut).join(' ')];
   const mid = Math.ceil(words.length / 2);
   return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
 }

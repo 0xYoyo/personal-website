@@ -169,6 +169,13 @@ describe('the pacer (POLISH2 A1)', () => {
 });
 
 describe('splitTurn / fitTurn', () => {
+  it('a sentence boundary that would leave a stub gives way to a later clause boundary', () => {
+    const t = 'Yoav Zrihan. Self-taught, building since 2022, crypto since 2021, second-year CS at Reichman.';
+    expect(splitTurn(t, byWords(9))).toEqual(['Yoav Zrihan. Self-taught, building since 2022, crypto since 2021,', 'second-year CS at Reichman.']);
+    // a sentence boundary with a real first part still wins
+    expect(splitTurn('He ships every week. Solidity in 2022, Ordinals in 2023, agents now.', byWords(9))).toEqual(['He ships every week.', 'Solidity in 2022, Ordinals in 2023, agents now.']);
+  });
+
   it('falls back to a clause boundary, then the middle', () => {
     const m = byWords(3);
     expect(splitTurn('one two, three four five', m)).toEqual(['one two,', 'three four five']);
