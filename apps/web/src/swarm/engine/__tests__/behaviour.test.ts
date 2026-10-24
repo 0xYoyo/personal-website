@@ -52,9 +52,9 @@ describe('keep-out rects (POLISH1 B3)', () => {
     expect(freeStage({ x: 0, y: 0, w: 400, h: 600 }, [{ x: 500, y: 0, w: 10, h: 10 }])).toEqual({ x: 0, y: 0, w: 400, h: 600 });
   });
 
-  it('keeps the idle CPU flock out of a rect that covers part of its stage', () => {
-    // the top 40 % of the stage is a keep-out (as the conversation block is on mobile)
-    const ko: Rect = { x: STAGE.x - 40, y: STAGE.y - 20, w: STAGE.w + 80, h: STAGE.h * 0.4 };
+  it('keeps the idle CPU flock out of a rect where it would otherwise fly', () => {
+    // the reply block on the left: the free-range flock (POLISH2 B1) flies there unless it is a keep-out
+    const ko: Rect = { x: 40, y: 250, w: 640, h: 260 };
     const free = rig(3000);
     free.ctrl.setStage(STAGE);
     free.step(5);

@@ -1,6 +1,6 @@
 import type { Mood, ShapeSpec } from '@yoyo/protocol';
 import type { SimParams } from './params';
-import { defaultParams, MAX_KEEPOUT, shapeExposure, targetArea } from './params';
+import { BOUND_INSET, defaultParams, HOLE_R, MAX_KEEPOUT, shapeExposure, targetArea } from './params';
 import type { Targets, Viewport } from '../shapes';
 import { emptyTargets, frameTargets, ringTargets, shapeTargets, stageCentre } from '../shapes';
 import { hash01 } from '../hash';
@@ -19,6 +19,27 @@ type Knobs = Pick<SimParams, 'flowAmp' | 'flowFreq' | 'flowRate' | 'speedMin' | 
  */
 /** Seconds of the post-entry migration boost. */
 const MIGRATE_S = 1.4;
+/** B3 dim frame: share of the particles that stay on the border, its brightness and band thickness (px). */
+export const DIM_SHARE = 0.25;
+const DIM_BRIGHT = 0.6;
+const DIM_THICKNESS = 5;
+const DIM_FREE = 0.38;
+/** Below this share of the (inset) viewport free of keep-outs, a dim frame's freed particles fade out. */
+export const DIM_ROOM = 0.12;
+
+/** Share of the viewport (inset 48 px) that is at least `pad` px clear of every rect (CSS px), on a 32 × 32 grid. */
+export function freeShare(vp: { w: number; h: number }, rects: readonly Rect[], pad = 30): number {
+  let free = 0;
+  const N = 32;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const x = 48 + ((i + 0.5) / N) * (vp.w - 96), y = 48 + ((j + 0.5) / N) * (vp.h - 96);
+    if (!rects.some((r) => x > r.x - pad && x < r.x + r.w + pad && y > r.y - pad && y < r.y + r.h + pad)) free++;
+  }
+  return free / (N * N);
+}
+/** B2: a touch point stays present this long; a still cursor turns curious after this (s). */
+const TOUCH_HOLD_S = 2;
+export const CURIOUS_AFTER = 0.5;
 
 export const BASE: Knobs = {
   flowAmp: 200, flowFreq: 1 / 420, flowRate: 0.7, speedMin: 90, speedMax: 380, align: 2.2, sep: 25, coh: 0, cruise: 210, waveAmp: 0.1,
@@ -52,6 +73,36 @@ export function freeStage(stage: Rect, keepOut: readonly Rect[], gap = 12): Rect
   return r;
 }
 
+/**
+ * The dim frame's own keep-out (B3): the frame grown by up to DIM_GAP px per side, so the freed flock keeps a
+ * clear gap off the thin border — but never into a neighbouring keep-out (a phone's caption sits 14 px above it).
+ */
+const DIM_GAP = 28;
+export function dimFrameKeepOut(f: Rect, others: readonly Rect[]): Rect {
+  let t = DIM_GAP, b = DIM_GAP, l = DIM_GAP, r = DIM_GAP;
+  for (const k of others) {
+    const hx = k.x < f.x + f.w && f.x < k.x + k.w, vy = k.y < f.y + f.h && f.y < k.y + k.h;
+    if (hx && k.y + k.h <= f.y) t = Math.min(t, Math.max(0, f.y - (k.y + k.h) - 4));
+    if (hx && k.y >= f.y + f.h) b = Math.min(b, Math.max(0, k.y - (f.y + f.h) - 4));
+    if (vy && k.x + k.w <= f.x) l = Math.min(l, Math.max(0, f.x - (k.x + k.w) - 4));
+    if (vy && k.x >= f.x + f.w) r = Math.min(r, Math.max(0, k.x - (f.x + f.w) - 4));
+  }
+  return { x: f.x - l, y: f.y - t, w: f.w + l + r, h: f.h + t + b };
+}
+
+/** The dim frame's faces that a neighbouring keep-out sits against (within 40 px): no exit there. */
+export function dimFrameBlocks(f: Rect, others: readonly Rect[], gap = 40): { t: number; b: number; l: number; r: number } {
+  const o = { t: 0, b: 0, l: 0, r: 0 };
+  for (const k of others) {
+    const hx = k.x < f.x + f.w && f.x < k.x + k.w, vy = k.y < f.y + f.h && f.y < k.y + k.h;
+    if (hx && k.y + k.h <= f.y + 1 && f.y - (k.y + k.h) < gap) o.t = 1;
+    if (hx && k.y >= f.y + f.h - 1 && k.y - (f.y + f.h) < gap) o.b = 1;
+    if (vy && k.x + k.w <= f.x + 1 && f.x - (k.x + k.w) < gap) o.l = 1;
+    if (vy && k.x >= f.x + f.w - 1 && k.x - (f.x + f.w) < gap) o.r = 1;
+  }
+  return o;
+}
+
 export interface ControllerHooks {
   upload(a: Targets, b: Targets): void;
   /** Called when a frame reaches progress 1 (the "lock" flash). */
@@ -78,9 +129,16 @@ export class Controller {
   private sched: Scheduler;
   private knobs: Knobs = { ...BASE };
   private moodBeforeTransient: Mood = 'idle';
-  private frame: { rect: Rect; progress: number; locked: boolean } | null = null;
+  private frame: { rect: Rect; progress: number; locked: boolean; dim: boolean } | null = null;
   private listenLevel = 0;
   private pointerSeen = -1e9;
+  // B2: cursor presence (CSS px screen position, last real movement, touch, wake tail in world px)
+  private ptrX = 0; private ptrY = 0; private ptrMoved = -1e9; private ptrTouch = false;
+  private tailX = 1e5; private tailY = 1e5;
+  /** B3: gather() — sim time it ends, its length (s), and the post-gather easing */
+  private gatherEnd = -1; private gatherT = 1;
+  /** B5: the 2D tier samples shapes edge-weighted and builds YOYO without three.js */
+  private lite = false;
   private camTX = 0; private camTY = 0;
   private burstPending = 0;
   private hooks: ControllerHooks;
@@ -105,7 +163,7 @@ export class Controller {
     const changed = Math.abs(w - this.vp.w) > 1 || Math.abs(h - this.vp.h) > 1;
     this.vp = { w, h };
     this.p.halfW = w / 2; this.p.halfH = h / 2;
-    this.p.pointerR = 90;
+    this.p.pointerR = HOLE_R;
     if (changed) this.relayout();
   }
 
@@ -123,6 +181,7 @@ export class Controller {
     if (s && r && same(s, r) && koSame) return;
     this.stage = r; this.keepOut = ko;
     this.free = r ? freeStage(r, ko) : null;
+    if (this.frame?.dim) this.setMoodKnobs(this.mood);
     this.relayout();
   }
 
@@ -147,8 +206,16 @@ export class Controller {
 
   /** The layout shapes are fitted into: the viewport plus the stage minus keep-outs (unless full-frame). */
   private layout(): Viewport {
-    return this.free && !this.fullFrame ? { ...this.vp, stage: this.free } : this.vp;
+    const v: Viewport = this.free && !this.fullFrame ? { ...this.vp, stage: this.free } : { ...this.vp };
+    if (this.lite) v.lite = true;
+    return v;
   }
+
+  /** The layout shapes are fitted into (QA / warm-up). */
+  get shapeLayout(): Viewport { return this.layout(); }
+
+  /** 2D tier (B5): edge-weighted shape sampling, YOYO from the 2D font mask (no three.js chunk). */
+  setLite(on: boolean): void { if (this.lite === on) return; this.lite = on; this.relayout(); }
 
   private relayout(): void {
     if (!this.holding || !this.lastSpec || this.frame || this.ringActive) return;
@@ -189,16 +256,19 @@ export class Controller {
     this.hooks.upload(this.A, this.B);
   }
 
-  become(spec: ShapeSpec, opts?: { hold?: number; depth?: number }): void {
-    if (spec.kind === 'none') { this.release(); return; }
+  /** Resolves true once the shape has knitted in (targets ready + the staggered knit), false if superseded. */
+  become(spec: ShapeSpec, opts?: { hold?: number; depth?: number }): Promise<boolean> {
+    if (spec.kind === 'none') { this.release(); return Promise.resolve(false); }
     const tok = ++this.token;
     this.clearHold();
     this.ringActive = false; this.p.ringOn = 0;
     if (spec.kind !== 'frame') this.frame = null;
     this.p.selectFrac = 1.01;
     const depth = opts?.depth ?? 1;
+    let knitted: (ok: boolean) => void = () => undefined;
+    const done = new Promise<boolean>((r) => { knitted = r; });
     void shapeTargets(spec, this.n, this.layout(), depth).then((t) => {
-      if (tok !== this.token || !t) return;
+      if (tok !== this.token || !t) { knitted(false); return; }
       this.lastSpec = spec; this.lastDepth = depth;
       this.knit(t);
       if (this.mood === 'idle' || this.mood === 'thinking' || this.mood === 'listening') { this.mood = 'speaking'; this.setMoodKnobs('speaking'); }
@@ -206,7 +276,9 @@ export class Controller {
         // hold counts from when the shape has knitted in (~0.95 s)
         this.holdTimer = this.sched.after(opts.hold / 1000 + this.p.spread + this.p.ramp, () => { if (tok === this.token) this.release(); });
       }
-    }).catch((e: unknown) => { console.warn('[swarm] shape failed', e); });
+      this.sched.after(this.p.spread + this.p.ramp, () => knitted(tok === this.token));
+    }).catch((e: unknown) => { console.warn('[swarm] shape failed', e); knitted(false); });
+    return done;
   }
 
   release(): void {
@@ -234,25 +306,54 @@ export class Controller {
     this.setMoodKnobs(this.mood);
   }
 
-  buildFrame(rect: Rect, progress: number): void {
+  /**
+   * A UI frame drawn by the swarm. `dim` (B3, only once locked): a thin, low-brightness border made of ~25 %
+   * of the particles; the rest are freed to idle around it (keep-outs on, and the frame itself is one).
+   */
+  buildFrame(rect: Rect, progress: number, opts?: { dim?: boolean }): void {
     const pr = Math.max(0, Math.min(1, progress));
     const same = this.frame && Math.abs(this.frame.rect.x - rect.x) + Math.abs(this.frame.rect.y - rect.y) + Math.abs(this.frame.rect.w - rect.w) + Math.abs(this.frame.rect.h - rect.h) < 2;
+    const dim = !!opts?.dim && pr >= 1;
     if (!same) {
       this.token++;
       this.clearHold();
       this.ringActive = false; this.p.ringOn = 0;
-      const t = frameTargets(this.n, rect, this.vp);
+      const t = frameTargets(this.n, rect, this.vp, dim ? DIM_THICKNESS : 11);
       this.lastSpec = { kind: 'frame', rect };
       this.knit(t, { transit: false });
-      this.frame = { rect: { ...rect }, progress: pr, locked: false };
+      this.frame = { rect: { ...rect }, progress: pr, locked: dim, dim };
+      if (dim) this.knobs.vortexW = 0;
     }
     const f = this.frame!;
     f.progress = pr;
-    this.mood = 'building';
-    this.setMoodKnobs('building');
+    if (dim !== f.dim) {
+      // same rect, thinner band: the held particles slide a few px, no re-knit
+      f.dim = dim;
+      // the construction vortex stops at once (easing it out would suck the freed flock into the frame)
+      if (dim) this.knobs.vortexW = 0;
+      const t = frameTargets(this.n, f.rect, this.vp, dim ? DIM_THICKNESS : 11);
+      this.A = t; this.B = t; this.applyShapeMeta(t); this.hooks.upload(this.A, this.B);
+    }
+    this.mood = dim ? 'idle' : 'building';
+    this.setMoodKnobs(this.mood);
     if (pr >= 1 && !f.locked) { f.locked = true; this.pulse(1); this.hooks.onLock?.(); }
     if (pr < 1) f.locked = false;
   }
+
+  /**
+   * B3: pull the flock to the stage centre within `ms` (used before releases after overlays). Drops any held
+   * shape or frame; the flight is free (keep-outs at full strength, goals routed around them), so the flock
+   * never crosses the words on its way. Resolves when the time is up; the flock then idles from there.
+   */
+  gather(ms: number): Promise<void> {
+    const T = Math.max(0.2, ms / 1000);
+    this.release();
+    // a quicker hand-off than a plain release, so the flight fits in `ms` (all at once crowds the corners)
+    this.p.spread = Math.min(this.p.spread, 0.25); this.p.ramp = Math.min(this.p.ramp, 0.2);
+    this.gatherT = T; this.gatherEnd = this.p.time + T;
+    return new Promise((res) => { this.sched.after(T, res); });
+  }
+  get gathering(): boolean { return this.p.time < this.gatherEnd; }
 
   // ------------------------------------------------------------ moods
 
@@ -345,16 +446,24 @@ export class Controller {
       case 'listening': Object.assign(k, { flowAmp: 90 }); break;
       default: break;
     }
+    // a dim locked frame (B3): the freed flock flies dimmer than the border, so the border reads as a line
+    // (with no room left to idle in — a phone with a build open — the freed particles fade out instead)
+    if (this.frame?.dim) k.freeDim = freeShare(this.vp, [...this.keepOut, this.frame.rect]) >= DIM_ROOM ? DIM_FREE : 0;
     if (this.reduced) Object.assign(k, { freeze: 1, flowAmp: 0, wild: 0, freeDim: 1 });
     this.moodKnobTarget = k;
   }
 
   // ------------------------------------------------------------ input
 
-  pointer(x: number, y: number, vx: number, vy: number): void {
-    this.p.pointerX = x - this.vp.w / 2; this.p.pointerY = this.vp.h / 2 - y;
+  /** CSS px (viewport) and px/s. `touch`: the point stays present for 2 s after the last touch (B2). */
+  pointer(x: number, y: number, vx: number, vy: number, touch = false): void {
+    const t = this.p.time;
+    const jump = t - this.pointerSeen > 0.3;
+    if (jump || Math.abs(x - this.ptrX) + Math.abs(y - this.ptrY) > 2 || vx * vx + vy * vy > 1600) this.ptrMoved = t;
+    this.ptrX = x; this.ptrY = y; this.ptrTouch = touch;
     this.p.pointerVx = vx; this.p.pointerVy = -vy;
-    this.pointerSeen = this.p.time;
+    this.pointerSeen = t;
+    if (jump) { this.tailX = x - this.vp.w / 2 + this.p.camX; this.tailY = this.vp.h / 2 - y + this.p.camY; }
     const cl = (v: number): number => Math.max(-1, Math.min(1, v));
     this.camTX = cl(((x / this.vp.w) - 0.5) * 2); this.camTY = cl((0.5 - (y / this.vp.h)) * 2);
   }
@@ -391,13 +500,13 @@ export class Controller {
     const re = this.snapBounds ? 1 : 1 - Math.exp(-dt / 0.6);
     this.roostX += (rc.x - this.roostX) * re; this.roostY += (rc.y - this.roostY) * re;
     const ax = L.stage ? Math.min(p.halfW, L.stage.w * 0.5) : p.halfW * 0.6, ay = L.stage ? Math.min(p.halfH, L.stage.h * 0.5) : p.halfH * 0.6;
-    // free flight stays in a soft box: the viewport (inset), or around the stage when there is one
-    // (a UI frame being built takes the whole viewport: its construction vortex sits on the frame)
-    const boxed = !!L.stage && !this.frame;
-    const bw = boxed ? Math.min(p.halfW * 0.8, L.stage!.w * 0.5) : p.halfW * 0.72, bh = boxed ? Math.min(p.halfH * 0.8, L.stage!.h * 0.44) : p.halfH * 0.7;
-    p.boundCx += ((boxed ? this.roostX : 0) - p.boundCx) * re; p.boundCy += ((boxed ? this.roostY : 0) - p.boundCy) * re;
+    // B1 free range: free flight is boxed by the whole viewport inset 48 px (keep-outs are the only other law)
+    const bw = Math.max(p.halfW - BOUND_INSET, 40), bh = Math.max(p.halfH - BOUND_INSET, 40);
+    p.boundCx += (0 - p.boundCx) * re; p.boundCy += (0 - p.boundCy) * re;
     p.boundHw += (bw - p.boundHw) * re; p.boundHh += (bh - p.boundHh) * re;
     this.snapBounds = false;
+    // a particle caught inside a keep-out leaves toward the roost (the stage side)
+    p.homeX = this.roostX; p.homeY = this.roostY;
     // idle-like moods fly as three trailing sub-flocks (ribbons); the others follow one point leader
     const groups = this.mood === 'idle' || this.mood === 'speaking' || this.mood === 'listening' || this.mood === 'excited' || (this.mood === 'thinking' && this.holding);
     // point leader (non-idle moods) sweeps a slow Lissajous around the roost
@@ -405,7 +514,13 @@ export class Controller {
     p.leaderY = this.roostY + Math.sin(t * 0.61 + 1) * ay * 0.5 + Math.cos(t * 1.07) * ay * 0.06;
     // idle: three trails (see SimParams.snake). Paths stay inside the stage; speeds ~120–220 px/s
     p.snake += ((groups ? 1 : 0) - p.snake) * (1 - Math.exp(-dt * 2));
-    p.snakeCx = this.roostX; p.snakeCy = this.roostY;
+    // B1: the sub-flock leaders roam the whole free area (centred between the viewport and the roost, so the
+    // flock still leans to the stage side), except in the entry's full-frame beat
+    const roam = !this.fullFrame;
+    const tx0 = roam ? this.roostX * 0.3 : this.roostX, ty0 = roam ? this.roostY * 0.3 : this.roostY;
+    // (the trails' widest reach is ~0.8 / 0.76 of the amplitude: scaled so they span the inset box)
+    const gax = roam ? Math.max((bw - Math.abs(tx0)) * 1.15, 60) : ax, gay = roam ? Math.max((bh - Math.abs(ty0)) * 1.2, 60) : ay;
+    p.snakeCx = tx0; p.snakeCy = ty0;
     p.snakeLag = 2.6; p.snakeW = Math.min(ax, ay) * 0.1;
     // [amp x, amp y, ω x, ω y, phase x, phase y, centre offset x, centre offset y] (amps/offsets × stage half)
     const G = [
@@ -416,12 +531,30 @@ export class Controller {
     const PP = p as unknown as Record<string, number>;
     G.forEach(([kx, ky, wx, wy, px, py, ox, oy], g) => {
       // the trail centre offset is folded into the phase-free part: x = c + o + a·sin(…)
-      PP[`g${g}ax`] = ax * kx; PP[`g${g}ay`] = ay * ky; PP[`g${g}wx`] = wx; PP[`g${g}wy`] = wy; PP[`g${g}px`] = px; PP[`g${g}py`] = py;
-      PP[`g${g}ox`] = ax * ox; PP[`g${g}oy`] = ay * oy;
+      PP[`g${g}ax`] = gax * kx; PP[`g${g}ay`] = gay * ky; PP[`g${g}wx`] = wx; PP[`g${g}wy`] = wy; PP[`g${g}px`] = px; PP[`g${g}py`] = py;
+      PP[`g${g}ox`] = gax * ox; PP[`g${g}oy`] = gay * oy;
     });
+    // B3 gather: one point leader on the stage centre, pulled hard enough to arrive within the given time
+    const gk = t < this.gatherEnd ? 1 : Math.max(0, 1 - (t - this.gatherEnd) / 1.2);
+    if (gk > 0) {
+      const diag = Math.hypot(p.halfW, p.halfH);
+      const need = Math.min(1600, Math.max(380, (1.5 * diag) / this.gatherT));
+      p.snake *= 1 - gk;
+      p.leaderX += (rc.x - p.leaderX) * gk; p.leaderY += (rc.y - p.leaderY) * gk;
+      p.leadR += (0.03 - p.leadR) * gk; p.leaderW *= 1 + 9 * gk;
+      p.speedMax += (need - p.speedMax) * gk; p.cruise += (need * 0.65 - p.cruise) * gk;
+      p.flowRate *= 1 - 0.7 * gk; p.vortexW *= 1 - gk;
+    }
     if (this.mood === 'celebrate') { p.leaderX = this.roostX + (p.leaderX - this.roostX) * 0.3; p.leaderY = this.roostY + (p.leaderY - this.roostY) * 0.3; }
     // keep-outs (world px); off during the entry's full-frame beat and while a UI frame is built
-    const ko = this.fullFrame || this.frame ? [] : this.keepOut;
+    // a dim locked frame (B3) keeps the keep-outs on and is one itself (inset so its own border is not pushed)
+    const fr = this.frame;
+    // (the UI's own keep-out for the frame's inside is replaced by the frame's: it would push the freed flock
+    // into the caption with its wide margin)
+    const kept = fr?.dim ? this.keepOut.filter((k) => !(k.x >= fr.rect.x - 20 && k.y >= fr.rect.y - 20 && k.x + k.w <= fr.rect.x + fr.rect.w + 20 && k.y + k.h <= fr.rect.y + fr.rect.h + 20)) : this.keepOut;
+    const ko = this.fullFrame || (fr && !fr.dim) ? [] : fr ? [...kept.slice(0, MAX_KEEPOUT - 1), dimFrameKeepOut(fr.rect, kept)] : this.keepOut;
+    p.koFrame = fr?.dim && !this.fullFrame ? 1 : 0;
+    if (p.koFrame) { const b = dimFrameBlocks(fr!.rect, kept); p.koFbT = b.t; p.koFbB = b.b; p.koFbL = b.l; p.koFbR = b.r; }
     const P = p as unknown as Record<string, number>;
     for (let i = 0; i < MAX_KEEPOUT; i++) {
       const k = ko[i];
@@ -429,6 +562,7 @@ export class Controller {
       P[`ko${i}w`] = k ? k.w / 2 : -1; P[`ko${i}h`] = k ? k.h / 2 : -1;
     }
     p.koOn = ko.length ? 1 : 0;
+    p.steerOn = ko.length && !this.reduced ? 1 : 0;
     p.farFrac = this.reduced ? 0 : 0.2;
     // frame / vortex centre
     if (this.frame) {
@@ -437,9 +571,11 @@ export class Controller {
       // B7: the border fills 1.6× faster (density ×1.6 at a given progress) and glows, so it reads on every tier
       p.selectFrac += (Math.min(1.01, this.frame.progress * 1.6) - p.selectFrac) * (1 - Math.exp(-dt * 8));
       if (this.frame.progress >= 1) p.selectFrac = 1.01;
+      if (this.frame.dim) p.selectFrac = DIM_SHARE;
     } else if (L.stage) { p.vortexCx = rc.x; p.vortexCy = rc.y; } else { p.vortexCx = 0; p.vortexCy = this.vp.h * 0.04; }
     const ge = 1 - Math.exp(-dt * 4);
-    p.frameGlow += ((this.frame ? 1 : 0) - p.frameGlow) * ge;
+    p.frameGlow += ((this.frame && !this.frame.dim ? 1 : 0) - p.frameGlow) * ge;
+    p.heldDim += ((this.frame?.dim ? DIM_BRIGHT : 1) - p.heldDim) * ge;
     const ex = this.holding && !this.frame && !this.ringActive ? this.expoTarget : 1;
     p.shapeExpo += (ex - p.shapeExpo) * (1 - Math.exp(-dt * 1.5)); // follows the ~1 s knit, so the outgoing shape never flares
     p.bloomK = p.shapeExpo ** 2;
@@ -449,13 +585,31 @@ export class Controller {
     if (this.ringActive) p.ringLevel += (this.listenLevel - p.ringLevel) * (1 - Math.exp(-dt * 14));
     // 3D sway while held
     p.rotY = p.spinOn ? Math.sin(t * 0.7) * 0.32 : 0;
-    // pointer presence + velocity decay
-    p.pointerOn = t - this.pointerSeen < 2.5 ? 1 : Math.max(0, p.pointerOn - dt);
+    // B2 pointer presence: a mouse cursor stays present where it was left; a touch point for 2 s
+    const seen = this.pointerSeen > -1e8 && (!this.ptrTouch || t - this.pointerSeen < TOUCH_HOLD_S);
+    p.pointerOn = seen ? 1 : Math.max(0, p.pointerOn - dt / 0.3);
     const vd = Math.exp(-dt * 6); p.pointerVx *= vd; p.pointerVy *= vd;
     // camera parallax (none while a UI frame is being built so the outline aligns with the DOM)
     const par = this.frame || this.reduced ? 0 : 1;
     const ce = 1 - Math.exp(-dt * 2);
     p.camX += (this.camTX * 16 * par - p.camX) * ce; p.camY += (this.camTY * 10 * par - p.camY) * ce;
+    // pointer in world px, where the dots are drawn (the camera parallax shifts them by camX / camY)
+    if (this.pointerSeen > -1e8) {
+      p.pointerX = this.ptrX - this.vp.w / 2 + p.camX; p.pointerY = this.vp.h / 2 - this.ptrY + p.camY;
+      // wake: a tail point trailing the cursor by ~0.12 s, at most 170 px (a short capsule behind fast motion)
+      const te = 1 - Math.exp(-dt / 0.12);
+      this.tailX += (p.pointerX - this.tailX) * te; this.tailY += (p.pointerY - this.tailY) * te;
+      const lx = this.tailX - p.pointerX, ly = this.tailY - p.pointerY, ll = Math.hypot(lx, ly);
+      if (ll > 170) { this.tailX = p.pointerX + (lx / ll) * 170; this.tailY = p.pointerY + (ly / ll) * 170; }
+      p.wakeX = this.tailX; p.wakeY = this.tailY;
+    }
+    const still = t - this.ptrMoved;
+    p.pointerHole += ((still < 0.5 ? 1 : 0) - p.pointerHole) * (1 - Math.exp(-dt * 3));
+    p.pointerR = HOLE_R * (0.8 + 0.2 * p.pointerHole); // a still cursor keeps a slightly smaller hole
+    // curious: a still cursor (> CURIOUS_AFTER s) outside the words draws a few particles into a loose orbit
+    const inKo = this.keepOut.some((k) => this.ptrX > k.x - 8 && this.ptrX < k.x + k.w + 8 && this.ptrY > k.y - 8 && this.ptrY < k.y + k.h + 8);
+    const curiousOk = p.pointerOn > 0.5 && still > CURIOUS_AFTER && !inKo && !this.reduced && !this.fullFrame && !(this.frame && !this.frame.dim) && this.mood !== 'celebrate' && !(gk > 0);
+    p.curious += ((curiousOk ? 1 : 0) - p.curious) * (1 - Math.exp(-dt * (curiousOk ? 3.5 : 10)));
     // pulses and bursts
     p.pulse *= Math.exp(-dt * 14);
     p.burst = this.burstPending; this.burstPending = 0;

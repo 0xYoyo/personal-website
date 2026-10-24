@@ -4,7 +4,10 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import type { Engine, EngineInit, Scene } from './types';
 import { COLORS } from './types';
 import type { SimParams } from './params';
-import { BOX_TURN, defaultParams, FAR_DIM, FAR_SIZE, FAR_Z, FIELD_H, FIELD_MARGIN, FIELD_VEL_SCALE, FIELD_W, KO_PUSH, KO_TURN, MAX_KEEPOUT, TRANSIT_DIP } from './params';
+import {
+  BOUND_REFLECT, BOUND_ZONE, BOX_TURN, CURIOUS_REACH, defaultParams, FAR_DIM, FAR_SIZE, FAR_Z, FIELD_H, FIELD_MARGIN, FIELD_VEL_SCALE, FIELD_W,
+  HOLE_KICK, HOLE_PUSH, HOLE_TURN, STILL_HOLE, KO_PUSH, KO_TURN, MAX_KEEPOUT, STEER_M, TRANSIT_DIP,
+} from './params';
 import { FLOW_WAVES, WAVE_K, WAVE_W } from './flow';
 import type { Targets } from '../shapes';
 import { makeSeeds } from '../hash';
@@ -15,7 +18,7 @@ type N = any;
 const TSL: N = TSLTyped;
 const {
   Fn, If, instancedArray, instanceIndex, uniform, float, vec2, vec3, vec4, texture, uv, sin, cos, atan, length,
-  clamp, smoothstep, mix, max, min, select, step, exp, pow, cameraViewMatrix, pass, PI, textureLoad, ivec2, fract, sqrt, abs, sign,
+  clamp, smoothstep, mix, max, min, select, step, exp, pow, cameraViewMatrix, pass, PI, textureLoad, ivec2, fract, sqrt, abs,
 } = TSL;
 
 /** Width of the data textures that hold read-only per-particle data for the compute kernel. */
@@ -52,6 +55,9 @@ function flowTSL(xy: N, t: N, freq: N): N {
   }
   return vec3(vx, vy, vz);
 }
+
+/** TSL mirror of params.exitByX. */
+const exitByXT = (nearer: N, vx: N, vy: N): N => vx.and(vy).and(nearer).or(vx.and(vy.not())).or(vx.not().and(vy.not()).and(nearer));
 
 const srgbToLinear = (c: number): number => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 
@@ -149,6 +155,11 @@ export class GpuEngine implements Engine {
   private buildSim(): void {
     const U = this.U, F = this.uField;
     const UU = U as Record<string, N>;
+    // the dim frame's slot: the last used keep-out slot while koFrame is on (see controller / cpu.ts)
+    const frameSlot = (k: number): N => U.koFrame.greaterThan(0).and(UU[`ko${k}w`].greaterThan(0)).and(k + 1 < MAX_KEEPOUT ? UU[`ko${k + 1}w`].lessThanEqual(0) : float(1).greaterThan(0));
+    // its faces blocked by a neighbouring keep-out (s = the face's side: +1 right / top, −1 left / bottom)
+    const blockedX = (sx: N): N => select(sx.greaterThan(0), U.koFbR, U.koFbL).greaterThan(0.5);
+    const blockedY = (sy: N): N => select(sy.greaterThan(0), U.koFbT, U.koFbB).greaterThan(0.5);
     const { pos, vel, col } = this.buf;
     const X = this.tex;
     const fieldTex = this.fieldRT.texture;
@@ -196,10 +207,16 @@ export class GpuEngine implements Engine {
       const free = float(1).sub(wEff.mul(0.94)).toVar();
       const fb = float(1).sub(wEff).pow(2).toVar(); // flocking forces vanish inside a held shape (keeps counters open)
       const acc = vec3(0).toVar();
+      // pointer geometry; curious particles (B2, see cpu.ts) leave the flock for a still cursor nearby
+      const q = p.xy.sub(vec2(U.pointerX, U.pointerY)).toVar();
+      const qr = max(length(q), 1e-3).toVar();
+      const cuSel = step(fract(S.x.mul(31.7).add(S.z.mul(3.1))), U.curiousFrac.sub(1e-4)).mul(step(1e-4, U.curiousFrac));
+      const cu = cuSel.mul(U.curious).mul(clamp(float(CURIOUS_REACH).sub(qr).div(80), 0, 1)).mul(free).mul(step(1e-4, U.pointerOn)).toVar();
+      const keep = float(1).sub(cu).toVar();
       // flow
       const fl = flowTSL(p.xy, U.time, U.flowFreq).toVar();
       const fa = U.flowAmp.mul(U.wild.mul(2.5).add(1));
-      acc.addAssign(vec3(fl.xy.mul(fa), fl.z.mul(fa).mul(0.5)).sub(v).mul(free.mul(U.flowRate).mul(U.wild.mul(3).add(1))));
+      acc.addAssign(vec3(fl.xy.mul(fa), fl.z.mul(fa).mul(0.5)).sub(v).mul(free.mul(U.flowRate).mul(U.wild.mul(3).add(1)).mul(keep)));
       If(U.wild.greaterThan(0), () => { // celebrate: every particle chases its own spinning heading
         const ja = S.x.mul(6.2832).add(U.time.mul(S.y.mul(4).add(1.5)));
         acc.xy.addAssign(vec2(cos(ja), sin(ja)).mul(U.wild.mul(750).mul(free)));
@@ -208,7 +225,7 @@ export class GpuEngine implements Engine {
       const f0 = sampleField(p.xy).toVar();
       If(f0.w.greaterThan(0.001), () => {
         const avg = f0.xyz.div(f0.w).div(FIELD_VEL_SCALE);
-        acc.addAssign(avg.sub(v).mul(min(f0.w.div(2), 1).mul(U.align).mul(fb)));
+        acc.addAssign(avg.sub(v).mul(min(f0.w.div(2), 1).mul(U.align).mul(fb).mul(keep)));
       });
       // separation: density gradient over ±1 cell (local pressure); cohesion: over ±3 cells, only at the
       // flock's thin edge. Two scales stop a single-scale gradient from feeding stripe/worm patterns.
@@ -226,7 +243,7 @@ export class GpuEngine implements Engine {
       ).div(6).div(F.densRef);
       // edge cohesion + rest-density pull below densCap − cap push above it, all on the smooth (±3 cell) gradient
       const rest = clamp(U.densCap.sub(dens).div(U.densCap), 0, 1);
-      const ck0 = U.coh.mul(float(1).sub(smoothstep(0.2, 0.9, dens))).add(U.restK.mul(rest)).sub(U.capK.mul(max(dens.sub(U.densCap), 0))).mul(fb);
+      const ck0 = U.coh.mul(float(1).sub(smoothstep(0.2, 0.9, dens))).add(U.restK.mul(rest)).sub(U.capK.mul(max(dens.sub(U.densCap), 0))).mul(fb).mul(keep);
       const sk0 = U.sep.mul(dens).mul(fb);
       acc.xy.addAssign(cg.mul(ck0).sub(sg.mul(sk0)));
       // individual jitter: breaks the cell-scale lattice the field would otherwise imprint
@@ -250,39 +267,383 @@ export class GpuEngine implements Engine {
         const tgt = vec2(U.snakeCx.add(pick('ox')).add(ox).sub(tn.y.mul(wd)), U.snakeCy.add(pick('oy')).add(oy).add(tn.x.mul(wd)));
         goalP.assign(mix(goalP, tgt, U.snake));
       });
+      // B1/B3: free-flight goals are projected out of keep-outs and routed around them (see params.steerGoal);
+      // a face only counts as an exit if it lies inside the bounds box (params.exitByX)
+      If(U.steerOn.greaterThan(0), () => {
+        const m = U.koMargin.mul(STEER_M);
+        const limS = vec2(U.boundHw, U.boundHh), bcS = vec2(U.boundCx, U.boundCy);
+        const inBoxX = (x: N): N => abs(x.sub(bcS.x)).lessThanEqual(limS.x);
+        const inBoxY = (y: N): N => abs(y.sub(bcS.y)).lessThanEqual(limS.y);
+        If(UU.ko0w.greaterThan(0), () => {
+          const c = vec2(UU.ko0x, UU.ko0y), hs = vec2(UU.ko0w, UU.ko0h).add(m);
+          const gq = goalP.sub(c).toVar();
+          If(abs(gq.x).lessThan(hs.x).and(abs(gq.y).lessThan(hs.y)), () => {
+            const sq = step(0, gq).mul(2).sub(1);
+            const ex = c.x.add(sq.x.mul(hs.x)), ey = c.y.add(sq.y.mul(hs.y));
+            const fs = frameSlot(0);
+            If(exitByXT(hs.x.sub(abs(gq.x)).lessThan(hs.y.sub(abs(gq.y))), inBoxX(ex).and(fs.and(blockedX(sq.x)).not()), inBoxY(ey).and(fs.and(blockedY(sq.y)).not())), () => { goalP.x.assign(ex); }).Else(() => { goalP.y.assign(ey); });
+          });
+        });
+        If(UU.ko1w.greaterThan(0), () => {
+          const c = vec2(UU.ko1x, UU.ko1y), hs = vec2(UU.ko1w, UU.ko1h).add(m);
+          const gq = goalP.sub(c).toVar();
+          If(abs(gq.x).lessThan(hs.x).and(abs(gq.y).lessThan(hs.y)), () => {
+            const sq = step(0, gq).mul(2).sub(1);
+            const ex = c.x.add(sq.x.mul(hs.x)), ey = c.y.add(sq.y.mul(hs.y));
+            const fs = frameSlot(1);
+            If(exitByXT(hs.x.sub(abs(gq.x)).lessThan(hs.y.sub(abs(gq.y))), inBoxX(ex).and(fs.and(blockedX(sq.x)).not()), inBoxY(ey).and(fs.and(blockedY(sq.y)).not())), () => { goalP.x.assign(ex); }).Else(() => { goalP.y.assign(ey); });
+          });
+        });
+        If(UU.ko2w.greaterThan(0), () => {
+          const c = vec2(UU.ko2x, UU.ko2y), hs = vec2(UU.ko2w, UU.ko2h).add(m);
+          const gq = goalP.sub(c).toVar();
+          If(abs(gq.x).lessThan(hs.x).and(abs(gq.y).lessThan(hs.y)), () => {
+            const sq = step(0, gq).mul(2).sub(1);
+            const ex = c.x.add(sq.x.mul(hs.x)), ey = c.y.add(sq.y.mul(hs.y));
+            const fs = frameSlot(2);
+            If(exitByXT(hs.x.sub(abs(gq.x)).lessThan(hs.y.sub(abs(gq.y))), inBoxX(ex).and(fs.and(blockedX(sq.x)).not()), inBoxY(ey).and(fs.and(blockedY(sq.y)).not())), () => { goalP.x.assign(ex); }).Else(() => { goalP.y.assign(ey); });
+          });
+        });
+        If(UU.ko3w.greaterThan(0), () => {
+          const c = vec2(UU.ko3x, UU.ko3y), hs = vec2(UU.ko3w, UU.ko3h).add(m);
+          const gq = goalP.sub(c).toVar();
+          If(abs(gq.x).lessThan(hs.x).and(abs(gq.y).lessThan(hs.y)), () => {
+            const sq = step(0, gq).mul(2).sub(1);
+            const ex = c.x.add(sq.x.mul(hs.x)), ey = c.y.add(sq.y.mul(hs.y));
+            const fs = frameSlot(3);
+            If(exitByXT(hs.x.sub(abs(gq.x)).lessThan(hs.y.sub(abs(gq.y))), inBoxX(ex).and(fs.and(blockedX(sq.x)).not()), inBoxY(ey).and(fs.and(blockedY(sq.y)).not())), () => { goalP.x.assign(ex); }).Else(() => { goalP.y.assign(ey); });
+          });
+        });
+        If(UU.ko4w.greaterThan(0), () => {
+          const c = vec2(UU.ko4x, UU.ko4y), hs = vec2(UU.ko4w, UU.ko4h).add(m);
+          const gq = goalP.sub(c).toVar();
+          If(abs(gq.x).lessThan(hs.x).and(abs(gq.y).lessThan(hs.y)), () => {
+            const sq = step(0, gq).mul(2).sub(1);
+            const ex = c.x.add(sq.x.mul(hs.x)), ey = c.y.add(sq.y.mul(hs.y));
+            const fs = frameSlot(4);
+            If(exitByXT(hs.x.sub(abs(gq.x)).lessThan(hs.y.sub(abs(gq.y))), inBoxX(ex).and(fs.and(blockedX(sq.x)).not()), inBoxY(ey).and(fs.and(blockedY(sq.y)).not())), () => { goalP.x.assign(ex); }).Else(() => { goalP.y.assign(ey); });
+          });
+        });
+        If(UU.ko5w.greaterThan(0), () => {
+          const c = vec2(UU.ko5x, UU.ko5y), hs = vec2(UU.ko5w, UU.ko5h).add(m);
+          const gq = goalP.sub(c).toVar();
+          If(abs(gq.x).lessThan(hs.x).and(abs(gq.y).lessThan(hs.y)), () => {
+            const sq = step(0, gq).mul(2).sub(1);
+            const ex = c.x.add(sq.x.mul(hs.x)), ey = c.y.add(sq.y.mul(hs.y));
+            const fs = frameSlot(5);
+            If(exitByXT(hs.x.sub(abs(gq.x)).lessThan(hs.y.sub(abs(gq.y))), inBoxX(ex).and(fs.and(blockedX(sq.x)).not()), inBoxY(ey).and(fs.and(blockedY(sq.y)).not())), () => { goalP.x.assign(ex); }).Else(() => { goalP.y.assign(ey); });
+          });
+        });
+        If(UU.ko6w.greaterThan(0), () => {
+          const c = vec2(UU.ko6x, UU.ko6y), hs = vec2(UU.ko6w, UU.ko6h).add(m);
+          const gq = goalP.sub(c).toVar();
+          If(abs(gq.x).lessThan(hs.x).and(abs(gq.y).lessThan(hs.y)), () => {
+            const sq = step(0, gq).mul(2).sub(1);
+            const ex = c.x.add(sq.x.mul(hs.x)), ey = c.y.add(sq.y.mul(hs.y));
+            const fs = frameSlot(6);
+            If(exitByXT(hs.x.sub(abs(gq.x)).lessThan(hs.y.sub(abs(gq.y))), inBoxX(ex).and(fs.and(blockedX(sq.x)).not()), inBoxY(ey).and(fs.and(blockedY(sq.y)).not())), () => { goalP.x.assign(ex); }).Else(() => { goalP.y.assign(ey); });
+          });
+        });
+        const done = float(0).toVar();
+        If(UU.ko0w.greaterThan(0).and(done.lessThan(0.5)), () => {
+          const c = vec2(UU.ko0x, UU.ko0y), h0 = vec2(UU.ko0w, UU.ko0h), hs = h0.add(m);
+          const r = p.xy.sub(c).toVar();
+          const sr = step(0, r).mul(2).sub(1);
+          If(abs(r.x).greaterThanEqual(h0.x).or(abs(r.y).greaterThanEqual(h0.y)), () => {
+            const d = goalP.sub(p.xy).toVar();
+            const dx = select(abs(d.x).lessThan(1e-3), float(1e-3), d.x), dy = select(abs(d.y).lessThan(1e-3), float(1e-3), d.y);
+            const tx1 = c.x.sub(hs.x).sub(p.x).div(dx), tx2 = c.x.add(hs.x).sub(p.x).div(dx);
+            const ty1 = c.y.sub(hs.y).sub(p.y).div(dy), ty2 = c.y.add(hs.y).sub(p.y).div(dy);
+            const t0 = max(min(tx1, tx2), min(ty1, ty2)), t1 = min(max(tx1, tx2), max(ty1, ty2));
+            If(t0.lessThanEqual(t1).and(t1.greaterThanEqual(0)).and(t0.lessThanEqual(1)), () => {
+              const sd = step(0, vec2(dx, dy)).mul(2).sub(1);
+              If(abs(dx).mul(hs.y).greaterThanEqual(abs(dy).mul(hs.x)), () => {
+                const sy = select(inBoxY(c.y.add(sr.y.mul(hs.y))), sr.y, sr.y.negate());
+                If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
+                  const past = step(hs.y.sub(1), sy.mul(r.y));
+                  goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                done.assign(1);
+              }).Else(() => {
+                const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
+                If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
+                  const past = step(hs.x.sub(1), sx.mul(r.x));
+                  goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                done.assign(1);
+              });
+            });
+          }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            const fs = frameSlot(0);
+            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            done.assign(1);
+          });
+        });
+        If(UU.ko1w.greaterThan(0).and(done.lessThan(0.5)), () => {
+          const c = vec2(UU.ko1x, UU.ko1y), h0 = vec2(UU.ko1w, UU.ko1h), hs = h0.add(m);
+          const r = p.xy.sub(c).toVar();
+          const sr = step(0, r).mul(2).sub(1);
+          If(abs(r.x).greaterThanEqual(h0.x).or(abs(r.y).greaterThanEqual(h0.y)), () => {
+            const d = goalP.sub(p.xy).toVar();
+            const dx = select(abs(d.x).lessThan(1e-3), float(1e-3), d.x), dy = select(abs(d.y).lessThan(1e-3), float(1e-3), d.y);
+            const tx1 = c.x.sub(hs.x).sub(p.x).div(dx), tx2 = c.x.add(hs.x).sub(p.x).div(dx);
+            const ty1 = c.y.sub(hs.y).sub(p.y).div(dy), ty2 = c.y.add(hs.y).sub(p.y).div(dy);
+            const t0 = max(min(tx1, tx2), min(ty1, ty2)), t1 = min(max(tx1, tx2), max(ty1, ty2));
+            If(t0.lessThanEqual(t1).and(t1.greaterThanEqual(0)).and(t0.lessThanEqual(1)), () => {
+              const sd = step(0, vec2(dx, dy)).mul(2).sub(1);
+              If(abs(dx).mul(hs.y).greaterThanEqual(abs(dy).mul(hs.x)), () => {
+                const sy = select(inBoxY(c.y.add(sr.y.mul(hs.y))), sr.y, sr.y.negate());
+                If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
+                  const past = step(hs.y.sub(1), sy.mul(r.y));
+                  goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                done.assign(1);
+              }).Else(() => {
+                const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
+                If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
+                  const past = step(hs.x.sub(1), sx.mul(r.x));
+                  goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                done.assign(1);
+              });
+            });
+          }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            const fs = frameSlot(1);
+            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            done.assign(1);
+          });
+        });
+        If(UU.ko2w.greaterThan(0).and(done.lessThan(0.5)), () => {
+          const c = vec2(UU.ko2x, UU.ko2y), h0 = vec2(UU.ko2w, UU.ko2h), hs = h0.add(m);
+          const r = p.xy.sub(c).toVar();
+          const sr = step(0, r).mul(2).sub(1);
+          If(abs(r.x).greaterThanEqual(h0.x).or(abs(r.y).greaterThanEqual(h0.y)), () => {
+            const d = goalP.sub(p.xy).toVar();
+            const dx = select(abs(d.x).lessThan(1e-3), float(1e-3), d.x), dy = select(abs(d.y).lessThan(1e-3), float(1e-3), d.y);
+            const tx1 = c.x.sub(hs.x).sub(p.x).div(dx), tx2 = c.x.add(hs.x).sub(p.x).div(dx);
+            const ty1 = c.y.sub(hs.y).sub(p.y).div(dy), ty2 = c.y.add(hs.y).sub(p.y).div(dy);
+            const t0 = max(min(tx1, tx2), min(ty1, ty2)), t1 = min(max(tx1, tx2), max(ty1, ty2));
+            If(t0.lessThanEqual(t1).and(t1.greaterThanEqual(0)).and(t0.lessThanEqual(1)), () => {
+              const sd = step(0, vec2(dx, dy)).mul(2).sub(1);
+              If(abs(dx).mul(hs.y).greaterThanEqual(abs(dy).mul(hs.x)), () => {
+                const sy = select(inBoxY(c.y.add(sr.y.mul(hs.y))), sr.y, sr.y.negate());
+                If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
+                  const past = step(hs.y.sub(1), sy.mul(r.y));
+                  goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                done.assign(1);
+              }).Else(() => {
+                const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
+                If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
+                  const past = step(hs.x.sub(1), sx.mul(r.x));
+                  goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                done.assign(1);
+              });
+            });
+          }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            const fs = frameSlot(2);
+            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            done.assign(1);
+          });
+        });
+        If(UU.ko3w.greaterThan(0).and(done.lessThan(0.5)), () => {
+          const c = vec2(UU.ko3x, UU.ko3y), h0 = vec2(UU.ko3w, UU.ko3h), hs = h0.add(m);
+          const r = p.xy.sub(c).toVar();
+          const sr = step(0, r).mul(2).sub(1);
+          If(abs(r.x).greaterThanEqual(h0.x).or(abs(r.y).greaterThanEqual(h0.y)), () => {
+            const d = goalP.sub(p.xy).toVar();
+            const dx = select(abs(d.x).lessThan(1e-3), float(1e-3), d.x), dy = select(abs(d.y).lessThan(1e-3), float(1e-3), d.y);
+            const tx1 = c.x.sub(hs.x).sub(p.x).div(dx), tx2 = c.x.add(hs.x).sub(p.x).div(dx);
+            const ty1 = c.y.sub(hs.y).sub(p.y).div(dy), ty2 = c.y.add(hs.y).sub(p.y).div(dy);
+            const t0 = max(min(tx1, tx2), min(ty1, ty2)), t1 = min(max(tx1, tx2), max(ty1, ty2));
+            If(t0.lessThanEqual(t1).and(t1.greaterThanEqual(0)).and(t0.lessThanEqual(1)), () => {
+              const sd = step(0, vec2(dx, dy)).mul(2).sub(1);
+              If(abs(dx).mul(hs.y).greaterThanEqual(abs(dy).mul(hs.x)), () => {
+                const sy = select(inBoxY(c.y.add(sr.y.mul(hs.y))), sr.y, sr.y.negate());
+                If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
+                  const past = step(hs.y.sub(1), sy.mul(r.y));
+                  goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                done.assign(1);
+              }).Else(() => {
+                const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
+                If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
+                  const past = step(hs.x.sub(1), sx.mul(r.x));
+                  goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                done.assign(1);
+              });
+            });
+          }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            const fs = frameSlot(3);
+            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            done.assign(1);
+          });
+        });
+        If(UU.ko4w.greaterThan(0).and(done.lessThan(0.5)), () => {
+          const c = vec2(UU.ko4x, UU.ko4y), h0 = vec2(UU.ko4w, UU.ko4h), hs = h0.add(m);
+          const r = p.xy.sub(c).toVar();
+          const sr = step(0, r).mul(2).sub(1);
+          If(abs(r.x).greaterThanEqual(h0.x).or(abs(r.y).greaterThanEqual(h0.y)), () => {
+            const d = goalP.sub(p.xy).toVar();
+            const dx = select(abs(d.x).lessThan(1e-3), float(1e-3), d.x), dy = select(abs(d.y).lessThan(1e-3), float(1e-3), d.y);
+            const tx1 = c.x.sub(hs.x).sub(p.x).div(dx), tx2 = c.x.add(hs.x).sub(p.x).div(dx);
+            const ty1 = c.y.sub(hs.y).sub(p.y).div(dy), ty2 = c.y.add(hs.y).sub(p.y).div(dy);
+            const t0 = max(min(tx1, tx2), min(ty1, ty2)), t1 = min(max(tx1, tx2), max(ty1, ty2));
+            If(t0.lessThanEqual(t1).and(t1.greaterThanEqual(0)).and(t0.lessThanEqual(1)), () => {
+              const sd = step(0, vec2(dx, dy)).mul(2).sub(1);
+              If(abs(dx).mul(hs.y).greaterThanEqual(abs(dy).mul(hs.x)), () => {
+                const sy = select(inBoxY(c.y.add(sr.y.mul(hs.y))), sr.y, sr.y.negate());
+                If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
+                  const past = step(hs.y.sub(1), sy.mul(r.y));
+                  goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                done.assign(1);
+              }).Else(() => {
+                const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
+                If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
+                  const past = step(hs.x.sub(1), sx.mul(r.x));
+                  goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                done.assign(1);
+              });
+            });
+          }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            const fs = frameSlot(4);
+            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            done.assign(1);
+          });
+        });
+        If(UU.ko5w.greaterThan(0).and(done.lessThan(0.5)), () => {
+          const c = vec2(UU.ko5x, UU.ko5y), h0 = vec2(UU.ko5w, UU.ko5h), hs = h0.add(m);
+          const r = p.xy.sub(c).toVar();
+          const sr = step(0, r).mul(2).sub(1);
+          If(abs(r.x).greaterThanEqual(h0.x).or(abs(r.y).greaterThanEqual(h0.y)), () => {
+            const d = goalP.sub(p.xy).toVar();
+            const dx = select(abs(d.x).lessThan(1e-3), float(1e-3), d.x), dy = select(abs(d.y).lessThan(1e-3), float(1e-3), d.y);
+            const tx1 = c.x.sub(hs.x).sub(p.x).div(dx), tx2 = c.x.add(hs.x).sub(p.x).div(dx);
+            const ty1 = c.y.sub(hs.y).sub(p.y).div(dy), ty2 = c.y.add(hs.y).sub(p.y).div(dy);
+            const t0 = max(min(tx1, tx2), min(ty1, ty2)), t1 = min(max(tx1, tx2), max(ty1, ty2));
+            If(t0.lessThanEqual(t1).and(t1.greaterThanEqual(0)).and(t0.lessThanEqual(1)), () => {
+              const sd = step(0, vec2(dx, dy)).mul(2).sub(1);
+              If(abs(dx).mul(hs.y).greaterThanEqual(abs(dy).mul(hs.x)), () => {
+                const sy = select(inBoxY(c.y.add(sr.y.mul(hs.y))), sr.y, sr.y.negate());
+                If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
+                  const past = step(hs.y.sub(1), sy.mul(r.y));
+                  goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                done.assign(1);
+              }).Else(() => {
+                const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
+                If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
+                  const past = step(hs.x.sub(1), sx.mul(r.x));
+                  goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                done.assign(1);
+              });
+            });
+          }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            const fs = frameSlot(5);
+            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            done.assign(1);
+          });
+        });
+        If(UU.ko6w.greaterThan(0).and(done.lessThan(0.5)), () => {
+          const c = vec2(UU.ko6x, UU.ko6y), h0 = vec2(UU.ko6w, UU.ko6h), hs = h0.add(m);
+          const r = p.xy.sub(c).toVar();
+          const sr = step(0, r).mul(2).sub(1);
+          If(abs(r.x).greaterThanEqual(h0.x).or(abs(r.y).greaterThanEqual(h0.y)), () => {
+            const d = goalP.sub(p.xy).toVar();
+            const dx = select(abs(d.x).lessThan(1e-3), float(1e-3), d.x), dy = select(abs(d.y).lessThan(1e-3), float(1e-3), d.y);
+            const tx1 = c.x.sub(hs.x).sub(p.x).div(dx), tx2 = c.x.add(hs.x).sub(p.x).div(dx);
+            const ty1 = c.y.sub(hs.y).sub(p.y).div(dy), ty2 = c.y.add(hs.y).sub(p.y).div(dy);
+            const t0 = max(min(tx1, tx2), min(ty1, ty2)), t1 = min(max(tx1, tx2), max(ty1, ty2));
+            If(t0.lessThanEqual(t1).and(t1.greaterThanEqual(0)).and(t0.lessThanEqual(1)), () => {
+              const sd = step(0, vec2(dx, dy)).mul(2).sub(1);
+              If(abs(dx).mul(hs.y).greaterThanEqual(abs(dy).mul(hs.x)), () => {
+                const sy = select(inBoxY(c.y.add(sr.y.mul(hs.y))), sr.y, sr.y.negate());
+                If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
+                  const past = step(hs.y.sub(1), sy.mul(r.y));
+                  goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                done.assign(1);
+              }).Else(() => {
+                const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
+                If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
+                  const past = step(hs.x.sub(1), sx.mul(r.x));
+                  goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
+                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                done.assign(1);
+              });
+            });
+          }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            const fs = frameSlot(6);
+            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            done.assign(1);
+          });
+        });
+      });
       const ld = goalP.sub(p.xy).toVar();
       const ll = max(length(ld), 1e-3);
       const r0 = min(U.halfW, U.halfH).mul(U.leadR);
-      acc.xy.addAssign(ld.div(ll).mul(smoothstep(r0, r0.mul(2.2), ll).mul(U.leaderW).mul(260).mul(free)));
+      acc.xy.addAssign(ld.div(ll).mul(smoothstep(r0, r0.mul(2.2), ll).mul(U.leaderW).mul(260).mul(free).mul(keep)));
+      // bounds (B1): the viewport inset; outward velocity turns within BOUND_ZONE of the edge, a spring past it
       const lim = vec2(U.boundHw, U.boundHh);
-      const bq = p.xy.sub(vec2(U.boundCx, U.boundCy));
-      const over = max(bq.abs().sub(lim), 0).mul(bq.sign()).toVar();
+      const bc = vec2(U.boundCx, U.boundCy);
+      const bq = p.xy.sub(bc).toVar();
+      const bs = step(0, bq).mul(2).sub(1);
+      const over = max(bq.abs().sub(lim), 0).mul(bs);
       acc.xy.subAssign(over.mul(free.mul(8)));
-      // past the box, outward velocity is turned back
-      acc.xy.subAssign(sign(over).mul(max(v.xy.mul(sign(over)), 0)).mul(min(abs(over).div(40), 1)).mul(free.mul(BOX_TURN)));
+      const zone = clamp(abs(bq).sub(max(lim.sub(BOUND_ZONE), 1)).div(BOUND_ZONE), 0, 1.5);
+      acc.xy.subAssign(bs.mul(max(v.xy.mul(bs), 0)).mul(zone).mul(free.mul(BOX_TURN)));
       const far = step(fract(S.z.mul(7.77)), U.farFrac.sub(1e-4)).mul(step(1e-4, U.farFrac));
       acc.z.addAssign(p.z.sub(far.mul(FAR_Z)).mul(-1.2).sub(v.z.mul(0.6)).mul(free));
       // keep-outs: soft push out + inward velocity turned around; a held shape barely feels it
       If(U.koOn.greaterThan(0), () => {
-        const kk = U.koOn.mul(float(1).sub(wEff.mul(0.85)));
+        const kk0 = U.koOn.mul(float(1).sub(wEff.mul(0.85)));
+        // the dim frame (B3) is the last used slot when koFrame is on: held border particles ignore it; inside its
+        // rect only the frame acts (exits skip blocked faces); outside it, any other keep-out acting wins over it
+        const other = float(0).toVar();
+        const inFr = float(0).toVar();
+        for (let k = 0; k < MAX_KEEPOUT; k++) {
+          If(frameSlot(k).and(abs(p.x.sub(UU[`ko${k}x`])).lessThan(UU[`ko${k}w`])).and(abs(p.y.sub(UU[`ko${k}y`])).lessThan(UU[`ko${k}h`])), () => { inFr.assign(1); });
+        }
         for (let k = 0; k < MAX_KEEPOUT; k++) {
           const hw = UU[`ko${k}w`], hh = UU[`ko${k}h`];
+          const isFrame = frameSlot(k);
+          const kk = select(isFrame, U.koOn.mul(float(1).sub(wEff)).mul(max(inFr, float(1).sub(other))), kk0.mul(float(1).sub(inFr)));
+          const margin = select(isFrame, U.koFrameMargin, U.koMargin);
           If(hw.greaterThan(0), () => {
             const q = p.xy.sub(vec2(UU[`ko${k}x`], UU[`ko${k}y`])).toVar();
             const dd = abs(q).sub(vec2(hw, hh)).toVar();
             const oo = max(dd, 0);
             const outside = length(oo);
             const sd = outside.add(min(max(dd.x, dd.y), 0));
-            If(sd.lessThan(U.koMargin), () => {
+            If(sd.lessThan(margin), () => {
               const sq = step(0, q).mul(2).sub(1);
               // inside: leave through the face that points home (box centre), see keepOutForce
-              const hm = vec2(U.boundCx, U.boundCy).sub(p.xy);
+              // (when home is inside the rect too — a dim frame around the stage — leave through the nearest face)
+              const hc = vec2(U.homeX, U.homeY).sub(vec2(UU[`ko${k}x`], UU[`ko${k}y`]));
+              const homeIn = abs(hc.x).lessThan(hw).and(abs(hc.y).lessThan(hh)).or(U.steerOn.greaterThan(0));
+              const hm = select(homeIn, q, vec2(U.homeX, U.homeY).sub(p.xy));
               const hs = step(0, hm).mul(2).sub(1);
-              const nIn = select(abs(hm.x).mul(hh).greaterThan(abs(hm.y).mul(hw)), vec2(hs.x, 0), vec2(0, hs.y));
+              const okX = abs(UU[`ko${k}x`].add(sq.x.mul(hw)).sub(U.boundCx)).lessThanEqual(U.boundHw).and(isFrame.and(blockedX(sq.x)).not());
+              const okY = abs(UU[`ko${k}y`].add(sq.y.mul(hh)).sub(U.boundCy)).lessThanEqual(U.boundHh).and(isFrame.and(blockedY(sq.y)).not());
+              const byX = select(homeIn, exitByXT(dd.x.negate().lessThan(dd.y.negate()), okX, okY), abs(hm.x).mul(hh).greaterThan(abs(hm.y).mul(hw)));
+              const nIn = select(byX, vec2(hs.x, 0), vec2(0, hs.y));
               const n = select(outside.greaterThan(1e-3), sq.mul(oo).div(max(outside, 1e-3)), nIn).toVar();
-              const t = min(float(1).sub(sd.div(U.koMargin)), 2.5);
+              const t = min(float(1).sub(sd.div(margin)), 2.5);
               const vn = min(v.xy.dot(n), 0);
               acc.xy.addAssign(n.mul(t.mul(t).mul(KO_PUSH).sub(vn.mul(KO_TURN).mul(t))).mul(kk));
+              If(isFrame.not(), () => { other.assign(1); });
             });
           });
         }
@@ -296,7 +657,7 @@ export class GpuEngine implements Engine {
         // per-particle orbit speed (±30 %) shears any clump into a full ring; per-particle radius gives the ring body
         const vs = U.vortexSpeed.mul(S.y.mul(0.6).add(0.7)), vr = U.vortexR.mul(S.z.mul(0.4).add(0.8));
         const dv = tang.mul(vs).add(dir.mul(vr.sub(rl).mul(3)));
-        const kk = U.vortexW.mul(free).mul(4);
+        const kk = U.vortexW.mul(free).mul(4).mul(keep);
         acc.xy.addAssign(dv.sub(v.xy).mul(kk));
         acc.z.addAssign(p.z.mul(-3).mul(U.vortexFlat).sub(v.z).mul(kk.mul(0.5)));
       });
@@ -307,14 +668,36 @@ export class GpuEngine implements Engine {
       const des = toT.mul(6).mul(min(float(1800).div(max(dl, 1e-3)), 1));
       acc.addAssign(des.sub(v).mul(wEff.mul(9)));
       acc.xy.addAssign(fl.xy.mul(min(dist.div(250), 1).mul(wEff).mul(1.8).mul(U.flowAmp)));
-      // pointer: soft repulsion sphere + drag along fast motion
-      const q = p.xy.sub(vec2(U.pointerX, U.pointerY)).toVar();
-      const qr = max(length(q), 1e-3);
-      const push = pow(max(float(1).sub(qr.div(U.pointerR)), 0), 2).mul(5200).mul(U.pointerOn).mul(float(1).sub(wEff.mul(0.5)));
-      acc.xy.addAssign(q.div(qr).mul(push));
-      const pv = vec2(U.pointerVx, U.pointerVy);
-      const fall = exp(qr.div(U.pointerR.mul(2.2)).pow(2).negate()).mul(min(length(pv).div(900), 1)).mul(4).mul(U.pointerOn).mul(float(1).sub(wEff.mul(0.6)));
-      acc.xy.addAssign(pv.mul(fall));
+      // pointer (B2): a soft hole around the cursor stretched into a short wake behind fast motion (capsule
+      // cursor → wake tail, radius tapering to 60 %), drag along fast motion, and the curious orbit
+      const hV = float(0).toVar(), hN = vec2(0).toVar();
+      If(U.pointerOn.greaterThan(0), () => {
+        const wv = vec2(U.wakeX, U.wakeY).sub(vec2(U.pointerX, U.pointerY)).toVar();
+        const s = clamp(q.dot(wv).div(max(wv.dot(wv), 1e-6)), 0, 1);
+        const cq = q.sub(wv.mul(s)).toVar();
+        const d = max(length(cq), 1e-3);
+        const R = U.pointerR.mul(float(1).sub(s.mul(0.4))).mul(S.z.mul(0.44).add(0.78)); // per-particle radius: soft edge
+        If(d.lessThan(R), () => {
+          const t = float(1).sub(d.div(R));
+          const nrm = cq.div(d);
+          const vn = min(v.xy.dot(nrm), 0);
+          const hk = U.pointerOn.mul(keep).mul(U.pointerHole.mul(float(1).sub(wEff.mul(0.5))).add(float(1).sub(U.pointerHole).mul(STILL_HOLE).mul(float(1).sub(wEff))));
+          acc.xy.addAssign(nrm.mul(t.mul(t).mul(HOLE_PUSH).sub(vn.mul(HOLE_TURN).mul(t))).mul(hk));
+          hV.assign(R.sub(d).mul(HOLE_KICK).mul(hk)); hN.assign(nrm);
+        });
+        const pv = vec2(U.pointerVx, U.pointerVy);
+        const fall = exp(qr.div(U.pointerR.mul(2.2)).pow(2).negate()).mul(min(length(pv).div(900), 1)).mul(4).mul(U.pointerOn).mul(float(1).sub(wEff.mul(0.6)));
+        acc.xy.addAssign(pv.mul(fall));
+        If(cu.greaterThan(0), () => {
+          const u = q.div(qr);
+          const dir = select(S.y.lessThan(0.5), float(1), float(-1));
+          const vs = S.z.mul(90).add(140).mul(dir), rr = U.curiousR.mul(S.y.mul(0.6).add(0.7));
+          const cv0 = vec2(u.y.negate().mul(vs).add(u.x.mul(rr.sub(qr)).mul(2.4)), u.x.mul(vs).add(u.y.mul(rr.sub(qr)).mul(2.4)));
+          const cv = cv0.mul(min(float(560).div(max(length(cv0), 1e-3)), 1));
+          acc.xy.addAssign(cv.sub(v.xy).mul(cu.mul(3.4)));
+          acc.z.addAssign(p.z.mul(-2).sub(v.z).mul(cu));
+        });
+      });
       // burst (one-frame impulse)
       If(U.burst.greaterThan(0), () => {
         const b = p.xy.sub(vec2(U.burstX, U.burstY)).add(vec2(S.y.sub(0.5), S.z.sub(0.5)).mul(60)).toVar();
@@ -323,19 +706,31 @@ export class GpuEngine implements Engine {
         v.addAssign(vec3(bn.mul(kb), S.z.sub(0.5).mul(U.burst).mul(0.5)));
       });
       v.addAssign(acc.mul(U.dt).mul(float(1).sub(U.freeze.mul(0.97))));
+      // the hole's direct outward velocity (see cpu.ts)
+      const hvr = v.xy.dot(hN);
+      v.xy.addAssign(hN.mul(max(hV.sub(hvr), 0).mul(min(U.dt.mul(22), 1))));
       // agitation waves: cruise speed modulated by a travelling wave → density bands roll through the flock
       const sp0 = max(length(v), 1e-3);
       const wd = vec2(cos(U.time.mul(0.21)), sin(U.time.mul(0.21)));
       const wa = p.xy.dot(wd).mul(WAVE_K).sub(U.time.mul(WAVE_W));
       const cruise = U.cruise.mul(sin(wa).mul(U.waveAmp).add(1));
-      v.addAssign(v.mul(cruise.sub(sp0).div(sp0).mul(min(U.dt.mul(1.6), 1)).mul(free).mul(float(1).sub(U.freeze))));
+      v.addAssign(v.mul(cruise.sub(sp0).div(sp0).mul(min(U.dt.mul(1.6), 1)).mul(free).mul(float(1).sub(U.freeze)).mul(keep)));
       // speed limits
       const sp = length(v);
-      const maxS = U.speedMax.mul(U.wild.mul(1.5).add(1)).mul(free).add(float(2200).mul(float(1).sub(free)));
-      const minS = U.speedMin.mul(free).mul(float(1).sub(U.freeze));
+      const maxS = U.speedMax.mul(U.wild.mul(1.5).add(1)).mul(free).add(float(2200).mul(float(1).sub(free))).add(hV);
+      const minS = U.speedMin.mul(free).mul(float(1).sub(U.freeze)).mul(keep);
       If(sp.greaterThan(maxS), () => { v.mulAssign(maxS.div(sp)); }).ElseIf(sp.lessThan(minS), () => { v.mulAssign(minS.div(max(sp, 1e-3))); });
       v.mulAssign(exp(U.freeze.mul(-8).mul(U.dt)));
       const np = p.add(v.mul(U.dt)).toVar();
+      // never cut off at the screen edge: a free particle that gets BOUND_REFLECT past the inset box reflects inward
+      If(free.greaterThan(0.5), () => {
+        const l2 = lim.add(BOUND_REFLECT);
+        const rq = np.xy.sub(bc);
+        If(rq.x.greaterThan(l2.x).and(v.x.greaterThan(0)), () => { np.x.assign(bc.x.add(l2.x)); v.x.assign(v.x.mul(-0.5)); })
+          .ElseIf(rq.x.lessThan(l2.x.negate()).and(v.x.lessThan(0)), () => { np.x.assign(bc.x.sub(l2.x)); v.x.assign(v.x.mul(-0.5)); });
+        If(rq.y.greaterThan(l2.y).and(v.y.greaterThan(0)), () => { np.y.assign(bc.y.add(l2.y)); v.y.assign(v.y.mul(-0.5)); })
+          .ElseIf(rq.y.lessThan(l2.y.negate()).and(v.y.lessThan(0)), () => { np.y.assign(bc.y.sub(l2.y)); v.y.assign(v.y.mul(-0.5)); });
+      });
       If(U.snap.greaterThan(0).and(wDes.greaterThan(0.5)), () => { np.assign(T); v.assign(vec3(0)); w.assign(1); });
       pos.element(i).assign(vec4(np, P.w));
       vel.element(i).assign(vec4(v, w));
@@ -357,7 +752,7 @@ export class GpuEngine implements Engine {
     const held = clamp(V.w, 0, 1);
     // far particles (20 % in free flight): dimmer, smaller, set back in z — a depth cue in the flock
     const farFree = step(fract(S.z.mul(7.77)), U.farFrac.sub(1e-4)).mul(step(1e-4, U.farFrac)).mul(float(1).sub(held));
-    const size = mix(1.7, 3.3, S.y).mul(U.sizeScale).mul(mix(float(1.45), float(1), L.dark)).mul(mix(float(1), float(FAR_SIZE), farFree)).mul(U.frameGlow.mul(0.3).mul(held).add(1)); // ink dots need more coverage on paper
+    const size = mix(1.7, 3.3, S.y).mul(U.sizeScale).mul(mix(float(1.45), float(1), L.dark)).mul(mix(float(1), float(FAR_SIZE), farFree)).mul(U.frameGlow.mul(0.3).mul(held).add(1)).mul(float(1).sub(float(1).sub(U.heldDim).mul(0.35).mul(held))); // ink dots need more coverage on paper
     m.scaleNode = vec2(size.mul(st.mul(3.2).add(1)), size.mul(float(1).sub(st.mul(0.35))));
     const vv = cameraViewMatrix.mul(vec4(V.xyz, 0)).xy;
     m.rotationNode = atan(vv.y, vv.x.add(1e-5));
@@ -371,7 +766,7 @@ export class GpuEngine implements Engine {
     const fd = texture(this.fieldRT.texture, vec2(fu.x, float(1).sub(fu.y))).w.div(this.uField.densRef);
     const expo = mix(clamp(float(1.5).div(fd.add(0.4).sqrt()), 0.3, 1), float(1), clamp(V.w, 0, 1));
     // idle flies at freeDim (~65 %); held shapes at shapeExpo (dense shapes dimmed so edges stay readable) + frame glow
-    const look = mix(U.freeDim.mul(mix(float(1), float(FAR_DIM), farFree)), U.shapeExpo.mul(U.frameGlow.mul(0.6).add(1)), held);
+    const look = mix(U.freeDim.mul(mix(float(1), float(FAR_DIM), farFree)), U.shapeExpo.mul(U.frameGlow.mul(0.6).add(1)).mul(U.heldDim), held);
     const bright = mix(0.5, 1.0, S.z).mul(U.pulse.mul(0.15).add(1)).mul(U.brightness).mul(mix(float(1), expo, this.uLook.dark)).mul(look);
     // dark: additive, brightness in colour; light: ink over paper, brightness only nudges opacity
     m.fragmentNode = vec4(color.mul(mix(float(1), bright, L.dark)), disc.mul(L.alpha).mul(mix(mix(0.8, 1.0, S.z), float(1), L.dark)));

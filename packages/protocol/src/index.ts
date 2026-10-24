@@ -17,8 +17,8 @@ export interface SwarmApi {
   become(shape: ShapeSpec, opts?: { hold?: number; depth?: number }): void;
   release(): void;
   mood(m: Mood): void;
-  buildFrame(rect: {x:number;y:number;w:number;h:number}, progress: number): void; // progress 0..1
-  pointer(x: number, y: number, vx: number, vy: number): void; // CSS px, viewport
+  buildFrame(rect: {x:number;y:number;w:number;h:number}, progress: number, opts?: { dim?: boolean }): void; // progress 0..1; dim (once locked): thin low-brightness border, the rest idle
+  pointer(x: number, y: number, vx: number, vy: number, touch?: boolean): void; // CSS px, viewport; touch: present for 2 s after the last touch
   setScene(mode: 'dark'|'light'): void;
   setQuality(tier: 0|1|2|3): void; // 0 = 2D fallback … 3 = max
   setListeningLevel(level01: number): void;
@@ -32,10 +32,16 @@ export interface SwarmApi {
 // Additive: optional engine extension. The UI calls it when present.
 // ---------------------------------------------------------------------------
 
+/**
+ * Entry beats (POLISH2): 'pour' (particles stream in), 'form' (the letters start), 'hold' (the letters have
+ * knitted — time the name line to this), 'release' (back to the flock), 'done' (idle).
+ */
+export type EntryBeat = 'pour' | 'form' | 'hold' | 'release' | 'done';
+
 /** An engine may expose its own cinematic entry (pour-in → YOYO → release). */
 export interface SwarmEntry {
   /** Resolves when the swarm has released into idle. `name` replaces YOYO for returning visitors. */
-  playEntry(opts?: { name?: string; reducedMotion?: boolean }): Promise<void>;
+  playEntry(opts?: { name?: string; reducedMotion?: boolean; onBeat?: (beat: EntryBeat) => void }): Promise<void>;
 }
 
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -60,8 +66,17 @@ export interface SwarmPause {
   resume(): void;
 }
 
+/**
+ * An engine may gather the flock to the stage centre on request (POLISH2 B3): used after an overlay closes,
+ * before `release()`, so the flock never crosses the restored words. Drops any held shape or frame; resolves
+ * after `ms`.
+ */
+export interface SwarmGather {
+  gather(ms: number): Promise<void>;
+}
+
 /** What the UI holds: the required API plus the optional extensions. */
-export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage> & Partial<SwarmPause>;
+export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage> & Partial<SwarmPause> & Partial<SwarmGather>;
 
 // ---------------------------------------------------------------------------
 // Id lists (the single source the guards and pickers use)

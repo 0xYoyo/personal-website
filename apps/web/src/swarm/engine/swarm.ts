@@ -40,13 +40,19 @@ export interface Swarm extends SwarmApi, SwarmEntry, SwarmStage {
   resume(): void;
   /** `setStage` takes keep-out rects (feature flag for callers). */
   readonly keepOut: true;
+  /** POLISH2 B3: pull the flock to the stage centre within `ms` (resolves then). Drops any held shape/frame. */
+  gather(ms: number): Promise<void>;
   /** The canvas currently drawn into (replaced when the context type has to change, e.g. GPU → 2D). */
   readonly canvas: HTMLCanvasElement;
   /** @internal QA hook: the active engine. */
   readonly _engine: Engine | null;
+  /** @internal QA hook: the behaviour controller (stage, keep-outs, params). */
+  readonly _ctrl: Controller;
   /** @internal QA hook: simulation time (s) and the 3D sway angle of a held YOYO. */
   readonly _time: number;
   readonly mood_: Mood;
+  /** Become a shape; resolves once it has knitted in (false if something else took the body first). */
+  knit(shape: ShapeSpec): Promise<boolean>;
   /** Re-seed particle positions (entry pour-in). */
   respawn(kind: 'edges' | 'scatter' | 'center'): void;
   setReducedMotion(on: boolean): void;
@@ -133,6 +139,7 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     const prev = ctrl as Controller | undefined;
     ctrl = new Controller(c.count, { upload: (a, b) => engine?.setTargets(a, b) }, sched);
     ctrl.setReduced(reduced);
+    ctrl.setLite(actual === 'canvas2d');
     ctrl.setStage(stage, keepOut);
     ctrl.setFullFrame(fullFrame);
     const { w, h } = cssSize();
@@ -152,7 +159,8 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     }
     monitor.reset();
     // warm the lazy 3D-letter chunk + sampling so the entry beat never waits on it
-    void yoyo3dTargets(c.count, ctrl.vp).catch(() => undefined);
+    // (the 2D tier samples YOYO from the font mask: no three.js chunk is fetched there — POLISH2 B4)
+    void yoyo3dTargets(c.count, ctrl.shapeLayout).catch(() => undefined);
     opts.onTierChange?.(api.stats());
   };
 
@@ -201,13 +209,16 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     get canvas() { return canvas; },
     /** @internal QA hook */
     get _engine() { return engine; },
+    get _ctrl() { return ctrl; },
     get _time() { return ctrl.p.time; },
     get mood_() { return ctrl.mood; },
-    become(shape, o) { ctrl.become(shape, o); },
+    become(shape, o) { void ctrl.become(shape, o); },
+    knit(shape) { return ctrl.become(shape); },
     release() { ctrl.release(); },
     mood(m) { ctrl.mood_(m); },
-    buildFrame(rect, progress) { ctrl.buildFrame(rect, progress); },
-    pointer(x, y, vx, vy) { ctrl.pointer(x, y, vx, vy); },
+    buildFrame(rect, progress, o) { ctrl.buildFrame(rect, progress, o); },
+    gather(ms) { return ctrl.gather(ms); },
+    pointer(x, y, vx, vy, touch) { ctrl.pointer(x, y, vx, vy, touch); },
     setScene(mode) { scene = mode; engine?.setScene(mode); },
     setQuality(t) {
       const next = tierConfig(t, capsTier);
@@ -224,12 +235,17 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
       try {
         if (o.reducedMotion ?? reduced) {
           // reduced motion: the shape appears, holds, and goes; no pour-in
-          api.become(o.name ? { kind: 'text', text: o.name } : { kind: 'yoyo3d' });
+          o.onBeat?.('form');
+          await api.knit(o.name ? { kind: 'text', text: o.name } : { kind: 'yoyo3d' });
+          o.onBeat?.('hold');
           await api.wait(1600);
+          o.onBeat?.('release');
           api.release();
+          o.onBeat?.('done');
         } else {
-          // the stage applies again from the release, so the flock already heads there as the greeting lands
-          await runEntry(api, { ...(o.name ? { name: o.name } : {}), onBeat: (b) => { if (b === 'release') { fullFrame = false; ctrl.setFullFrame(false); } } });
+          // the stage applies again from the release, so the flock already heads there as the greeting lands;
+          // the beats go on to the caller ('hold' = the letters have knitted, for the name line under them)
+          await runEntry(api, { ...(o.name ? { name: o.name } : {}), onBeat: (b) => { if (b === 'release') { fullFrame = false; ctrl.setFullFrame(false); } o.onBeat?.(b); } });
         }
       } finally {
         fullFrame = false; ctrl.setFullFrame(false);

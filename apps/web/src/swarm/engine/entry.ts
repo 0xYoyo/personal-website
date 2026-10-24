@@ -4,8 +4,10 @@ export interface EntryOptions {
   /** Returning visitor: form their name instead of YOYO for the beat (SPEC §2.1). */
   name?: string;
   signal?: AbortSignal;
-  onBeat?: (beat: 'pour' | 'form' | 'hold' | 'release' | 'done') => void;
+  /** 'hold' fires once the letters have actually knitted (not on a fixed clock: target sampling can lag). */
+  onBeat?: (beat: EntryBeat) => void;
 }
+export type EntryBeat = 'pour' | 'form' | 'hold' | 'release' | 'done';
 
 
 /**
@@ -22,8 +24,10 @@ export async function playEntry(swarm: Swarm, o: EntryOptions = {}): Promise<voi
     o.onBeat?.('pour');
     await wait(1200, o.signal);
     o.onBeat?.('form');
-    swarm.become(o.name ? { kind: 'text', text: o.name } : { kind: 'yoyo3d' });
-    await wait(950, o.signal); // knit-in duration (spread 0.6 s + ramp 0.35 s)
+    // knit-in: the targets (async) + the staggered knit (spread 0.6 s + ramp 0.35 s)
+    const knit = swarm.knit(o.name ? { kind: 'text', text: o.name } : { kind: 'yoyo3d' });
+    await Promise.race([knit, new Promise<never>((_, rej) => o.signal?.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError')), { once: true }))]);
+    o.signal?.throwIfAborted?.();
     o.onBeat?.('hold');
     await wait(900, o.signal);
     o.onBeat?.('release');
