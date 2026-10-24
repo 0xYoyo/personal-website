@@ -22,7 +22,15 @@ export interface Viewport {
    * whole viewport, so they never sit under the agent's words. Frames ignore it (they have their own rect).
    */
   stage?: { x: number; y: number; w: number; h: number } | null;
+  /**
+   * The 2D tier (POLISH2 B5): shapes are sampled edge-weighted (EDGE_SHARE on a thin outline) so complex glyphs
+   * read at 3k dots, and YOYO is extruded from the 2D font mask instead of three.js (no GPU chunk on tier 0).
+   */
+  lite?: boolean;
 }
+
+/** Share of a lite shape's targets on its outline (60 / 40 fill / edge). */
+export const EDGE_SHARE = 0.4;
 
 /** World-space centre (origin = viewport centre, y up) of the stage, or of the viewport when there is none. */
 export function stageCentre(vp: Viewport): { x: number; y: number } {
@@ -84,6 +92,35 @@ export function sampleMask(alpha: Uint8ClampedArray | Uint8Array, stride: number
   }
   return { x: xs, y: ys, filled };
 }
+
+/** Outline of a mask: filled pixels with an unfilled pixel within `r` (4 directions). One byte per pixel. */
+export function edgeMask(alpha: Uint8ClampedArray | Uint8Array, stride: number, w: number, h: number, threshold = 128, r = 2): Uint8Array {
+  const out = new Uint8Array(w * h);
+  const on = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h && alpha[(y * w + x) * stride]! >= threshold;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (!on(x, y)) continue;
+    let e = false;
+    for (let d = 1; d <= r && !e; d++) e = !on(x + d, y) || !on(x - d, y) || !on(x, y + d) || !on(x, y - d);
+    if (e) out[y * w + x] = 255;
+  }
+  return out;
+}
+
+/** sampleMask with `edgeShare` of the n points on the mask's outline (the rest fill it), shuffled together. */
+export function sampleMaskEdged(alpha: Uint8ClampedArray | Uint8Array, stride: number, w: number, h: number, n: number, seed = 1, threshold = 128, edgeShare = EDGE_SHARE): MaskSample {
+  const edge = edgeMask(alpha, stride, w, h, threshold);
+  const ne = Math.round(n * edgeShare);
+  const a = sampleMask(alpha, stride, w, h, n - ne, seed, threshold);
+  if (a.filled === 0) return sampleMask(alpha, stride, w, h, n, seed, threshold);
+  const b = sampleMask(edge, 1, w, h, ne, seed ^ 0x2545f491, 128);
+  const xs = new Float32Array(n), ys = new Float32Array(n);
+  xs.set(a.x); ys.set(a.y); xs.set(b.x, n - ne); ys.set(b.y, n - ne);
+  const r = rng(seed * 7 + 3);
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const tx = xs[i]!, ty = ys[i]!; xs[i] = xs[j]!; ys[i] = ys[j]!; xs[j] = tx; ys[j] = ty; }
+  return { x: xs, y: ys, filled: a.filled };
+}
+
+const sampleFor = (vp: Viewport): typeof sampleMask => (vp.lite ? sampleMaskEdged : sampleMask);
 
 export interface Fit { maxW: number; maxH: number; cx: number; cy: number; depth: number }
 
@@ -261,7 +298,7 @@ export function textTargets(text: string, n: number, vp: Viewport, depthMul = 1)
   lines.forEach((l, i) => ctx.fillText(l, W / 2, fs * 0.2 + fs * 1.05 * (i + 0.5)));
   const img = ctx.getImageData(0, 0, W, H);
   const seed = hashString('text:' + text);
-  const s = sampleMask(img.data.subarray(3), 4, W, H, n, seed);
+  const s = sampleFor(vp)(img.data.subarray(3), 4, W, H, n, seed);
   const fit = fitFor('text', vp, lines.length); fit.depth *= depthMul;
   return samplesToTargets(s, W, H, fit, seed);
 }
@@ -273,7 +310,7 @@ export function emojiTargets(emoji: string, n: number, vp: Viewport, depthMul = 
   ctx.fillText(emoji, S / 2, S * 0.54);
   const img = ctx.getImageData(0, 0, S, S);
   const seed = hashString('emoji:' + emoji);
-  const s = sampleMask(img.data.subarray(3), 4, S, S, n, seed, 140);
+  const s = sampleFor(vp)(img.data.subarray(3), 4, S, S, n, seed, 140);
   const fit = fitFor('emoji', vp); fit.depth *= depthMul;
   return samplesToTargets(s, S, S, fit, seed, img.data);
 }
@@ -293,7 +330,7 @@ export async function svgTargets(svg: string, n: number, vp: Viewport, key: stri
     ctx.drawImage(img, (S - iw * k) / 2, (S - ih * k) / 2, iw * k, ih * k);
     const data = ctx.getImageData(0, 0, S, S);
     const seed = hashString('glyph:' + key);
-    const s = sampleMask(data.data.subarray(3), 4, S, S, n, seed, 110);
+    const s = sampleFor(vp)(data.data.subarray(3), 4, S, S, n, seed, 110);
     const fit = fitFor('glyph', vp); fit.depth *= depthMul;
     return samplesToTargets(s, S, S, fit, seed);
   } finally {
@@ -320,11 +357,67 @@ function loadTypeface(): Promise<unknown> {
 }
 
 let yoyoCache: { n: number; key: string; t: Targets } | null = null;
-const vpKey = (vp: Viewport): string => `${vp.w}x${vp.h}:${vp.stage ? `${vp.stage.x},${vp.stage.y},${vp.stage.w},${vp.stage.h}` : '-'}`;
+const vpKey = (vp: Viewport): string => `${vp.w}x${vp.h}:${vp.stage ? `${vp.stage.x},${vp.stage.y},${vp.stage.w},${vp.stage.h}` : '-'}:${vp.lite ? 'lite' : 'mesh'}`;
 
-/** Extruded "YOYO" (Bricolage Grotesque 800 typeface) sampled on its surface with MeshSurfaceSampler. */
+/**
+ * Extruded "YOYO": on GPU tiers, the Bricolage Grotesque 800 typeface extruded and sampled on its surface with
+ * MeshSurfaceSampler (three.js, lazy); on the 2D tier (vp.lite) the same letters from the 2D font mask, extruded
+ * by hand (front / back faces + the outline swept through the depth), so tier 0 never fetches the three.js chunk.
+ */
 export async function yoyo3dTargets(n: number, vp: Viewport): Promise<Targets> {
   if (yoyoCache && yoyoCache.n === n && yoyoCache.key === vpKey(vp)) return yoyoCache.t;
+  const t = vp.lite ? yoyoMaskTargets(n, vp) : await yoyoMeshTargets(n, vp);
+  yoyoCache = { n, key: vpKey(vp), t };
+  return t;
+}
+
+/** Share of the 2D-extruded YOYO's points on the front face, the back face and the sides. */
+export const YOYO_FACES = { front: 0.42, back: 0.16, sides: 0.42 } as const;
+
+/** Extrude a mask sample by hand: front / back faces from `face`, the sides from `edge` spread through ±depth. */
+export function extrudeSamples(face: MaskSample, edge: MaskSample, n: number, halfDepth: number, seed = 0x7070): { x: Float32Array; y: Float32Array; z: Float32Array } {
+  const nf = Math.round(n * YOYO_FACES.front), nb = Math.round(n * YOYO_FACES.back);
+  const r = rng(seed);
+  const x = new Float32Array(n), y = new Float32Array(n), z = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    if (i < nf + nb) { const k = i % face.x.length; x[i] = face.x[k]!; y[i] = face.y[k]!; z[i] = i < nf ? halfDepth : -halfDepth; }
+    else { const k = (i - nf - nb) % Math.max(edge.x.length, 1); x[i] = edge.x[k] ?? 0; y[i] = edge.y[k] ?? 0; z[i] = (r() * 2 - 1) * halfDepth; }
+  }
+  return { x, y, z };
+}
+
+function yoyoMaskTargets(n: number, vp: Viewport): Targets {
+  const fs = 220;
+  const font = `800 ${fs}px "${DISPLAY_FONT}", "Arial Black", system-ui, sans-serif`;
+  const probe = makeCanvas(8, 8).ctx;
+  probe.font = font;
+  const W = Math.ceil(probe.measureText('YOYO').width + fs * 0.4), H = Math.ceil(fs * 1.4);
+  const { ctx } = makeCanvas(W, H);
+  ctx.font = font; ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  ctx.fillText('YOYO', W / 2, H / 2);
+  const a = ctx.getImageData(0, 0, W, H).data.subarray(3);
+  const nf = Math.round(n * YOYO_FACES.front);
+  const face = sampleMask(a, 4, W, H, nf, 0x7071);
+  const edge = sampleMask(edgeMask(a, 4, W, H), 1, W, H, n - nf - Math.round(n * YOYO_FACES.back), 0x7072);
+  // the mesh YOYO is 34 deep at size 100 → ~0.34 × the font size
+  const e = extrudeSamples(face, edge, n, fs * 0.17);
+  const fit = fitFor('yoyo3d', vp);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (let i = 0; i < face.x.length; i++) { x0 = Math.min(x0, face.x[i]!); x1 = Math.max(x1, face.x[i]!); y0 = Math.min(y0, face.y[i]!); y1 = Math.max(y1, face.y[i]!); }
+  const bw = Math.max(x1 - x0, 1), bh = Math.max(y1 - y0, 1);
+  const scale = Math.min(fit.maxW / bw, fit.maxH / bh), mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+  const t = emptyTargets(n);
+  for (let i = 0; i < n; i++) {
+    t.pos[i * 4] = fit.cx + (e.x[i]! - mx) * scale;
+    t.pos[i * 4 + 1] = fit.cy - (e.y[i]! - my) * scale;
+    t.pos[i * 4 + 2] = e.z[i]! * scale;
+    t.pos[i * 4 + 3] = knitDelay(i, (e.x[i]! - x0) / bw);
+  }
+  t.cx = fit.cx; t.cy = fit.cy; t.spin = true;
+  return t;
+}
+
+async function yoyoMeshTargets(n: number, vp: Viewport): Promise<Targets> {
   const [THREE, { FontLoader }, { TextGeometry }, { MeshSurfaceSampler }, fontJson] = await Promise.all([
     import('three/webgpu'),
     import('three/addons/loaders/FontLoader.js'),
@@ -355,7 +448,6 @@ export async function yoyo3dTargets(n: number, vp: Viewport): Promise<Targets> {
   }
   geo.dispose();
   t.cx = fit.cx; t.cy = fit.cy; t.spin = true;
-  yoyoCache = { n, key: vpKey(vp), t };
   return t;
 }
 
