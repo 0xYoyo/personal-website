@@ -22,7 +22,10 @@ import { createSound } from './ui/sound';
 import { TopBar } from './ui/TopBar';
 import { createVoice } from './ui/voice';
 
-const IDLE_MS = 4000;
+/** The greeting rests this long (from the moment it has landed) before "or just watch." (POLISH2 A5). */
+const IDLE_MS = 7000;
+/** The name line fades in under the letters once they have knitted (POLISH2 A5). */
+const NAME_LINE_MS = 2200;
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -148,7 +151,7 @@ export function App() {
 
       // ---- entry (SPEC §2.1)
       st.setPhase('entry');
-      const nameLine = setTimeout(() => useStore.getState().setEntryName(copy.entry.nameLine), reduced ? 0 : 1100);
+      const nameLine = setTimeout(() => useStore.getState().setEntryName(copy.entry.nameLine), reduced ? 0 : NAME_LINE_MS);
       const entryName = returning && name ? name : undefined;
       if (params.get('skipEntry') !== '1') {
         if (swarm.playEntry) await swarm.playEntry({ ...(entryName ? { name: entryName } : {}), reducedMotion: reduced });
@@ -185,6 +188,7 @@ export function App() {
       }
       useStore.getState().setChips(chips);
       await ctl.speakLine(line);
+      // the idle timer starts when the greeting has landed
       useStore.getState().touch();
     })();
 
