@@ -8,7 +8,8 @@ export type ChipContext = 'entry' | 'who' | 'project' | 'build' | 'story' | 'idl
 
 export const ENTRY_CHIPS = ['Who is Yoyo?', 'What has he built?', 'Spell my name', 'Build me something', 'Play his game'];
 export const WHO_CHIPS = ['Tell me a story', "What's he bad at?", 'Why should we hire him?', 'How do I reach him?'];
-export const BUILD_CHIPS = ['Change it', 'Share it', 'Build another', 'Who made this agent?'];
+/** "Change it" lives in the frame's controls row only (POLISH2 A4). */
+export const BUILD_CHIPS = ['Share it', 'Build another', 'Who made this agent?'];
 export const STORY_CHIPS = ['Next story', 'Who is Yoyo?', 'What has he built?', 'How do I reach him?'];
 
 /** Returning visitor with a stored build (POLISH1 A6): reopen it first, then the usual moves. */

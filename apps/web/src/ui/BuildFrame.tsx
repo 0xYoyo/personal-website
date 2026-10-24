@@ -39,8 +39,10 @@ export function BuildFrame() {
 
   const locked = build.status === 'locked';
   const streaming = build.status === 'streaming';
-  const lastAgent = [...lines].reverse().find((l) => l.role === 'agent')?.text ?? '';
-  const caption = streaming ? copy.build.writing : lastAgent;
+  const lastAgent = [...lines].reverse().find((l) => l.role === 'agent');
+  const caption = streaming ? copy.build.writing : lastAgent?.text ?? '';
+  // one element per line said (it streams in word by word), not per word
+  const captionKey = streaming ? 'writing' : `a:${lastAgent?.id ?? 0}`;
 
   // the code view: the tail of what has streamed, tags dimmed
   const runs = useMemo(() => codeRuns(build.html.length > CODE_TAIL ? build.html.slice(-CODE_TAIL) : build.html), [build.html]);
@@ -67,12 +69,15 @@ export function BuildFrame() {
     return () => clearTimeout(t);
   }, [locked]);
 
-  // The swarm: ring at the frame's center, then the frame's outline with density = progress.
+  // The swarm: ring at the frame's center, then the frame's outline with density = progress;
+  // once locked, a dim thin border around it (POLISH2 A4).
   useLayoutEffect(() => {
     const el = frameRef.current;
-    if (!el || locked || build.status === 'idle') return;
+    if (!el || build.status === 'idle') return;
     const r = el.getBoundingClientRect();
-    ctl.buildFrameProgress({ x: r.left, y: r.top, w: r.width, h: r.height }, build.status === 'ring' ? 0 : build.progress);
+    const rect = { x: r.left, y: r.top, w: r.width, h: r.height };
+    if (locked) ctl.holdLockedFrame(rect);
+    else ctl.buildFrameProgress(rect, build.status === 'ring' ? 0 : build.progress);
   }, [build.status, build.progress, locked]);
 
   const say = (k: string, t: string) => {
@@ -133,7 +138,8 @@ export function BuildFrame() {
   return (
     <div className="y-build-wrap">
       <section ref={ref} className="y-build" role="dialog" aria-modal="true" aria-label={copy.build.frameTitle} aria-busy={!locked}>
-        <p className="y-build-caption" aria-live="off" key={caption}>
+        {/* desktop: a full agent line above the frame; mobile: one line the flock keeps off */}
+        <p className="y-build-caption" aria-live="off" key={captionKey} data-done={locked}>
           {caption}
         </p>
         <div ref={frameRef} className="y-build-frame" data-visible={visible} data-locked={locked} data-flash={flash} data-maxed={maxed}>

@@ -9,7 +9,7 @@ describe('chips', () => {
     expect(defaultChips('who')).toEqual(['Tell me a story', "What's he bad at?", 'Why should we hire him?', 'How do I reach him?']);
     expect(projectChips('prompt-racers')).toContain('Play it');
     expect(projectChips('polybot')).not.toContain('Play it');
-    expect(defaultChips('build')).toEqual(['Change it', 'Share it', 'Build another', 'Who made this agent?']);
+    expect(defaultChips('build')).toEqual(['Share it', 'Build another', 'Who made this agent?']);
   });
 
   it('runs UI commands directly', () => {

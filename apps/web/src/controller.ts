@@ -32,6 +32,7 @@ let buildAbort: AbortController | null = null;
 let runner: Runner | null = null;
 let deferred: Action[] = [];
 let lastBuildRect: Rect | null = null;
+let lockTimer: ReturnType<typeof setTimeout> | null = null;
 /** A shape the agent formed holds at least this long (POLISH1 A5). */
 const READ_FLOOR = 4000;
 /** Bumped by every turn; a pending "let the shape go" from an older turn checks it. */
@@ -577,18 +578,16 @@ export const ctl = {
       );
       if (buildAbort !== ac) return;
       const seconds = Math.max(1, Math.round(res.ms / 1000));
-      S().patchBuild({ status: 'locked', html: res.html, bytes: res.bytes, progress: 1, seconds, title: res.title });
-      rt.sound?.thump();
-      swarm()?.pulse(1);
-      brain.memory.addBuild({ title: res.title, instruction, html: res.html });
-      setTimeout(() => {
-        // on a phone the frame fills the stage, so a released flock would roost over the
-        // frame's header and the top bar: keep the locked outline there instead
-        if (S().build.status === 'locked' && !isMobileViewport()) {
-          swarm()?.release();
-          swarm()?.mood('idle');
-        }
-      }, 650);
+      if (res.unchanged) {
+        // scripted "Change it" to the example already on screen: nothing re-streams, no re-lock, no new build
+        S().patchBuild({ status: 'locked', html: res.html, bytes: res.bytes, progress: 1, title: res.title });
+      } else {
+        S().patchBuild({ status: 'locked', html: res.html, bytes: res.bytes, progress: 1, seconds, title: res.title });
+        rt.sound?.thump();
+        swarm()?.pulse(1);
+        brain.memory.addBuild({ title: res.title, instruction, html: res.html });
+      }
+      // after the lock flash the outline thins to a dim border (BuildFrame reports the rect → holdLockedFrame)
       await said;
       await speakLine(res.line || copy.build.done(seconds));
       S().setChips(BUILD_CHIPS);
@@ -626,6 +625,26 @@ export const ctl = {
   buildFrameProgress(rect: Rect, progress: number) {
     lastBuildRect = rect;
     swarm()?.buildFrame(rect, progress);
+  },
+  /**
+   * The frame locked (or a stored / shared build opened locked): after the lock flash the outline
+   * thins to a dim border around it and the rest of the flock idles off the frame (POLISH2 A4).
+   * Engines without the dim frame: desktop lets go; on a phone the full outline stays (a free flock
+   * would roost over the frame's header and the top bar).
+   */
+  holdLockedFrame(rect: Rect) {
+    lastBuildRect = rect;
+    if (lockTimer) clearTimeout(lockTimer);
+    const seq = bodySeq;
+    lockTimer = setTimeout(() => {
+      lockTimer = null;
+      const sw = swarm();
+      if (seq !== bodySeq || S().overlay !== 'build' || S().build.status !== 'locked' || !sw) return;
+      if (canGather(sw)) (sw.buildFrame as FrameFn).call(sw, rect, 1, { dim: true });
+      else if (!isMobileViewport()) sw.release();
+      else sw.buildFrame(rect, 1);
+      sw.mood('idle');
+    }, 650);
   },
   get lastBuildRect() {
     return lastBuildRect;

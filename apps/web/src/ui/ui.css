@@ -708,13 +708,19 @@
   outline: none;
 }
 .y-build-caption {
-  margin: 0;
-  min-height: 1.3em;
+  /* the agent's line, in the conversation's voice and size, above the frame (POLISH2 A4) */
+  margin: 22px 0 6px;
+  min-height: 1.04em;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 26px;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  font-variation-settings: 'wdth' 92;
+  font-size: 44px;
+  line-height: 1.04;
+  letter-spacing: var(--t-agent-track);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: none;
   animation: y-line-in var(--dur-3) var(--ease-out) both;
 }
 .y-build-frame {
@@ -1158,8 +1164,12 @@
   .y-build {
     width: calc(100vw - 32px);
   }
+  /* one line the flock keeps off (a keep-out, App.tsx) */
   .y-build-caption {
+    margin: 4px 0 0;
     font-size: 21px;
+    line-height: 1.2;
+    min-height: 1.2em;
   }
   .y-build-controls {
     gap: 4px 16px;
