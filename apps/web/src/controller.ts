@@ -1,7 +1,7 @@
 // The conductor: the only module that talks to the swarm, the brain, sound and
 // voice. UI components call `ctl.*`; state lives in the zustand store.
 import type { Action, ProjectId, Rect, ShapeSpec, StoryId } from '@yoyo/protocol';
-import { BrainError, type Brain } from './agent';
+import { BrainError, type Brain, type ReplyHandlers } from './agent';
 import { BUILD_CHIPS, ENTRY_CHIPS, WHO_CHIPS, STORY_CHIPS, projectChips, resolveChip } from './content/chips';
 import { copy } from './content/copy';
 import { neighbour, projectById } from './content/projects';
@@ -12,6 +12,7 @@ import { emptyBuild, useStore, type Overlay } from './state/store';
 import type { SwarmHandle } from './swarm';
 import { createRunner, type Runner, type Step } from './ui/runner/engine';
 import type { Sound } from './ui/sound';
+import { createChannel, createPacer, stripMarks, TURN_WORD_MS, type Pacer, type TurnFit } from './ui/turns';
 import type { Voice } from './ui/voice';
 
 interface Runtime {
@@ -36,6 +37,54 @@ const READ_FLOOR = 4000;
 /** Bumped by every turn; a pending "let the shape go" from an older turn checks it. */
 let settleSeq = 0;
 
+/** How long the flock gathers at the stage centre after an overlay closes, before it is let go (POLISH2 A2). */
+export const GATHER_MS = 450;
+
+// ---- turns (POLISH2 A1) -------------------------------------------------------
+/** Sizes a whole turn on the conversation's hidden clone (registered by Conversation). */
+let measureFn: ((text: string) => TurnFit | null) | null = null;
+/** The turn on screen, shared by every pacer so a UI line still honours its read time. */
+const channel = createChannel();
+const pacers = new Set<Pacer>();
+
+/**
+ * A pacer that shows its turns in the conversation: one agent line per turn,
+ * sized once, words streamed in, the reply's `streaming` flag held until the
+ * last turn is on screen.
+ */
+function turnPacer(opts: { onBegin?: () => void } = {}): Pacer {
+  const p = createPacer(
+    {
+      begin(t) {
+        opts.onBegin?.();
+        S().startAgent({ ...(t.px ? { size: t.px } : {}), full: t.text });
+        if (S().voice) rt.voice?.speak(t.text, pulseWord);
+      },
+      word(w) {
+        S().appendAgentWord(w);
+        pulseWord();
+      },
+      end() {
+        S().finishAgent({ keepStreaming: true });
+      },
+    },
+    {
+      measure: (text) => measureFn?.(text) ?? { px: 0, fits: true },
+      pace: S().reducedMotion ? 0 : TURN_WORD_MS,
+      channel,
+    },
+  );
+  pacers.add(p);
+  S().setStreaming(true);
+  return p;
+}
+
+/** The pacer is done (or cancelled): drop it; the bar's hairline goes when the last one does. */
+function retire(p: Pacer) {
+  if (!pacers.delete(p)) return;
+  if (!pacers.size) S().setStreaming(false);
+}
+
 /** Overlay-opening actions wait until the line has been said. */
 const DEFERRED = new Set<Action['type']>(['show', 'play', 'story', 'tour', 'build', 'contact']);
 
@@ -48,18 +97,15 @@ function pulseWord() {
   rt.sound?.tick();
 }
 
-/** Stream a fixed agent line into the conversation (UI-originated lines). */
-async function speakLine(text: string, opts: { pace?: number } = {}): Promise<void> {
-  const st = S();
-  st.startAgent();
-  const pace = st.reducedMotion ? 0 : opts.pace ?? 70;
-  for (const w of text.split(/\s+/).filter(Boolean)) {
-    S().appendAgentWord(w);
-    pulseWord();
-    if (pace) await sleep(pace);
+/** Say a fixed agent line (UI-originated) as its own turn(s); resolves once it is on screen. */
+async function speakLine(text: string): Promise<void> {
+  const p = turnPacer();
+  p.line(text);
+  try {
+    await p.close();
+  } finally {
+    retire(p);
   }
-  S().finishAgent();
-  if (S().voice) rt.voice?.speak(text, pulseWord);
 }
 
 function closeAll(except?: Overlay) {
@@ -194,58 +240,65 @@ export const ctl = {
     st.spendIdle();
     if (runner?.running()) runner.skip();
     turn?.abort();
+    for (const p of pacers) p.cancel();
+    // the visitor moved on: the next turn does not wait for the one on screen
+    channel.last = null;
     deferred = [];
     const ac = new AbortController();
     turn = ac;
     st.pushVisitor(clean);
     settleSeq++;
-    const startedAt = performance.now();
     swarm()?.mood('thinking');
     st.setMood('thinking');
-    let started = false;
-    const ensureLine = () => {
-      if (!started) {
-        started = true;
-        S().startAgent();
-        swarm()?.mood('speaking');
-        S().setMood('speaking');
-      }
-    };
+    let lastTurn = '';
+    const pacer = turnPacer({
+      onBegin() {
+        if (S().mood === 'thinking') {
+          swarm()?.mood('speaking');
+          S().setMood('speaking');
+        }
+      },
+    });
+    ac.signal.addEventListener('abort', () => pacer.cancel(), { once: true });
     let chipsSet = false;
     let opened: ProjectId | null = null;
+    // `onTurn` is the brain's turn boundary (POLISH2 C1); until it lands, `||` in the words marks the turns
+    const handlers: ReplyHandlers & { onTurn?(): void } = {
+      onWord(w) {
+        pacer.push(w);
+      },
+      onTurn() {
+        pacer.boundary();
+      },
+      onAction(a) {
+        if (a.type === 'chips') chipsSet = true;
+        if (a.type === 'show') opened = a.project;
+        if (DEFERRED.has(a.type)) deferred.push(a);
+        else runAction(a);
+      },
+      onNotice(t) {
+        pacer.line(t);
+      },
+    };
     try {
-      const reply = await rt.brain.send(
-        clean,
-        {
-          onWord(w) {
-            ensureLine();
-            S().appendAgentWord(w);
-            pulseWord();
-          },
-          onAction(a) {
-            if (a.type === 'chips') chipsSet = true;
-            if (a.type === 'show') opened = a.project;
-            if (DEFERRED.has(a.type)) deferred.push(a);
-            else runAction(a);
-          },
-          onNotice(t) {
-            S().agentLine(t);
-          },
-        },
-        ac.signal,
-      );
+      const reply = await rt.brain.send(clean, handlers, ac.signal);
       if (turn !== ac) return;
-      S().finishAgent();
+      const text = stripMarks(reply.text);
+      lastTurn = text;
+      // every turn on screen, in order, each after the previous one's read time
+      await pacer.close();
+      retire(pacer);
+      if (turn !== ac) return;
+      lastTurn = [...S().lines].reverse().find((l) => l.role === 'agent')?.text ?? lastTurn;
       S().setMood('idle');
-      // The whole reply rests on screen; keep its shape up while it is read (~230 ms a word
-      // from the first word), and never less than 4 s after the stream ends — reduced motion too.
-      const readMs = Math.max(READ_FLOOR, startedAt + reply.text.split(/\s+/).length * 230 - performance.now() + 1800);
+      // The last turn rests on screen; keep its shape up while it is read (300 ms a word),
+      // and never less than 4 s after it lands — reduced motion too.
+      const readMs = Math.max(READ_FLOOR, lastTurn.split(/\s+/).length * 300);
       const seq = ++settleSeq;
       setTimeout(() => {
         if (seq !== settleSeq || turn || S().overlay !== 'none' || runner?.running()) return;
         swarm()?.mood('idle');
       }, readMs);
-      if (reply.text && S().voice) rt.voice?.speak(reply.text, pulseWord);
       if (!chipsSet) {
         if (opened) S().setChips(projectChips(opened));
         else if (/who/i.test(clean) && !deferred.length) S().setChips(WHO_CHIPS);
@@ -254,17 +307,30 @@ export const ctl = {
       deferred = [];
       if (queue.length) {
         // let the line land before an overlay takes the stage
-        await sleep(reply.text ? Math.min(1400, 500 + reply.text.split(' ').length * 40) : 0);
+        await sleep(text ? Math.min(1400, 500 + lastTurn.split(' ').length * 40) : 0);
         if (turn !== ac) return;
         queue.forEach(runAction);
       }
     } catch (e) {
       if (e instanceof BrainError && e.reason === 'aborted') return;
-      S().finishAgent();
+      // whatever arrived before the failure is still said
+      await pacer.close();
       swarm()?.mood('idle');
     } finally {
+      retire(pacer);
       if (turn === ac) turn = null;
     }
+  },
+
+  /** A click or Enter: the turn on screen has been read — the next one now (POLISH2 A1). */
+  advance() {
+    for (const p of pacers) p.advance();
+  },
+  /** Whether a reply is still pacing its turns (Enter on an empty bar advances it). */
+  pacing: () => pacers.size > 0,
+  /** Conversation registers the hidden clone each turn is sized on. */
+  setMeasure(fn: ((text: string) => TurnFit | null) | null) {
+    measureFn = fn;
   },
 
   chip(label: string) {

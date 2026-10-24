@@ -15,6 +15,10 @@ export interface Line {
   streaming: boolean;
   /** shown without the word-in animation (a runner caption that stays on screen as the last line) */
   quiet?: boolean;
+  /** font size the turn was fitted to, once, before it was shown (POLISH2 A1), px */
+  size?: number;
+  /** the turn's whole text (known before its words stream in) */
+  full?: string;
 }
 
 export type BuildStatus = 'idle' | 'ring' | 'streaming' | 'locked' | 'error';
@@ -68,6 +72,8 @@ export interface State {
   lastInput: number;
   /** whether the idle → tour path already ran or was cancelled this session */
   idleSpent: boolean;
+  /** an overlay just closed and the flock is gathering: chips and bar wait (POLISH2 A2) */
+  settling: boolean;
   entryName: string | null; // the quiet mono line under the entry letters
   reducedMotion: boolean;
 }
@@ -79,9 +85,12 @@ export const emptyBuild: BuildState = {
 export interface Actions {
   setPhase(p: Phase): void;
   pushVisitor(text: string): number;
-  startAgent(): number;
+  startAgent(turn?: { size?: number; full?: string }): number;
   appendAgentWord(word: string): void;
-  finishAgent(): void;
+  /** `keepStreaming`: a turn ended but the reply goes on */
+  finishAgent(opts?: { keepStreaming?: boolean }): void;
+  setStreaming(on: boolean): void;
+  setSettling(on: boolean): void;
   agentLine(text: string, opts?: { quiet?: boolean }): number;
   setChips(chips: string[]): void;
   openOverlay(o: Overlay): void;
@@ -124,6 +133,7 @@ const initial = (): State => ({
   runner: null,
   lastInput: 0,
   idleSpent: false,
+  settling: false,
   entryName: null,
   reducedMotion: false,
 });
@@ -136,9 +146,12 @@ export const useStore = create<State & Actions>()((set, get) => ({
     set((s) => ({ lines: [...s.lines, { id, role: 'visitor' as const, text, streaming: false }].slice(-MAX_LINES), lastInput: Date.now() }));
     return id;
   },
-  startAgent() {
+  startAgent(turn) {
     const id = nextId++;
-    set((s) => ({ lines: [...s.lines, { id, role: 'agent' as const, text: '', streaming: true }].slice(-MAX_LINES), streaming: true }));
+    const line: Line = { id, role: 'agent', text: '', streaming: true };
+    if (turn?.size) line.size = turn.size;
+    if (turn?.full) line.full = turn.full;
+    set((s) => ({ lines: [...s.lines, line].slice(-MAX_LINES), streaming: true }));
     return id;
   },
   appendAgentWord(word) {
@@ -154,13 +167,15 @@ export const useStore = create<State & Actions>()((set, get) => ({
       return { lines };
     });
   },
-  finishAgent() {
+  finishAgent(opts) {
     set((s) => ({
       // drop an agent line that never received text (action-only replies)
       lines: s.lines.filter((l) => !(l.role === 'agent' && l.streaming && !l.text)).map((l) => (l.streaming ? { ...l, streaming: false } : l)),
-      streaming: false,
+      streaming: !!opts?.keepStreaming,
     }));
   },
+  setStreaming: (streaming) => set({ streaming }),
+  setSettling: (settling) => set({ settling }),
   agentLine(text, opts) {
     const id = nextId++;
     const line: Line = { id, role: 'agent', text, streaming: false, ...(opts?.quiet ? { quiet: true } : {}) };
@@ -189,24 +204,29 @@ export const useStore = create<State & Actions>()((set, get) => ({
 
 export const defaultEntryChips = ENTRY_CHIPS;
 
-/** The last two exchanges: [previous agent line, current agent line, current visitor line]. */
+/**
+ * What the conversation shows: the current agent turn, the visitor line it
+ * answers, and the one agent turn before it (muted beneath; a previous turn
+ * of the same reply or the end of the last one). Older lines live in History.
+ */
 export function visibleExchange(lines: Line[]): { prevAgent?: Line; agent?: Line; visitor?: Line } {
   let agent: Line | undefined;
   let visitor: Line | undefined;
   let prevAgent: Line | undefined;
   for (let i = lines.length - 1; i >= 0; i--) {
     const l = lines[i]!;
-    if (!agent && l.role === 'agent') {
-      agent = l;
+    if (!agent) {
+      if (l.role === 'agent') agent = l;
       continue;
     }
-    if (agent && !visitor && l.role === 'visitor') {
-      visitor = l;
+    if (l.role === 'visitor') {
+      visitor ??= l;
+      if (prevAgent) break;
       continue;
     }
-    if (agent && l.role === 'agent') {
+    if (!prevAgent) {
       prevAgent = l;
-      break;
+      if (visitor) break;
     }
   }
   // If the visitor just spoke and the agent hasn't answered yet, show their echo under the last agent line.

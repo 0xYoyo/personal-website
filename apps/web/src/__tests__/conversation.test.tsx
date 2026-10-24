@@ -1,5 +1,6 @@
 import { act, render } from '@testing-library/react';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ctl } from '../controller';
 import { AGENT_LH } from '../ui/fit';
 import { Conversation } from '../ui/Conversation';
 import { useStore } from '../state/store';
@@ -26,36 +27,63 @@ beforeEach(() => {
   useStore.getState().setPhase('ready');
 });
 
-const line = (c: HTMLElement) => c.querySelector<HTMLElement>('.y-agent-line');
+const line = (c: HTMLElement) => c.querySelector<HTMLElement>('.y-agent-line:not(.y-agent-measure)');
 const WHO = "Yoav Zrihan. Self-taught, building since 2022, crypto since 2021, second-year CS and Entrepreneurship at Reichman. He doesn't write most of his code anymore — he directs the agents that do.";
 
 describe('Conversation', () => {
-  it('streams a reply into one block that never retracts a word or replaces itself', () => {
+  it('streams a turn at the size it was fitted to once: no shrinking, no retracted word', () => {
     const { container } = render(<Conversation />);
     const st = useStore.getState();
     act(() => void st.pushVisitor('who is yoyo'));
-    act(() => void st.startAgent());
+    act(() => void st.startAgent({ size: 52, full: WHO }));
     let node: HTMLElement | null = null;
     let lastCount = 0;
-    let lastSize = Infinity;
     for (const w of WHO.split(' ')) {
       act(() => st.appendAgentWord(w));
       const el = line(container)!;
       node ??= el;
-      expect(el).toBe(node); // same element for the whole reply
+      expect(el).toBe(node); // same element for the whole turn
       const count = el.querySelectorAll('.y-w').length;
       expect(count).toBeGreaterThanOrEqual(lastCount); // words only ever arrive
       lastCount = count;
-      const px = parseFloat(el.style.fontSize);
-      expect(px).toBeLessThanOrEqual(lastSize); // the type only ever steps down
-      lastSize = px;
+      expect(el.style.fontSize).toBe('52px'); // the size never changes while it streams
     }
     act(() => st.finishAgent());
     const el = line(container)!;
     expect(el).toBe(node);
     expect(el.textContent?.replace(/\u00a0/g, ' ')).toBe(WHO); // rests whole
-    expect(lastSize).toBeGreaterThanOrEqual(30);
-    expect(lastSize).toBeLessThan(60);
+    expect(el.style.fontSize).toBe('52px');
+  });
+
+  it('sizes a whole line once on the hidden clone (≥ 44 px desktop) and registers the measure', () => {
+    let measure: ((t: string) => { px: number; fits: boolean } | null) | null = null;
+    const spy = vi.spyOn(ctl, 'setMeasure').mockImplementation((fn) => void (measure = fn));
+    const { container } = render(<Conversation />);
+    const turn = 'Yoav Zrihan. Self-taught, building since 2022. Crypto since 2021. Second-year CS at Reichman.';
+    act(() => void useStore.getState().agentLine(turn));
+    const px = parseFloat(line(container)!.style.fontSize);
+    expect(px).toBeGreaterThanOrEqual(44);
+    expect(px).toBeLessThan(60);
+    // the clone the pacer measures on: the same answer for the same text, and "doesn't fit" for a wall
+    expect(measure).toBeTypeOf('function');
+    expect(measure!(turn)).toEqual({ px, fits: true });
+    expect(measure!(`${WHO} ${WHO} ${WHO}`)).toEqual({ px: 44, fits: false });
+    spy.mockRestore();
+  });
+
+  it('shows the previous turn muted beneath, one at most, with the visitor line between', () => {
+    const { container } = render(<Conversation />);
+    const st = useStore.getState();
+    act(() => {
+      st.agentLine('hey.');
+      st.pushVisitor('why hire him?');
+      st.agentLine('Three reasons. No adjectives.');
+    });
+    expect(container.querySelector('.y-prev')?.textContent).toBe('hey.');
+    act(() => void st.agentLine('He ships: 917 public commits this year.'));
+    expect(line(container)?.textContent).toBe('He ships: 917 public commits this year.');
+    expect(container.querySelector('.y-echo')?.textContent).toBe('why hire him?');
+    expect([...container.querySelectorAll('.y-prev')].map((e) => e.textContent)).toEqual(['Three reasons. No adjectives.']);
   });
 
   it('keeps hyphenated words in nowrap spans', () => {

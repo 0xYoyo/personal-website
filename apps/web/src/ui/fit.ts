@@ -1,8 +1,10 @@
-// Auto-fit for the agent's words (POLISH1 A1). A reply is one block of large
-// type that starts at the viewport's max size and steps down as the text
-// grows, so the whole reply fits in ≤ 3 lines on desktop (≤ 4 on mobile),
-// never below the floor. The fit reads the real DOM (`scrollHeight`), not a
-// word count, and within one reply the size only ever goes down.
+// Auto-fit for the agent's words (POLISH1 A1, POLISH2 A1). A turn is one block
+// of large type sized once, before it is shown, for its whole text: the
+// largest size (from the viewport's max, in 2 px steps) at which it fits in
+// ≤ 3 lines on desktop (≤ 4 on mobile), never below the floor (44 / 28 px).
+// The fit reads the real DOM (`scrollHeight`) of a hidden clone, not a word
+// count, so nothing shrinks while the visitor reads. A turn that still runs
+// long at the floor is split by the pacer (ui/turns.ts).
 
 export interface TypeScale {
   /** starting (largest) size, px */
@@ -19,11 +21,15 @@ export const FIT_STEP = 2;
 
 export const isMobileWidth = (vw: number): boolean => vw <= 720;
 
+/** The floor: a turn never renders below 44 px on desktop, 28 px on mobile (POLISH2 A1). */
+export const MIN_DESKTOP = 44;
+export const MIN_MOBILE = 28;
+
 /** The agent type scale for a viewport width: 72/60/55/47 px desktop, 35 px mobile. */
 export function typeScale(vw: number): TypeScale {
-  if (isMobileWidth(vw)) return { max: 35, min: 24, maxLines: 4 };
+  if (isMobileWidth(vw)) return { max: 35, min: MIN_MOBILE, maxLines: 4 };
   const max = vw >= 1800 ? 72 : vw >= 1400 ? 60 : vw >= 1200 ? 55 : 47;
-  return { max, min: 30, maxLines: 3 };
+  return { max, min: MIN_DESKTOP, maxLines: 3 };
 }
 
 /** Does `el` hold its text within `maxLines` at `px`? (sets the size to measure it) */
@@ -69,6 +75,29 @@ export function createFitter() {
       return px;
     },
   };
+}
+
+/** Fill `el` with a turn's words the way the renderer draws them (nowrap spans). */
+export function fillWords(el: HTMLElement, text: string): void {
+  el.replaceChildren();
+  toWords(text).forEach((w, i) => {
+    if (i > 0) el.append(' ');
+    const s = document.createElement('span');
+    if (w.nowrap) s.style.whiteSpace = 'nowrap';
+    s.textContent = w.text;
+    el.append(s);
+  });
+}
+
+/**
+ * Measure a whole turn on `clone`, a hidden copy of the agent line (same
+ * width, same font): its size, and whether it fits the line budget there.
+ */
+export function measureOn(clone: HTMLElement, text: string, vw: number): { px: number; fits: boolean } {
+  fillWords(clone, text);
+  const scale = typeScale(vw);
+  const px = fitFont(clone, scale.max, scale);
+  return { px, fits: fitsAt(clone, px, scale.maxLines) };
 }
 
 // ---- words ------------------------------------------------------------------

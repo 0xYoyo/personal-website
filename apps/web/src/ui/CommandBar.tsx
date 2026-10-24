@@ -85,7 +85,8 @@ export function CommandBar() {
 
   async function submit(raw?: string) {
     const text = (raw ?? value).trim();
-    if (!text) return;
+    // Enter on an empty bar: the turn on screen has been read (POLISH2 A1)
+    if (!text) return ctl.advance();
     setValue('');
     recall.current = -1;
     if (useStore.getState().barMode === 'change') await ctl.changeBuild(text);

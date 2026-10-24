@@ -105,7 +105,16 @@
 .y-agent[data-waiting='true'] {
   opacity: 0.28;
 }
-/* font-size is set by the fitter (ui/fit.ts); this is only the first frame's size */
+/* the hidden clone a turn is sized on before it is shown (ui/fit.ts measureOn) */
+.y-agent-measure {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+/* font-size is set once per turn (ui/fit.ts); this is only the first frame's size */
 .y-agent-line {
   margin: 0;
   font-size: var(--t-agent);

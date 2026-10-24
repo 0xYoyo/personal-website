@@ -25,12 +25,13 @@ const lines = (el: HTMLElement, width: number) => {
 };
 
 describe('typeScale', () => {
-  it('starts at 72/60/55/47 px by desktop width and 35 px on mobile', () => {
-    expect(typeScale(1920)).toEqual({ max: 72, min: 30, maxLines: 3 });
+  it('starts at 72/60/55/47 px by desktop width and 35 px on mobile; floors at 44 / 28 px', () => {
+    expect(typeScale(1920)).toEqual({ max: 72, min: 44, maxLines: 3 });
     expect(typeScale(1440).max).toBe(60);
     expect(typeScale(1280).max).toBe(55);
     expect(typeScale(1024).max).toBe(47);
-    expect(typeScale(390)).toEqual({ max: 35, min: 24, maxLines: 4 });
+    expect(typeScale(390)).toEqual({ max: 35, min: 28, maxLines: 4 });
+    expect(typeScale(1024).min).toBe(44);
   });
 });
 
@@ -53,13 +54,13 @@ describe('fitFont', () => {
     expect(lines(el, 900)).toBeGreaterThan(3);
   });
 
-  it('never goes below the floor (the block grows lines instead)', () => {
+  it('never goes below the 44 / 28 px floor (the pacer splits the turn instead)', () => {
     const el = textBox(300);
     el.textContent = 'x'.repeat(2000);
-    expect(fitFont(el, 60, typeScale(1440))).toBe(30);
+    expect(fitFont(el, 60, typeScale(1440))).toBe(44);
     const m = textBox(358);
     m.textContent = 'x'.repeat(2000);
-    expect(fitFont(m, 35, typeScale(390))).toBe(24);
+    expect(fitFont(m, 35, typeScale(390))).toBe(28);
   });
 
   it('allows 4 lines on mobile', () => {

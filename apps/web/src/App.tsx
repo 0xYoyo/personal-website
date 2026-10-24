@@ -53,7 +53,7 @@ const boxOf = (sel: string): Rect | null => {
 
 /** What the flock should stay off: the top bar, the words, the chips and the bar (POLISH1 B3). */
 function keepOutRects(): Rect[] {
-  return ['.y-top', '.y-convo[data-hidden="false"] .y-agent', '.y-convo[data-hidden="false"] .y-echo', '.y-chips[data-hidden="false"] .y-chips-row', '.y-bar-wrap[data-ready="true"] .y-bar']
+  return ['.y-top', '.y-convo[data-hidden="false"] .y-agent', '.y-convo[data-hidden="false"] .y-echo', '.y-convo[data-hidden="false"] .y-prev[data-room="true"]', '.y-chips[data-hidden="false"] .y-chips-row', '.y-bar-wrap[data-ready="true"] .y-bar']
     .map(boxOf)
     .filter((r): r is Rect => !!r);
 }
@@ -317,7 +317,10 @@ export function App() {
         return;
       }
       if (typing) return;
-      if (e.key === '/' && s.overlay === 'none') {
+      if (e.key === 'Enter' && s.overlay === 'none' && ctl.pacing() && !(e.target instanceof HTMLButtonElement)) {
+        e.preventDefault();
+        ctl.advance();
+      } else if (e.key === '/' && s.overlay === 'none') {
         e.preventDefault();
         document.getElementById('y-input')?.focus();
       } else if (e.key === '?' && s.overlay === 'none') {
@@ -332,11 +335,15 @@ export function App() {
     return () => removeEventListener('keydown', onKey);
   }, []);
 
-  // A click anywhere during the tour skips it; in step mode, a click steps.
+  // A click anywhere during the tour skips it; in step mode, a click steps;
+  // otherwise a click advances a reply's turns (POLISH2 A1).
   const onStageClick = (e: React.MouseEvent) => {
-    if (!ctl.runnerActive()) return;
     const target = e.target as HTMLElement;
     if (target.closest('button, a, input')) return;
+    if (!ctl.runnerActive()) {
+      if (ctl.pacing() && useStore.getState().overlay === 'none') ctl.advance();
+      return;
+    }
     const s = useStore.getState();
     if (s.runner?.stepMode) ctl.runnerNext();
     else if (s.overlay === 'tour') ctl.runnerSkip();

@@ -31,6 +31,10 @@ export interface Step {
 
 /** The shape goes first; the caption lands this long after it (the knit takes ~800 ms). */
 export const CAPTION_DELAY = 900;
+/** A caption types in at this pace, ms a word (the word fade is 280 ms). */
+export const CAPTION_TYPE_MS = 60;
+/** How long a caption takes to type in completely. */
+export const typeMs = (text: string): number => Math.max(0, text.split(/\s+/).filter(Boolean).length - 1) * CAPTION_TYPE_MS + 280;
 /** Extra time a caption stays after it has been read. */
 export const CAPTION_TAIL = 600;
 /** Floor for a caption's read time. */
@@ -42,6 +46,8 @@ export const readMs = (text: string): number => Math.max(READ_MIN, text.split(/\
 export type BeatSpec = Omit<Step, 'at' | 'hold' | 'sayAt'> & {
   /** override the computed length (ms the caption stays, read time + tail by default) */
   captionHold?: number;
+  /** caption and shape change together: the caption types in while the shape knits (POLISH2 A3) */
+  sync?: boolean;
   /** a shape-only step's length */
   hold?: number;
 };
@@ -52,9 +58,9 @@ export type BeatSpec = Omit<Step, 'at' | 'hold' | 'sayAt'> & {
  * read time + CAPTION_TAIL (or `captionHold`).
  */
 export function beat(b: BeatSpec): Omit<Step, 'at'> {
-  const { captionHold, hold, ...rest } = b;
+  const { captionHold, hold, sync, ...rest } = b;
   if (rest.say === undefined) return { ...rest, hold: hold ?? READ_MIN };
-  const sayAt = rest.become ? CAPTION_DELAY : 0;
+  const sayAt = rest.become && !sync ? CAPTION_DELAY : 0;
   const stay = captionHold ?? readMs(rest.say) + CAPTION_TAIL;
   return { ...rest, sayAt, hold: sayAt + stay };
 }
