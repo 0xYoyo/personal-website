@@ -8,6 +8,8 @@ import type { Action, BuildRequest, ChatMessage, ChatRequest, GlyphId, ProjectId
 import { scriptedReply, withRestingLine, wordPieces } from './scripted';
 import { shareHtml, type ShareResult } from './share';
 import { createTagStream } from './tags';
+import { createPacer, paceReply } from './pace';
+import { createTurnSplitter } from './turns';
 import { CHANGE_RESTING_LINE, EXAMPLE_DONE_LINE, liveDoneLine } from './lines';
 import { pickExampleId } from './pick-example';
 import { AbortedError, DEFAULT_TIMING, jittered, sleep, tokensIn, type Timing } from './timing';
@@ -17,6 +19,13 @@ export type BrainMode = 'live' | 'scripted';
 export type BrainEvent =
   | { type: 'start' }
   | { type: 'token'; text: string }
+  /**
+   * A boundary between two turns of one reply (POLISH2 C1): the tokens before it are a complete
+   * turn, the tokens after it start the next. Never first or last in a reply, never two in a row.
+   * Turns come from `||` marks in the reply (stripped); a live reply over 32 words with none gets
+   * them at sentence boundaries (./pace).
+   */
+  | { type: 'turn' }
   | { type: 'action'; action: Action }
   | { type: 'end'; mode: BrainMode }
   /**
@@ -156,26 +165,41 @@ export function createBrain(opts: BrainOptions): Brain {
     while (history.length > LIMITS.historyMessages) history.shift();
   }
 
-  /** Feeds raw model text through the tag parser and emits token/action events. */
+  /**
+   * Feeds raw model text through the pacer (live only), the tag parser and the turn splitter,
+   * and emits token / action / turn events.
+   */
   function makeSink(emit: (e: BrainEvent) => void, scripted = false) {
+    const pacer = scripted ? null : createPacer();
     const parser = createTagStream({ glyphs: opts.swarmGlyphs });
+    const turns = createTurnSplitter(emit);
     const out = (r: { text: string; actions: Action[] }) => {
+      if (r.text) turns.text(r.text);
       for (const a of r.actions) {
         if (a.type === 'show') lastShown = a.project;
         if (a.type === 'build' && scripted) scriptedHandoffs.add(a.instruction);
-        emit({ type: 'action', action: a });
+        turns.action(a);
       }
-      if (r.text) emit({ type: 'token', text: r.text });
+    };
+    // Feed the parser up to each `]]` at a time, so the text before a tag is emitted before its
+    // action (the parser reports a chunk's actions and text separately).
+    const feed = (s: string) => {
+      for (const piece of s.split(/(?<=\]\])/)) if (piece) out(parser.push(piece));
     };
     return {
-      push: (chunk: string) => out(parser.push(chunk)),
-      end: () => out(parser.end()),
+      push: (chunk: string) => feed(pacer ? pacer.push(chunk) : chunk),
+      end: () => {
+        if (pacer) feed(pacer.end());
+        out(parser.end());
+        turns.end();
+      },
     };
   }
 
   async function streamScripted(raw: string, signal: AbortSignal, temit: (e: BrainEvent) => void) {
     const sink = makeSink(temit, true);
-    const pieces = wordPieces(raw);
+    // the copy is paced with `||` already; this only splits a turn that runs long (pace.ts)
+    const pieces = wordPieces(paceReply(raw));
     await sleep(jittered(timing.firstTokenMs, timing.jitter, random), signal);
     for (let i = 0; i < pieces.length; i++) {
       const p = pieces[i]!;

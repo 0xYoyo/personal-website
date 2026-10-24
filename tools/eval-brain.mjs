@@ -11,6 +11,10 @@
 //    easter eggs) → resolveChip(); UI chips must resolve to their command, the rest are sent to
 //    the brain and must land on the expected intent with the expected actions. The same chips go
 //    through the mock worker's reply (tools/mock-worker.mjs), so the mock can't drift (C2).
+// 3. Turns (POLISH2 C1): every reply the scripted brain can give (faq.md, easter eggs, unknown,
+//    each with the resting line in front) and every mock reply, through the client's pipeline
+//    (pacer → tag parser → turn splitter): each turn ≤ 22 words, no `|` left on screen, nothing
+//    lost, and the resting line a turn of its own.
 
 import { fileURLToPath } from 'node:url';
 import { normalize } from 'node:path';
@@ -170,12 +174,62 @@ export function evalChips(replyFn, label = 'scripted') {
   return rows;
 }
 
+/** raw reply → the turns the visitor sees (the client's pipeline: pace.ts → tags.ts → turns.ts). */
+export function turnsOf(raw) {
+  const { text } = A.extractActions(A.paceReply(raw), { glyphs: A.GLYPH_IDS });
+  const turns = [''];
+  const t = A.createTurnSplitter((o) => {
+    if (o.type === 'turn') turns.push('');
+    else if (o.type === 'token') turns[turns.length - 1] += o.text;
+  });
+  t.text(text);
+  t.end();
+  return turns.filter((x, i) => x || i === 0);
+}
+
+const words = (s) => s.split(/\s+/).filter(Boolean).length;
+const flat = (s) => s.replace(/\|\|/g, ' ').replace(/\s+/g, ' ').trim();
+
+/** Turn checks over a set of [label, raw] replies; returns rows. */
+export function evalTurns(replies, label) {
+  const rows = [];
+  for (const [input, raw] of replies) {
+    const turns = turnsOf(raw);
+    const longest = Math.max(...turns.map(words));
+    const shown = turns.join(' ');
+    const plain = flat(A.extractActions(raw, { glyphs: A.GLYPH_IDS }).text);
+    const problems = [];
+    if (longest > A.TURN_MAX_WORDS) problems.push(`a turn of ${longest} words`);
+    if (shown.includes('|')) problems.push('a | on screen');
+    if (flat(shown) !== plain) problems.push('text changed');
+    if (raw.includes(A.RESTING_LINE) && raw.trim() !== A.RESTING_LINE && !turns.includes(A.RESTING_LINE)) problems.push('resting line not its own turn');
+    rows.push({ kind: `turns/${label}`, input, want: `≤ ${A.TURN_MAX_WORDS} words a turn`, got: problems.join(', ') || `${turns.length} turns, longest ${longest}`, ok: !problems.length });
+  }
+  return rows;
+}
+
+/** Every reply the scripted brain can give, plain and behind the resting line. */
+export function scriptedReplies() {
+  const base = [
+    ...A.FAQ_INTENTS.map((i) => [i.id, i.reply]),
+    ...A.EXTRA_INTENTS.map((x) => [`egg:${x.id}`, x.reply]),
+    ['unknown', A.FAQ_UNKNOWN],
+    ...Object.entries(A.ADDED_LINES).map(([k, v]) => [`added:${k}`, v]),
+  ];
+  return [...base, ...base.map(([k, v]) => [`resting+${k}`, A.withRestingLine(v)])];
+}
+
 export async function runEval({ quiet = false } = {}) {
   const { mockReply } = await import('./mock-worker.mjs');
   const rows = [
     ...evalHints(),
     ...evalChips((t) => A.scriptedReply(t, CTX).raw, 'scripted'),
     ...evalChips((t) => mockReply(t, {}, []), 'mock'),
+    ...evalTurns(scriptedReplies(), 'scripted'),
+    ...evalTurns(
+      A.FAQ_INTENTS.flatMap((i) => i.hints).map((h) => [h, mockReply(h, {}, [])]),
+      'mock',
+    ),
   ];
   const fails = rows.filter((r) => !r.ok);
   const by = (k) => rows.filter((r) => r.kind === k);
@@ -192,6 +246,8 @@ export async function runEval({ quiet = false } = {}) {
       line('hint'),
       line('chip/scripted'),
       line('chip/mock'),
+      line('turns/scripted'),
+      line('turns/mock'),
       fails.length ? `${fails.length} FAILED` : 'all passed',
     ].join('\n'),
   );

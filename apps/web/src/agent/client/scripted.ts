@@ -91,12 +91,15 @@ export function replyFor(c: Classification, ctx: ScriptedContext): string {
   }
 }
 
-/** Puts the resting line after any leading tags so the body still moves first. */
+/**
+ * Puts the resting line after any leading tags so the body still moves first, as its own turn
+ * (POLISH2 C2: never run into the reply that follows it).
+ */
 export function withRestingLine(raw: string): string {
   const m = /^(\s*(?:\[\[[^\]]*\]\]\s*)*)/.exec(raw);
   const lead = m?.[1] ?? '';
-  const rest = raw.slice(lead.length);
-  return `${lead}${RESTING_LINE}${rest ? ` ${rest}` : ''}`;
+  const rest = raw.slice(lead.length).trim();
+  return `${lead}${RESTING_LINE}${rest ? ` || ${rest}` : ''}`;
 }
 
 /** Splits a raw reply into word-sized pieces (keeping the spaces) for streaming. */

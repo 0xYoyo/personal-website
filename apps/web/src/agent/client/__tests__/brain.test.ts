@@ -93,7 +93,14 @@ describe('fallback state machine', () => {
     const { brain, rec } = make(hang);
     await brain.send('who is yoyo?');
     expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
-    expect(rec.text()).toBe(`${RESTING_LINE} Yoav Zrihan. Self-taught, building since 2022, crypto since 2021, second-year CS and Entrepreneurship at Reichman. He doesn't write most of his code anymore — he directs the agents that do.`);
+    // the resting line is a turn of its own, then the reply's own turns, with the `||` stripped
+    const turns = rec.turns();
+    expect(turns[0]).toBe(RESTING_LINE);
+    expect(turns[1]).toBe('Yoav Zrihan. Self-taught, building since 2022. Crypto since 2021. Second-year CS and Entrepreneurship at Reichman.');
+    expect(turns[2]).toBe("He doesn't write most of his code anymore. He directs the agents that do.");
+    expect(turns).toHaveLength(3);
+    expect(rec.text()).not.toContain('|');
+    expect(rec.types().filter((t) => t === 'turn')).toHaveLength(2);
     expect(rec.actions()[0]).toEqual({ type: 'become', shape: { kind: 'glyph', id: 'curls' } });
     // still live for the next turn (only one failure)
     expect(brain.mode()).toBe('live');

@@ -11,6 +11,11 @@ export type { Brain, BrainEvent, BrainErrorReason, BrainMode, BrainOptions, Chat
 export { createTagStream, extractActions, resolveTag, shapeFromArg, isEmojiOnly, leadingEmoji } from './tags';
 export type { TagStream, ParseOut, ResolveOptions } from './tags';
 
+export { createPacer, paceReply, countWords, sentenceEnds, TURN_MARK, TURN_MAX_WORDS, AUTO_PACE_WORDS } from './pace';
+export type { Pacer } from './pace';
+export { createTurnSplitter } from './turns';
+export type { TurnSplitter, TurnOut } from './turns';
+
 export { classify, rankIntents, captureName, tokenize } from './intents';
 export type { Classification } from './intents';
 export { scriptedReply, RESTING_LINE, ADDED_LINES } from './scripted';

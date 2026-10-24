@@ -10,7 +10,9 @@ const content = join(root, 'apps', 'web', 'src', 'content');
 
 const ENTRY = `
 export { classify, rankIntents, captureName } from './intents';
-export { scriptedReply, replyFor, ADDED_LINES, RESTING_LINE } from './scripted';
+export { scriptedReply, replyFor, withRestingLine, ADDED_LINES, RESTING_LINE } from './scripted';
+export { paceReply, countWords, TURN_MAX_WORDS, AUTO_PACE_WORDS } from './pace';
+export { createTurnSplitter } from './turns';
 export { EXTRA_INTENTS } from './extras';
 export { FAQ_INTENTS, FAQ_UNKNOWN, EMOJI_BEATS } from './faq';
 export { extractActions, createTagStream } from './tags';

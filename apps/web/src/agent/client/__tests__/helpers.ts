@@ -63,6 +63,15 @@ export function recorder() {
     onEvent: (e: BrainEvent) => void events.push(e),
     text: () => events.filter((e): e is Extract<BrainEvent, { type: 'token' }> => e.type === 'token').map((e) => e.text).join(''),
     actions: () => events.filter((e): e is Extract<BrainEvent, { type: 'action' }> => e.type === 'action').map((e) => e.action),
+    /** display text per turn (split at `turn` events) */
+    turns: () => {
+      const out = [''];
+      for (const e of events) {
+        if (e.type === 'turn') out.push('');
+        else if (e.type === 'token') out[out.length - 1] += e.text;
+      }
+      return out;
+    },
     types: () => events.map((e) => e.type),
     clear: () => void events.splice(0),
   };

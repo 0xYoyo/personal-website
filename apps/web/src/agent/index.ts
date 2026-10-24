@@ -16,6 +16,8 @@ export type { Brain, BrainOptions, BuildHandlers, BuildResult, Memory, Reply, Re
 const HOUR = 3_600_000;
 /** the build hand-off line, alone after a [[build:…]] tag */
 const ON_IT = /^\s*on it[.!]*\s*$/i;
+/** a turn boundary among held words */
+const TURN = Symbol('turn');
 
 /** `<title>` of a build, else a short form of the instruction. */
 export const titleOf = (html: string, fallback = 'build'): string =>
@@ -54,8 +56,10 @@ export function createBrain(opts: BrainOptions = {}): Brain {
     actions: Action[];
     h: ReplyHandlers;
     mode: 'live' | 'scripted';
-    /** words after a [[build:…]] tag, held until the reply ends (see ON_IT) */
-    held: string[] | null;
+    /** words (and turn breaks) after a [[build:…]] tag, held until the reply ends (see ON_IT) */
+    held: (string | typeof TURN)[] | null;
+    /** a turn boundary, reported right before the next word (so never after the last one) */
+    turnBreak(): void;
   }
   interface BuildTurn {
     h: BuildHandlers;
@@ -74,9 +78,21 @@ export function createBrain(opts: BrainOptions = {}): Brain {
       case 'token':
         if (chat?.started) chat.words.push(e.text);
         break;
+      case 'turn':
+        if (chat?.started) {
+          // the client starts a turn's first token without a space: close the last word first
+          chat.words.flush();
+          if (chat.held) chat.held.push(TURN);
+          else chat.turnBreak();
+        }
+        break;
       case 'action':
         if (chat?.started) {
-          if (e.action.type === 'build') chat.held ??= [];
+          if (e.action.type === 'build') {
+            // the word before the tag is complete: show it before holding what follows
+            chat.words.flush();
+            chat.held ??= [];
+          }
           chat.actions.push(e.action);
           chat.h.onAction?.(e.action);
         }
@@ -162,9 +178,16 @@ export function createBrain(opts: BrainOptions = {}): Brain {
 
     async send(text, h = {}, signal): Promise<Reply> {
       if (signal?.aborted) throw new BrainError('aborted');
-      const shown: string[] = [];
+      // turns[i] = the words of turn i; a boundary opens a new (empty) turn, reported on its first word
+      const turns: string[][] = [[]];
+      let breakPending = false;
       const show = (w: string) => {
-        shown.push(w);
+        if (breakPending) {
+          breakPending = false;
+          turns.push([]);
+          h.onTurn?.();
+        }
+        turns.at(-1)!.push(w);
         h.onWord?.(w);
       };
       const turn: ChatTurn = {
@@ -174,6 +197,9 @@ export function createBrain(opts: BrainOptions = {}): Brain {
         h,
         mode: client.mode(),
         held: null,
+        turnBreak: () => {
+          if (turns.at(-1)!.length) breakPending = true;
+        },
       };
       chat = turn;
       const onAbort = () => {
@@ -190,8 +216,17 @@ export function createBrain(opts: BrainOptions = {}): Brain {
       turn.words.flush();
       // A reply that hands off a build ends with "on it." (persona.md). Drop it here: the
       // shell says it from onAccepted, once the Worker has actually taken the build (POLISH1 C5).
-      if (turn.held && !ON_IT.test(turn.held.join(' '))) turn.held.forEach(show);
-      return { text: shown.join(' '), actions: turn.actions, source: turn.mode };
+      if (turn.held) {
+        const words = turn.held.filter((x): x is string => x !== TURN);
+        if (!ON_IT.test(words.join(' '))) {
+          for (const x of turn.held) {
+            if (x === TURN) turn.turnBreak();
+            else show(x);
+          }
+        }
+      }
+      const texts = turns.map((t) => t.join(' ')).filter(Boolean);
+      return { text: texts.join(' '), turns: texts, actions: turn.actions, source: turn.mode };
     },
 
     build(instruction, h = {}, o = {}): Promise<BuildResult> {

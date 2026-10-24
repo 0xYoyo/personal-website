@@ -157,9 +157,9 @@ describe('special rules from faq.md', () => {
     }
   });
 
-  it('puts the resting line after leading tags', () => {
-    expect(withRestingLine('[[become:curls]] Yoav Zrihan.')).toBe(`[[become:curls]] ${RESTING_LINE} Yoav Zrihan.`);
+  it('puts the resting line after leading tags, as a turn of its own', () => {
+    expect(withRestingLine('[[become:curls]] Yoav Zrihan.')).toBe(`[[become:curls]] ${RESTING_LINE} || Yoav Zrihan.`);
     expect(withRestingLine('[[story:next]]')).toBe(`[[story:next]]${RESTING_LINE}`);
-    expect(withRestingLine('plain')).toBe(`${RESTING_LINE} plain`);
+    expect(withRestingLine('plain')).toBe(`${RESTING_LINE} || plain`);
   });
 });
