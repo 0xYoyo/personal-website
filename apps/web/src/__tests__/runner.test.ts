@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CAPTION_DELAY, CAPTION_TAIL, READ_MIN, beat, beatStarts, createRunner, duration, readMs, seq, type Clock, type Step } from '../ui/runner/engine';
-import { tour } from '../content/tour';
+import { CAPTION_DELAY, CAPTION_TAIL, READ_MIN, beat, beatStarts, createRunner, duration, readMs, seq, typeMs, type Clock, type Step } from '../ui/runner/engine';
+import { PROJECT_HOLD, tour } from '../content/tour';
 import { stories } from '../content/stories';
 
 function fakeClock() {
@@ -151,24 +151,42 @@ describe('runner', () => {
 });
 
 describe('the tour and the stories', () => {
-  it('every captioned beat forms its shape 900 ms before the caption and holds it ≥ 2.4 s + 600 ms', () => {
+  it('story beats form the shape 900 ms before the caption; every caption holds ≥ 2.4 s + 600 ms', () => {
     for (const steps of [tour, ...stories.map((s) => s.steps)]) {
       for (const s of steps) {
         if (s.say === undefined) continue;
-        if (s.become) expect(s.sayAt).toBe(CAPTION_DELAY);
+        if (s.become && steps !== tour) expect(s.sayAt).toBe(CAPTION_DELAY);
         expect(s.hold - (s.sayAt ?? 0)).toBeGreaterThanOrEqual(Math.min(2600, READ_MIN + CAPTION_TAIL));
       }
     }
+  });
+
+  it('tour captions and shapes change together (0 ms): the caption types in while the shape knits (POLISH2 A3)', () => {
+    const captioned = tour.filter((s) => s.say !== undefined);
+    expect(captioned.length).toBeGreaterThan(8);
+    for (const s of captioned) expect(s.sayAt ?? 0).toBe(0);
+    expect(beat({ say: 'x', become: glyph('wave'), sync: true }).sayAt).toBe(0);
+  });
+
+  it('the tour opens on its first caption at once, so "or just watch." is never followed by a wordless gap', () => {
+    const { clock, advance } = fakeClock();
+    const seen: string[] = [];
+    const r = createRunner(tour, { onStep: () => undefined, onSay: (s) => seen.push(s.say!), onEnd: () => undefined }, { clock });
+    r.start();
+    expect(seen).toEqual(['This is what I do.']); // at t = 0, with the wave
+    advance(10);
+    r.skip();
   });
 
   it('shapes morph straight into each other: no release between tour beats', () => {
     expect(tour.some((s) => s.release)).toBe(false);
   });
 
-  it('the project names hold 2.6 s each under one lead', () => {
+  it('the project names hold 2.6 s each from the moment the caption has typed in, under one lead', () => {
     const names = tour.filter((s) => s.lead === "Things I've shipped:");
     expect(names.map((s) => s.say)).toEqual(['Prompt Racers', 'Unfiltered', 'yoyo-loop', 'Reichman Courses connector', 'Availability Monitor']);
-    for (const s of names) expect(s.hold - (s.sayAt ?? 0)).toBe(2600);
+    expect(PROJECT_HOLD).toBe(2600);
+    for (const s of names) expect(s.hold - (s.sayAt ?? 0) - typeMs(s.say!)).toBe(2600);
   });
 
   it('"8 streams" is one window frame; the tour ends on the cursor with chips', () => {
