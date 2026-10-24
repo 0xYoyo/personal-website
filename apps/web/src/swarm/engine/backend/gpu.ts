@@ -28,6 +28,8 @@ const TEX_W = 256;
  * like the CPU simulator: ∫(1-r/R)² over a disc = πR²/6 px², and a cell is FIELD_RES² px.
  */
 const BLOOM_STRENGTH = 0.28;
+/** Share of the speed hue removed for particles attracted to a shape (V.w). */
+const HELD_HUE_CUT = 0.75;
 const FIELD_RES = 3;
 /**
  * Splat radius 2 cells (was 1.5): the field must not hold density waves shorter than ~2 cells, because a
@@ -350,7 +352,8 @@ export class GpuEngine implements Engine {
     const P = pos.toAttribute(), V = vel.toAttribute(), C = col.toAttribute(), S = seed.toAttribute();
     m.positionNode = P.xyz;
     const speed = length(V.xyz);
-    const st = smoothstep(110, 720, speed);
+    // particles flying to a shape keep most of their warm colour: a full speed hue there read as a blue burst
+    const st = smoothstep(110, 720, speed).mul(float(1).sub(clamp(V.w, 0, 1).mul(HELD_HUE_CUT)));
     const held = clamp(V.w, 0, 1);
     // far particles (20 % in free flight): dimmer, smaller, set back in z — a depth cue in the flock
     const farFree = step(fract(S.z.mul(7.77)), U.farFrac.sub(1e-4)).mul(step(1e-4, U.farFrac)).mul(float(1).sub(held));

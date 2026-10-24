@@ -380,7 +380,7 @@ export class Controller {
       // post-entry migration boost: stronger, faster pull to the stage (B8), fading out
       this.migrate = Math.max(0, this.migrate - dt);
       const m = this.migrate / MIGRATE_S;
-      p.leaderW *= 1 + 2.5 * m; p.speedMax += 520 * m; p.cruise += 300 * m; p.leadR *= 1 - 0.5 * m;
+      p.leaderW *= 1 + 2.5 * m; p.speedMax += 320 * m; p.cruise += 220 * m; p.leadR *= 1 - 0.5 * m;
     }
     // leader wander (murmuration centre of mass drifts around the viewport)
     const t = p.time;
@@ -441,7 +441,7 @@ export class Controller {
     const ge = 1 - Math.exp(-dt * 4);
     p.frameGlow += ((this.frame ? 1 : 0) - p.frameGlow) * ge;
     const ex = this.holding && !this.frame && !this.ringActive ? this.expoTarget : 1;
-    p.shapeExpo += (ex - p.shapeExpo) * ge;
+    p.shapeExpo += (ex - p.shapeExpo) * (1 - Math.exp(-dt * 1.5)); // follows the ~1 s knit, so the outgoing shape never flares
     p.bloomK = p.shapeExpo ** 2;
     // speaking breathing + listening ring
     // breathing while speaking, plus the per-word pulse (~6 % scale, decays in ~120 ms)

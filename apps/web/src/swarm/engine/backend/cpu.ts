@@ -282,8 +282,10 @@ export class CpuEngine implements Engine {
       const o = i * 4;
       if (C[o + 3]! > 0.15) continue;
       const sp = Math.hypot(V[o]!, V[o + 1]!);
-      const st = Math.min(Math.max((sp - 120) / 580, 0), 1);
-      const cls = V[o + 3]! > 0.5 ? 0 : farOf(S[o + 2]!, p.farFrac) ? 2 : 1;
+      const held = Math.min(Math.max(V[o + 3]!, 0), 1);
+      // particles flying to a shape keep most of their warm colour (a full speed hue read as a blue burst)
+      const st = Math.min(Math.max((sp - 120) / 580, 0), 1) * (1 - 0.75 * held);
+      const cls = held > 0.5 ? 0 : farOf(S[o + 2]!, p.farFrac) ? 2 : 1;
       buckets[cls * 4 + Math.min(3, Math.floor(st * 4))]!.push(i);
     }
     const proj = (i: number): [number, number, number] => {
