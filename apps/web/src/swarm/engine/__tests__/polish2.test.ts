@@ -207,7 +207,12 @@ describe('a phone after an overlay closes (POLISH2 B1/B3, Owner A note 3)', () =
     r.step(1.6);
     r.ctrl.setStage(stage, ko);
     void r.ctrl.gather(800);
-    r.step(3);
+    r.step(1.2);
+    // no way round a full-width reply: the far side of the card flies behind the words (not drawn there) to the stage
+    expect(r.share((x, y) => y < 380)).toBeGreaterThan(0.8);
+    expect(r.ctrl.p.tunnel).toBe(1); // still in the post-gather easing
+    r.step(1.8);
+    expect(r.ctrl.p.tunnel).toBe(0);
     const edges = r.share((x, y) => (x < 40 || x > 350) && y > 380 && y < 700);
     expect(edges).toBeLessThan(0.01);
     expect(r.share((x, y) => ko.some((q) => x > q.x && x < q.x + q.w && y > q.y && y < q.y + q.h))).toBeLessThan(0.01);

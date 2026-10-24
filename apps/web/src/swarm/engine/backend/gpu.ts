@@ -6,7 +6,7 @@ import { COLORS } from './types';
 import type { SimParams } from './params';
 import {
   BOUND_REFLECT, BOUND_ZONE, BOX_TURN, CURIOUS_REACH, defaultParams, FAR_DIM, FAR_SIZE, FAR_Z, FIELD_H, FIELD_MARGIN, FIELD_VEL_SCALE, FIELD_W,
-  HOLE_KICK, HOLE_PUSH, HOLE_TURN, STILL_HOLE, KO_PUSH, KO_TURN, MAX_KEEPOUT, STEER_M, TRANSIT_DIP,
+  CULL_INSET, HOLE_KICK, HOLE_PUSH, HOLE_TURN, STILL_HOLE, KO_PUSH, KO_TURN, MAX_KEEPOUT, STEER_M, TRANSIT_DIP,
 } from './params';
 import { FLOW_WAVES, WAVE_K, WAVE_W } from './flow';
 import type { Targets } from '../shapes';
@@ -269,6 +269,7 @@ export class GpuEngine implements Engine {
       });
       // B1/B3: free-flight goals are projected out of keep-outs and routed around them (see params.steerGoal);
       // a face only counts as an exit if it lies inside the bounds box (params.exitByX)
+      const tun = float(0).toVar();
       If(U.steerOn.greaterThan(0), () => {
         const m = U.koMargin.mul(STEER_M);
         const limS = vec2(U.boundHw, U.boundHh), bcS = vec2(U.boundCx, U.boundCy);
@@ -362,21 +363,29 @@ export class GpuEngine implements Engine {
                 If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
                   const past = step(hs.y.sub(1), sy.mul(r.y));
                   goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); });
+                });
                 done.assign(1);
               }).Else(() => {
                 const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
                 If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
                   const past = step(hs.x.sub(1), sx.mul(r.x));
                   goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); });
+                });
                 done.assign(1);
               });
             });
           }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            // (gathering, with no way round this rect toward the goal: keep flying behind it)
+            const gd = goalP.sub(p.xy);
+            const noWay = select(abs(gd.x).mul(hs.y).greaterThanEqual(abs(gd.y).mul(hs.x)), inBoxY(c.y.add(hs.y)).or(inBoxY(c.y.sub(hs.y))).not(), inBoxX(c.x.add(hs.x)).or(inBoxX(c.x.sub(hs.x))).not());
+            If(U.tunnel.greaterThan(0).and(noWay), () => { tun.assign(1); });
             const fs = frameSlot(0);
-            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
-              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            If(tun.lessThan(0.5).and(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not()))), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .ElseIf(tun.lessThan(0.5), () => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
             done.assign(1);
           });
         });
@@ -397,21 +406,29 @@ export class GpuEngine implements Engine {
                 If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
                   const past = step(hs.y.sub(1), sy.mul(r.y));
                   goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); });
+                });
                 done.assign(1);
               }).Else(() => {
                 const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
                 If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
                   const past = step(hs.x.sub(1), sx.mul(r.x));
                   goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); });
+                });
                 done.assign(1);
               });
             });
           }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            // (gathering, with no way round this rect toward the goal: keep flying behind it)
+            const gd = goalP.sub(p.xy);
+            const noWay = select(abs(gd.x).mul(hs.y).greaterThanEqual(abs(gd.y).mul(hs.x)), inBoxY(c.y.add(hs.y)).or(inBoxY(c.y.sub(hs.y))).not(), inBoxX(c.x.add(hs.x)).or(inBoxX(c.x.sub(hs.x))).not());
+            If(U.tunnel.greaterThan(0).and(noWay), () => { tun.assign(1); });
             const fs = frameSlot(1);
-            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
-              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            If(tun.lessThan(0.5).and(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not()))), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .ElseIf(tun.lessThan(0.5), () => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
             done.assign(1);
           });
         });
@@ -432,21 +449,29 @@ export class GpuEngine implements Engine {
                 If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
                   const past = step(hs.y.sub(1), sy.mul(r.y));
                   goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); });
+                });
                 done.assign(1);
               }).Else(() => {
                 const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
                 If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
                   const past = step(hs.x.sub(1), sx.mul(r.x));
                   goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); });
+                });
                 done.assign(1);
               });
             });
           }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            // (gathering, with no way round this rect toward the goal: keep flying behind it)
+            const gd = goalP.sub(p.xy);
+            const noWay = select(abs(gd.x).mul(hs.y).greaterThanEqual(abs(gd.y).mul(hs.x)), inBoxY(c.y.add(hs.y)).or(inBoxY(c.y.sub(hs.y))).not(), inBoxX(c.x.add(hs.x)).or(inBoxX(c.x.sub(hs.x))).not());
+            If(U.tunnel.greaterThan(0).and(noWay), () => { tun.assign(1); });
             const fs = frameSlot(2);
-            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
-              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            If(tun.lessThan(0.5).and(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not()))), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .ElseIf(tun.lessThan(0.5), () => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
             done.assign(1);
           });
         });
@@ -467,21 +492,29 @@ export class GpuEngine implements Engine {
                 If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
                   const past = step(hs.y.sub(1), sy.mul(r.y));
                   goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); });
+                });
                 done.assign(1);
               }).Else(() => {
                 const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
                 If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
                   const past = step(hs.x.sub(1), sx.mul(r.x));
                   goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); });
+                });
                 done.assign(1);
               });
             });
           }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            // (gathering, with no way round this rect toward the goal: keep flying behind it)
+            const gd = goalP.sub(p.xy);
+            const noWay = select(abs(gd.x).mul(hs.y).greaterThanEqual(abs(gd.y).mul(hs.x)), inBoxY(c.y.add(hs.y)).or(inBoxY(c.y.sub(hs.y))).not(), inBoxX(c.x.add(hs.x)).or(inBoxX(c.x.sub(hs.x))).not());
+            If(U.tunnel.greaterThan(0).and(noWay), () => { tun.assign(1); });
             const fs = frameSlot(3);
-            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
-              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            If(tun.lessThan(0.5).and(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not()))), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .ElseIf(tun.lessThan(0.5), () => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
             done.assign(1);
           });
         });
@@ -502,21 +535,29 @@ export class GpuEngine implements Engine {
                 If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
                   const past = step(hs.y.sub(1), sy.mul(r.y));
                   goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); });
+                });
                 done.assign(1);
               }).Else(() => {
                 const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
                 If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
                   const past = step(hs.x.sub(1), sx.mul(r.x));
                   goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); });
+                });
                 done.assign(1);
               });
             });
           }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            // (gathering, with no way round this rect toward the goal: keep flying behind it)
+            const gd = goalP.sub(p.xy);
+            const noWay = select(abs(gd.x).mul(hs.y).greaterThanEqual(abs(gd.y).mul(hs.x)), inBoxY(c.y.add(hs.y)).or(inBoxY(c.y.sub(hs.y))).not(), inBoxX(c.x.add(hs.x)).or(inBoxX(c.x.sub(hs.x))).not());
+            If(U.tunnel.greaterThan(0).and(noWay), () => { tun.assign(1); });
             const fs = frameSlot(4);
-            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
-              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            If(tun.lessThan(0.5).and(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not()))), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .ElseIf(tun.lessThan(0.5), () => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
             done.assign(1);
           });
         });
@@ -537,21 +578,29 @@ export class GpuEngine implements Engine {
                 If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
                   const past = step(hs.y.sub(1), sy.mul(r.y));
                   goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); });
+                });
                 done.assign(1);
               }).Else(() => {
                 const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
                 If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
                   const past = step(hs.x.sub(1), sx.mul(r.x));
                   goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); });
+                });
                 done.assign(1);
               });
             });
           }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            // (gathering, with no way round this rect toward the goal: keep flying behind it)
+            const gd = goalP.sub(p.xy);
+            const noWay = select(abs(gd.x).mul(hs.y).greaterThanEqual(abs(gd.y).mul(hs.x)), inBoxY(c.y.add(hs.y)).or(inBoxY(c.y.sub(hs.y))).not(), inBoxX(c.x.add(hs.x)).or(inBoxX(c.x.sub(hs.x))).not());
+            If(U.tunnel.greaterThan(0).and(noWay), () => { tun.assign(1); });
             const fs = frameSlot(5);
-            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
-              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            If(tun.lessThan(0.5).and(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not()))), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .ElseIf(tun.lessThan(0.5), () => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
             done.assign(1);
           });
         });
@@ -572,21 +621,29 @@ export class GpuEngine implements Engine {
                 If(inBoxY(c.y.add(sy.mul(hs.y))), () => {
                   const past = step(hs.y.sub(1), sy.mul(r.y));
                   goalP.assign(vec2(c.x.add(mix(sd.x.negate(), sd.x, past).mul(hs.x)), c.y.add(sy.mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); });
+                });
                 done.assign(1);
               }).Else(() => {
                 const sx = select(inBoxX(c.x.add(sr.x.mul(hs.x))), sr.x, sr.x.negate());
                 If(inBoxX(c.x.add(sx.mul(hs.x))), () => {
                   const past = step(hs.x.sub(1), sx.mul(r.x));
                   goalP.assign(vec2(c.x.add(sx.mul(hs.x)), c.y.add(mix(sd.y.negate(), sd.y, past).mul(hs.y))));
-                }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); }); // no way round: stay on this side
+                }).Else(() => { // no way round: stay on this side (gathering: fly behind it)
+                  If(U.tunnel.greaterThan(0), () => { tun.assign(1); }).Else(() => { goalP.assign(vec2(clamp(goalP.x, c.x.sub(h0.x), c.x.add(h0.x)), c.y.add(sr.y.mul(hs.y)))); });
+                });
                 done.assign(1);
               });
             });
           }).Else(() => { // inside the rect itself: aim at the nearest valid face's exit (the keep-out force pushes the same way)
+            // (gathering, with no way round this rect toward the goal: keep flying behind it)
+            const gd = goalP.sub(p.xy);
+            const noWay = select(abs(gd.x).mul(hs.y).greaterThanEqual(abs(gd.y).mul(hs.x)), inBoxY(c.y.add(hs.y)).or(inBoxY(c.y.sub(hs.y))).not(), inBoxX(c.x.add(hs.x)).or(inBoxX(c.x.sub(hs.x))).not());
+            If(U.tunnel.greaterThan(0).and(noWay), () => { tun.assign(1); });
             const fs = frameSlot(6);
-            If(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not())), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
-              .Else(() => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
+            If(tun.lessThan(0.5).and(exitByXT(h0.x.sub(abs(r.x)).lessThan(h0.y.sub(abs(r.y))), inBoxX(c.x.add(sr.x.mul(h0.x))).and(fs.and(blockedX(sr.x)).not()), inBoxY(c.y.add(sr.y.mul(h0.y))).and(fs.and(blockedY(sr.y)).not()))), () => { goalP.assign(vec2(c.x.add(sr.x.mul(hs.x)), p.y)); })
+              .ElseIf(tun.lessThan(0.5), () => { goalP.assign(vec2(p.x, c.y.add(sr.y.mul(hs.y)))); });
             done.assign(1);
           });
         });
@@ -607,7 +664,7 @@ export class GpuEngine implements Engine {
       const far = step(fract(S.z.mul(7.77)), U.farFrac.sub(1e-4)).mul(step(1e-4, U.farFrac));
       acc.z.addAssign(p.z.sub(far.mul(FAR_Z)).mul(-1.2).sub(v.z.mul(0.6)).mul(free));
       // keep-outs: soft push out + inward velocity turned around; a held shape barely feels it
-      If(U.koOn.greaterThan(0), () => {
+      If(U.koOn.greaterThan(0).and(tun.lessThan(0.5)), () => {
         const kk0 = U.koOn.mul(float(1).sub(wEff.mul(0.85)));
         // the dim frame (B3) is the last used slot when koFrame is on: held border particles ignore it; inside its
         // rect only the frame acts (exits skip blocked faces); outside it, any other keep-out acting wins over it
@@ -769,7 +826,15 @@ export class GpuEngine implements Engine {
     const look = mix(U.freeDim.mul(mix(float(1), float(FAR_DIM), farFree)), U.shapeExpo.mul(U.frameGlow.mul(0.6).add(1)).mul(U.heldDim), held);
     const bright = mix(0.5, 1.0, S.z).mul(U.pulse.mul(0.15).add(1)).mul(U.brightness).mul(mix(float(1), expo, this.uLook.dark)).mul(look);
     // dark: additive, brightness in colour; light: ink over paper, brightness only nudges opacity
-    m.fragmentNode = vec4(color.mul(mix(float(1), bright, L.dark)), disc.mul(L.alpha).mul(mix(mix(0.8, 1.0, S.z), float(1), L.dark)));
+    // dots inside a keep-out (not the dim frame's own) are never drawn: nothing visibly crosses the words
+    const UU = U as Record<string, N>;
+    let cull: N = float(1);
+    for (let k = 0; k < MAX_KEEPOUT; k++) {
+      const isFrame = U.koFrame.greaterThan(0).and(k + 1 < MAX_KEEPOUT ? UU[`ko${k + 1}w`].lessThanEqual(0) : float(1).greaterThan(0));
+      const inside = abs(P.x.sub(UU[`ko${k}x`])).lessThan(UU[`ko${k}w`].sub(CULL_INSET)).and(abs(P.y.sub(UU[`ko${k}y`])).lessThan(UU[`ko${k}h`].sub(CULL_INSET))).and(UU[`ko${k}w`].greaterThan(0)).and(isFrame.not());
+      cull = cull.mul(select(inside, float(0), float(1)));
+    }
+    m.fragmentNode = vec4(color.mul(mix(float(1), bright, L.dark)).mul(cull), disc.mul(L.alpha).mul(mix(mix(0.8, 1.0, S.z), float(1), L.dark)).mul(cull));
     this.material = m;
     this.sprite = new THREE.Sprite(m);
     this.sprite.count = this.count;

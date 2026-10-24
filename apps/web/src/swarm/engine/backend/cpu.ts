@@ -2,7 +2,7 @@ import type { Engine, EngineInit, Scene } from './types';
 import { COLORS, hexToRgb01 } from './types';
 import type { SimParams } from './params';
 import {
-  BOUND_REFLECT, BOUND_ZONE, BOX_TURN, CURIOUS_REACH, FAR_DIM, FAR_SIZE, FAR_Z, FIELD_H, FIELD_MARGIN, FIELD_W, HOLE_KICK, HOLE_PUSH, HOLE_TURN, STILL_HOLE,
+  BOUND_REFLECT, BOUND_ZONE, BOX_TURN, CURIOUS_REACH, FAR_DIM, FAR_SIZE, FAR_Z, FIELD_H, FIELD_MARGIN, FIELD_W, CULL_INSET, HOLE_KICK, HOLE_PUSH, HOLE_TURN, STILL_HOLE,
   MAX_KEEPOUT, STEER_M, TRANSIT_DIP, curiousOf, groupOf, keepOutForce, steerGoal, trailSlot,
 } from './params';
 import { FLOW_WAVES, WAVE_K, WAVE_W } from './flow';
@@ -162,6 +162,7 @@ export class CpuEngine implements Engine {
     const fa = p.flowAmp * wildMul, flowRate = p.flowRate * (1 + p.wild * 3), freq = p.flowFreq;
     const r0 = Math.min(p.halfW, p.halfH) * p.leadR, r0s = r0 * 1.2;
     const steer = p.steerOn > 0 && nk > 0, steerM = p.koMargin * STEER_M;
+    const tunnel = p.tunnel > 0;
     const fmask = p.koFrame > 0 ? (p.koFbT ? 1 : 0) | (p.koFbB ? 2 : 0) | (p.koFbL ? 4 : 0) | (p.koFbR ? 8 : 0) : 0;
     const ptrOn = p.pointerOn > 0;
     const hR = p.pointerR, hx0 = p.pointerX, hy0 = p.pointerY;
@@ -169,6 +170,8 @@ export class CpuEngine implements Engine {
     const pvx = p.pointerVx, pvy = p.pointerVy, ps = Math.sqrt(pvx * pvx + pvy * pvy);
     const fallR2 = 1 / ((hR * 2.2) * (hR * 2.2)), fallK = Math.min(ps / 900, 1) * 4 * p.pointerOn;
     const curOn = p.curious > 0, curFracOk = p.curiousFrac;
+    // beyond this from the cursor neither the hole (capsule) nor the drag (exp(-4) ≈ 2 %) reaches
+    const ptrReach = Math.max(hR * 1.3 + Math.sqrt(wl2), fallK > 0 ? hR * 4.4 : 0);
     const bHw = p.boundHw, bHh = p.boundHh, bCx = p.boundCx, bCy = p.boundCy;
     const zx = Math.max(bHw - BOUND_ZONE, 1), zy = Math.max(bHh - BOUND_ZONE, 1);
     const stepW = dt / p.ramp;
@@ -250,6 +253,7 @@ export class CpuEngine implements Engine {
       const ck0 = (p.coh * edge * edge * (3 - 2 * edge) + p.restK * rest - p.capK * Math.max(dens - p.densCap, 0)) * fbk, sk0 = p.sep * dens * fb;
       ax += gs[6]! * ck0 - gs[4]! * sk0; ay += gs[7]! * ck0 - gs[5]! * sk0;
       // leader + bounds + slab
+      let tun = 0;
       { // leader = a roost the flock is steered toward only when it strays (dead zone), not a spring
         let gx = p.leaderX, gy = p.leaderY;
         if (p.snake > 0) {
@@ -264,7 +268,7 @@ export class CpuEngine implements Engine {
           const try_ = p.snakeCy + TR[b8 + 7]! + ay1 * Math.sin(sb) + (ttx / tl) * wd;
           gx += (trx - gx) * p.snake; gy += (try_ - gy) * p.snake;
         }
-        if (steer) { steerGoal(px - bCx, py - bCy, gx - bCx, gy - bCy, kosB, nk, steerM, sgo, bHw, bHh, p.koFrame > 0 ? nk - 1 : -1, fmask); gx = sgo[0] + bCx; gy = sgo[1] + bCy; }
+        if (steer) { tun = steerGoal(px - bCx, py - bCy, gx - bCx, gy - bCy, kosB, nk, steerM, sgo, bHw, bHh, p.koFrame > 0 ? nk - 1 : -1, fmask, tunnel); gx = sgo[0] + bCx; gy = sgo[1] + bCy; }
         const lx = gx - px, ly = gy - py, ll = Math.max(Math.sqrt(lx * lx + ly * ly), 1e-3);
         const t = Math.min(Math.max((ll - r0) / r0s, 0), 1), k = t * t * (3 - 2 * t) * p.leaderW * 260 * free * keep;
         ax += (lx / ll) * k; ay += (ly / ll) * k;
@@ -280,7 +284,7 @@ export class CpuEngine implements Engine {
       const far = this.farS[i]! < p.farFrac ? 1 : 0;
       az += (-(pz - FAR_Z * far) * 1.2 - vz * 0.6) * free;
       // keep-outs: soft repulsion (top bar, conversation, chips, command bar); a held shape barely feels it
-      if (p.koOn > 0) {
+      if (p.koOn > 0 && !tun) {
         const kk = p.koOn * (1 - 0.85 * wEff);
         const nOwn = p.koFrame > 0 ? nk - 1 : nk;
         const kf0 = nk - 1;
@@ -289,6 +293,7 @@ export class CpuEngine implements Engine {
         const inFrame = nOwn < nk && Math.abs(px - kos[kf0 * 4]!) < kos[kf0 * 4 + 2]! && Math.abs(py - kos[kf0 * 4 + 1]!) < kos[kf0 * 4 + 3]!;
         let other = false;
         for (let k = 0; k < (inFrame ? 0 : nOwn); k++) {
+          if (Math.abs(px - kos[k * 4]!) - kos[k * 4 + 2]! >= p.koMargin || Math.abs(py - kos[k * 4 + 1]!) - kos[k * 4 + 3]! >= p.koMargin) continue; // far: no force
           keepOutForce(px - bCx, py - bCy, vx, vy, kosB[k * 4]!, kosB[k * 4 + 1]!, kos[k * 4 + 2]!, kos[k * 4 + 3]!, p.koMargin, kof, p.homeX - bCx, p.homeY - bCy, steer, bHw, bHh);
           if (kof[0] !== 0 || kof[1] !== 0) other = true;
           ax += kof[0] * kk; ay += kof[1] * kk;
@@ -321,7 +326,7 @@ export class CpuEngine implements Engine {
       // pointer (B2): a soft hole around the cursor, stretched into a short wake behind fast motion; drag along
       // fast motion; a still cursor draws the curious few into a loose orbit
       let hV = 0, hNx = 0, hNy = 0;
-      if (ptrOn) {
+      if (ptrOn && qr < ptrReach + (cu > 0 ? CURIOUS_REACH : 0)) {
         // closest point on the capsule cursor → wake tail; the radius tapers to 60 % at the tail
         const s = Math.min(Math.max((qx * wx + qy * wy) / wl2, 0), 1);
         const cx = qx - wx * s, cy = qy - wy * s, d = Math.max(Math.sqrt(cx * cx + cy * cy), 1e-3);
@@ -407,12 +412,26 @@ export class CpuEngine implements Engine {
       SX[i] = (cx + (P[o]! - p.camX) * k) * dpr; SY[i] = (cy - (P[o + 1]! - p.camY) * k) * dpr;
     }
     ctx.lineCap = 'round';
+    // dots inside a keep-out (not the dim frame's own) are never drawn: nothing visibly crosses the words
+    const PP = p as unknown as Record<string, number>, cull = this.kos;
+    let nc = 0;
+    for (let k = 0; k < MAX_KEEPOUT; k++) {
+      const hw = PP[`ko${k}w`]!;
+      if (hw <= 0 || (p.koFrame > 0 && (k + 1 >= MAX_KEEPOUT || PP[`ko${k + 1}w`]! <= 0))) continue;
+      cull[nc * 4] = PP[`ko${k}x`]!; cull[nc * 4 + 1] = PP[`ko${k}y`]!; cull[nc * 4 + 2] = hw - CULL_INSET; cull[nc * 4 + 3] = PP[`ko${k}h`]! - CULL_INSET; nc++;
+    }
     // 4 speed buckets × 3 classes (held, free near, free far) for uncoloured particles, one path each
     // (counting sort into one reused index array: no per-frame allocation)
     const cls = this.bcls, start = this.bstart, order = this.bucket;
     start.fill(0);
     for (let i = 0; i < n; i++) {
       const o = i * 4;
+      if (nc) {
+        const x = P[o]!, y = P[o + 1]!;
+        let hid = false;
+        for (let k = 0; k < nc && !hid; k++) hid = Math.abs(x - cull[k * 4]!) < cull[k * 4 + 2]! && Math.abs(y - cull[k * 4 + 1]!) < cull[k * 4 + 3]!;
+        if (hid) { cls[i] = 254; continue; }
+      }
       if (C[o + 3]! > 0.15) { cls[i] = 255; continue; }
       const sp = Math.sqrt(V[o]! * V[o]! + V[o + 1]! * V[o + 1]!);
       const held = Math.min(Math.max(V[o + 3]!, 0), 1);
@@ -424,7 +443,7 @@ export class CpuEngine implements Engine {
     }
     for (let b = 0; b < 12; b++) start[b + 1]! += start[b]!;
     const fill = start.slice(0, 12);
-    for (let i = 0; i < n; i++) { const b = cls[i]!; if (b !== 255) order[fill[b]!++] = i; }
+    for (let i = 0; i < n; i++) { const b = cls[i]!; if (b < 254) order[fill[b]!++] = i; }
     const ds = dotScale(n);
     const lite = n <= 6000 ? 1 : 0;
     const dimK = 1 - p.heldDim;
@@ -458,6 +477,9 @@ export class CpuEngine implements Engine {
       ctx.fillRect(x - sz / 2, y - sz / 2, sz, sz);
     }
   }
+
+  /** @internal QA: drawn? (false while inside a keep-out) — from the last draw. */
+  drawn(i: number): boolean { return this.bcls[i] !== 254; }
 
   /** Debug (QA): same as GpuEngine.debugFieldSum. */
   async debugFieldSum(): Promise<{ sum: number; max: number; nonzero: number }> {

@@ -536,6 +536,7 @@ export class Controller {
     });
     // B3 gather: one point leader on the stage centre, pulled hard enough to arrive within the given time
     const gk = t < this.gatherEnd ? 1 : Math.max(0, 1 - (t - this.gatherEnd) / 1.2);
+    p.tunnel = gk > 0 ? 1 : 0;
     if (gk > 0) {
       const diag = Math.hypot(p.halfW, p.halfH);
       const need = Math.min(1600, Math.max(380, (1.5 * diag) / this.gatherT));

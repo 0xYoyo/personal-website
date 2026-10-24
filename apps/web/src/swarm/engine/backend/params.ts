@@ -53,6 +53,9 @@ export interface SimParams {
   homeX: number; homeY: number;
   /** free-flight goals are projected out of keep-outs and routed around them (B1/B3): 1 = on */
   steerOn: number;
+  /** while gathering (B3): a particle with no way round a keep-out flies behind it (keep-out forces off for it;
+   *  dots inside keep-outs are never drawn), instead of staying trapped on its side */
+  tunnel: number;
   /** pointer wake: the trailing end of the cursor's hole capsule (world px), the hole strength (1 while moving,
    *  0 when still), and the curious orbit (0..1) that a still cursor gathers from curiousFrac of the flock */
   wakeX: number; wakeY: number; pointerHole: number; curious: number; curiousFrac: number; curiousR: number;
@@ -113,7 +116,7 @@ export function defaultParams(): SimParams {
     ko0x: 0, ko0y: 0, ko0w: -1, ko0h: -1, ko1x: 0, ko1y: 0, ko1w: -1, ko1h: -1,
     ko2x: 0, ko2y: 0, ko2w: -1, ko2h: -1, ko3x: 0, ko3y: 0, ko3w: -1, ko3h: -1,
     ko4x: 0, ko4y: 0, ko4w: -1, ko4h: -1, ko5x: 0, ko5y: 0, ko5w: -1, ko5h: -1, ko6x: 0, ko6y: 0, ko6w: -1, ko6h: -1,
-    koOn: 0, koMargin: 72, koFrame: 0, koFrameMargin: 56, koFbT: 0, koFbB: 0, koFbL: 0, koFbR: 0, homeX: 0, homeY: 0, steerOn: 0,
+    koOn: 0, koMargin: 72, koFrame: 0, koFrameMargin: 56, koFbT: 0, koFbB: 0, koFbL: 0, koFbR: 0, homeX: 0, homeY: 0, steerOn: 0, tunnel: 0,
     wakeX: 1e5, wakeY: 1e5, pointerHole: 0, curious: 0, curiousFrac: CURIOUS_FRAC, curiousR: 70,
     boundCx: 0, boundCy: 0, boundHw: 460, boundHh: 252,
     freeze: 0, snap: 0,
@@ -230,6 +233,8 @@ export const BOUND_ZONE = 90;
 export const BOUND_REFLECT = 20;
 /** Steering margin around keep-outs, × koMargin (the flock streams along the outer part of the repulsion zone). */
 export const STEER_M = 0.8;
+/** Dots more than this (px) inside a keep-out are not drawn. */
+export const CULL_INSET = 4;
 
 /**
  * Free-flight goal steering (B1/B3), mirrored in the GPU kernel. `kos` = [cx, cy, hw, hh] × nk (world px).
@@ -238,7 +243,8 @@ export const STEER_M = 0.8;
  *    keep-out's corner on the particle's side (then the far corner once it is past the face): the flock flows
  *    around the text block instead of pressing against it.
  */
-export function steerGoal(px: number, py: number, gx: number, gy: number, kos: ArrayLike<number>, nk: number, m: number, out: [number, number], boxHw = Infinity, boxHh = Infinity, fk = -1, fmask = 0): void {
+export function steerGoal(px: number, py: number, gx: number, gy: number, kos: ArrayLike<number>, nk: number, m: number, out: [number, number], boxHw = Infinity, boxHh = Infinity, fk = -1, fmask = 0, tunnel = false): number {
+  let tun = 0;
   let x = gx, y = gy;
   for (let k = 0; k < nk; k++) {
     const cx = kos[k * 4]!, cy = kos[k * 4 + 1]!, hw = kos[k * 4 + 2]! + m, hh = kos[k * 4 + 3]! + m;
@@ -258,6 +264,12 @@ export function steerGoal(px: number, py: number, gx: number, gy: number, kos: A
     // in its margin it still steers round
     const hw0 = kos[k * 4 + 2]!, hh0 = kos[k * 4 + 3]!;
     if (Math.abs(rx) < hw0 && Math.abs(ry) < hh0) {
+      // gathering, and no way round this rect toward the goal: keep flying behind it
+      if (tunnel) {
+        const ddx = x - px, ddy = y - py;
+        const noWay = Math.abs(ddx) * hh >= Math.abs(ddy) * hw ? Math.abs(cy + hh) > boxHh && Math.abs(cy - hh) > boxHh : Math.abs(cx + hw) > boxHw && Math.abs(cx - hw) > boxHw;
+        if (noWay) { tun = 1; break; }
+      }
       const ex = cx + (rx >= 0 ? hw : -hw), ey = cy + (ry >= 0 ? hh : -hh);
       const mk = k === fk ? fmask : 0;
       if (exitByX(hw0 - Math.abs(rx) < hh0 - Math.abs(ry), Math.abs(cx + (rx >= 0 ? hw0 : -hw0)) <= boxHw && !(mk & (rx >= 0 ? 8 : 4)), Math.abs(cy + (ry >= 0 ? hh0 : -hh0)) <= boxHh && !(mk & (ry >= 0 ? 1 : 2)))) { x = ex; y = py; } else { x = px; y = ey; }
@@ -275,14 +287,14 @@ export function steerGoal(px: number, py: number, gx: number, gy: number, kos: A
     if (Math.abs(dx) * hh >= Math.abs(dy) * hw) { // mostly across it horizontally: go over or under
       let sy = ry >= 0 ? 1 : -1;
       if (Math.abs(cy + sy * hh) > boxHh) sy = -sy;
-      if (Math.abs(cy + sy * hh) > boxHh) { x = cx + (rx >= 0 ? hw : -hw); y = py; break; }
+      if (Math.abs(cy + sy * hh) > boxHh) { if (tunnel) tun = 1; else { x = cx + (rx >= 0 ? hw : -hw); y = py; } break; }
       const sx = dx >= 0 ? 1 : -1;
       const past = sy * ry >= hh - 1;
       x = cx + (past ? sx : -sx) * hw; y = cy + sy * hh;
     } else {
       let sx = rx >= 0 ? 1 : -1;
       if (Math.abs(cx + sx * hw) > boxHw) sx = -sx;
-      if (Math.abs(cx + sx * hw) > boxHw) { x = Math.min(Math.max(x, cx - hw0), cx + hw0); y = cy + (ry >= 0 ? hh : -hh); break; }
+      if (Math.abs(cx + sx * hw) > boxHw) { if (tunnel) tun = 1; else { x = Math.min(Math.max(x, cx - hw0), cx + hw0); y = cy + (ry >= 0 ? hh : -hh); } break; }
       const sy = dy >= 0 ? 1 : -1;
       const past = sx * rx >= hw - 1;
       x = cx + sx * hw; y = cy + (past ? sy : -sy) * hh;
@@ -290,6 +302,7 @@ export function steerGoal(px: number, py: number, gx: number, gy: number, kos: A
     break;
   }
   out[0] = x; out[1] = y;
+  return tun;
 }
 
 /** Leave a rect through an x face? `nearerX`: the x face is the nearer one; a face outside the bounds box is no exit. */
