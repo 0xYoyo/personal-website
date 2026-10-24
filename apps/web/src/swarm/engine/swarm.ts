@@ -4,7 +4,7 @@ import { AdaptiveMonitor, initialTier, nextLowerTier, tierConfig } from './tiers
 import { detectBackend } from './detect';
 import { Controller } from './backend/controller';
 import type { Engine, Scene } from './backend/types';
-import { CpuEngine } from './backend/cpu';
+import { makeEngine } from './backend/load';
 import { loadDisplayFont } from './font';
 import { Scheduler } from './backend/scheduler';
 import { yoyo3dTargets } from './shapes';
@@ -65,15 +65,6 @@ function pct(a: number[], q: number): number {
   if (!a.length) return 0;
   const s = [...a].sort((x, y) => x - y);
   return s[Math.min(s.length - 1, Math.floor(q * s.length))]!;
-}
-
-async function makeEngine(cfg: TierConfig, canvas: HTMLCanvasElement, scene: Scene): Promise<Engine> {
-  const init = { canvas, count: cfg.count, bloom: cfg.bloom, dprCap: cfg.dprCap, scene };
-  if (cfg.backend === 'canvas2d') { const e = new CpuEngine(init); await e.init(); return e; }
-  const { GpuEngine } = await import('./backend/gpu');
-  const e = new GpuEngine(init, cfg.backend);
-  await e.init();
-  return e;
 }
 
 function contextKind(b: Backend): string { return b === 'canvas2d' ? '2d' : b === 'webgpu' ? 'webgpu' : 'webgl2'; }
