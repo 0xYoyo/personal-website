@@ -38,14 +38,13 @@ export function Chips() {
   }, [key]);
 
   return (
-    <div className="y-chips" data-hidden={hide || !chips.length}>
+    <nav className="y-chips" data-hidden={hide || !chips.length} aria-label="suggestions">
+      {/* the row is a stop of its own only when it scrolls (arrow keys reach the hidden chips), and then it says so */}
       <div
         className="y-chips-row"
         key={key}
         ref={row}
-        role="group"
-        aria-label="Suggestions"
-        tabIndex={scrollable && !hide ? 0 : undefined}
+        {...(scrollable && !hide ? { tabIndex: 0, role: 'group', 'aria-label': copy.chips.scrollLabel } : {})}
       >
         {chips.map((c, i) => (
           <button key={c} className="y-chip" style={{ animationDelay: `${i * 30}ms` }} onClick={() => ctl.chip(c)} tabIndex={hide ? -1 : 0}>
@@ -53,7 +52,7 @@ export function Chips() {
           </button>
         ))}
       </div>
-    </div>
+    </nav>
   );
 }
 

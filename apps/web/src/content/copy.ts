@@ -40,6 +40,8 @@ export const copy = {
   },
   chips: {
     soundOn: 'sound on',
+    /** the chip row, when it scrolls sideways (mobile) and takes focus */
+    scrollLabel: 'More suggestions: use the arrow keys or scroll',
   },
   card: {
     play: 'Play',

@@ -381,11 +381,14 @@ export function App() {
       <a className="y-skip" href="#y-input" onClick={(e) => { e.preventDefault(); document.getElementById('y-input')?.focus(); }}>
         {copy.a11y.skip}
       </a>
-      <div ref={bodyRef} className="y-canvas" aria-label={copy.a11y.swarm} role="img" />
       <TopBar voiceSupported={voiceSupported} />
+      {/* landmarks (POLISH2 A7): the swarm is decoration inside main; the words are mirrored in the live region */}
       <main className="y-main">
-        <Conversation />
-        <RunnerControls />
+        <div ref={bodyRef} className="y-canvas" role="presentation" />
+        <div className="y-stage-layer">
+          <Conversation />
+          <RunnerControls />
+        </div>
       </main>
       <Chips />
       <SoundChip />

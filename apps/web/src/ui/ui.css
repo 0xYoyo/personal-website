@@ -74,7 +74,11 @@
 
 /* ---------------------------------------------------------- conversation */
 
+/* the landmark: no box of its own (its layers are fixed, each with its own z-index) */
 .y-main {
+  position: static;
+}
+.y-stage-layer {
   position: fixed;
   inset: 0;
   z-index: var(--z-convo);
@@ -381,6 +385,11 @@
 .y-bar[data-focused='true'] {
   border-color: var(--accent);
 }
+/* a visible focus ring for the input itself (POLISH2 A7) */
+.y-bar:has(#y-input:focus-visible) {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+}
 .y-bar[data-mode='change'] {
   border-color: var(--accent);
 }
@@ -438,6 +447,7 @@
   caret-color: var(--accent);
 }
 .y-bar-input:focus-visible {
+  /* the ring is drawn on the bar around it (.y-bar:has(...)) */
   outline: none;
 }
 .y-bar-ph {
