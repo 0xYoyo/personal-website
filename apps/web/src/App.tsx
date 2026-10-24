@@ -43,19 +43,40 @@ function stageRect(): Rect {
   return { x, y: 72, w: w - x - 32, h: h - 72 - 190 };
 }
 
-const boxOf = (sel: string): Rect | null => {
+/** `sel`'s box; `inset` > 0 shrinks it (a keep-out inside a frame the swarm outlines). */
+const boxOf = (sel: string, inset = 0): Rect | null => {
   const el = document.querySelector(sel);
   if (!el) return null;
   const r = el.getBoundingClientRect();
   if (!r.width || !r.height) return null;
-  return { x: r.left, y: r.top, w: r.width, h: r.height };
+  return { x: r.left + inset, y: r.top + inset, w: Math.max(1, r.width - 2 * inset), h: Math.max(1, r.height - 2 * inset) };
 };
 
-/** What the flock should stay off: the top bar, the words, the chips and the bar (POLISH1 B3). */
-function keepOutRects(): Rect[] {
-  return ['.y-top', '.y-convo[data-hidden="false"] .y-agent', '.y-convo[data-hidden="false"] .y-echo', '.y-convo[data-hidden="false"] .y-prev[data-room="true"]', '.y-chips[data-hidden="false"] .y-chips-row', '.y-bar-wrap[data-ready="true"] .y-bar']
-    .map(boxOf)
-    .filter((r): r is Rect => !!r);
+/**
+ * What the flock should stay off (POLISH1 B3; up to 6): the top bar, the words, the chips and the
+ * bar — and with a build open, its caption, the inside of its frame and the controls (POLISH2 A4).
+ * `restored`: an overlay is closing (POLISH2 A2): count the conversation and chips that are about to
+ * come back even though they are still hidden, so the flock is kept off them before it moves.
+ */
+function keepOutRects(restoring = false): Rect[] {
+  // while the flock gathers, the words and chips are still hidden but already kept clear
+  const restored = restoring || !!useStore.getState().settling;
+  const shown = restored ? '' : '[data-hidden="false"]';
+  const sels: [string, number?][] = [
+    ['.y-top'],
+    [`.y-convo${shown} .y-agent`],
+    [`.y-convo${shown} .y-echo`],
+    [`.y-convo${shown} .y-prev[data-room="true"]`],
+    [`.y-chips${shown} .y-chips-row`],
+    ['.y-bar-wrap[data-ready="true"] .y-bar'],
+  ];
+  if (!restored && useStore.getState().overlay === 'build') {
+    sels.splice(1, 3, ['.y-build-caption'], ['.y-build-frame[data-visible="true"]', 14], ['.y-build-controls[data-on="true"]']);
+  }
+  return sels
+    .map(([sel, inset]) => boxOf(sel, inset))
+    .filter((r): r is Rect => !!r)
+    .slice(0, 6);
 }
 
 type StageFn = (rect: Rect, keepOut?: Rect[]) => void;
@@ -64,11 +85,11 @@ type StageFn = (rect: Rect, keepOut?: Rect[]) => void;
  * `setStage` takes a second argument (or flags `keepOut` support), so this works
  * against engines with and without it.
  */
-function pushStage() {
+function pushStage(restored = false) {
   const sw = ctl.swarm as (typeof ctl.swarm & { keepOut?: boolean }) | null;
   const fn = sw?.setStage as StageFn | undefined;
   if (!sw || !fn) return;
-  if (fn.length >= 2 || sw.keepOut === true) fn.call(sw, stageRect(), keepOutRects());
+  if (fn.length >= 2 || sw.keepOut === true) fn.call(sw, stageRect(), keepOutRects(restored));
   else fn.call(sw, stageRect());
 }
 
@@ -181,8 +202,9 @@ export function App() {
     let raf = 0;
     const schedule = () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(pushStage);
+      raf = requestAnimationFrame(() => pushStage());
     };
+    ctl.onStage((restored) => pushStage(restored));
     addEventListener('resize', schedule);
     const ro = new ResizeObserver(schedule);
     for (const sel of ['.y-convo', '.y-chips', '.y-bar-wrap']) {
@@ -190,9 +212,10 @@ export function App() {
       if (el) ro.observe(el);
     }
     const unsub = useStore.subscribe((s, p) => {
-      if (s.overlay !== p.overlay || s.phase !== p.phase || s.chipsKey !== p.chipsKey) schedule();
+      if (s.overlay !== p.overlay || s.phase !== p.phase || s.chipsKey !== p.chipsKey || s.build.status !== p.build.status || s.settling !== p.settling) schedule();
     });
     return () => {
+      ctl.onStage(null);
       removeEventListener('resize', schedule);
       ro.disconnect();
       unsub();

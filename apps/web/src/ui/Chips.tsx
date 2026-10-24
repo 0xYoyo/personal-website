@@ -13,7 +13,9 @@ export function Chips() {
   const key = useStore((s) => s.chipsKey);
   const phase = useStore((s) => s.phase);
   const overlay = useStore((s) => s.overlay);
-  const hide = phase !== 'ready' || overlay === 'game' || overlay === 'history' || overlay === 'contact';
+  const settling = useStore((s) => s.settling);
+  // while the flock gathers after an overlay closes, the chips wait (POLISH2 A2)
+  const hide = phase !== 'ready' || overlay === 'game' || overlay === 'history' || overlay === 'contact' || !!settling;
   const row = useRef<HTMLDivElement>(null);
   const [scrollable, setScrollable] = useState(false);
 

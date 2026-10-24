@@ -38,7 +38,47 @@ const READ_FLOOR = 4000;
 let settleSeq = 0;
 
 /** How long the flock gathers at the stage centre after an overlay closes, before it is let go (POLISH2 A2). */
-export const GATHER_MS = 450;
+export const GATHER_MS = 800;
+/** Bumped whenever something new takes the body; a pending post-overlay release checks it. */
+let bodySeq = 0;
+/** App pushes the stage and keep-outs; `restored`: count the conversation and chips even while they are still hidden. */
+let stageHook: ((restored: boolean) => void) | null = null;
+
+type Body = SwarmHandle & { gather?: (ms: number) => Promise<void> };
+type FrameFn = (rect: Rect, progress: number, opts?: { dim?: boolean }) => void;
+/** The engine can gather the flock and hold a dim frame (POLISH2 B3). */
+const canGather = (sw: SwarmHandle | null): sw is Body & { gather: (ms: number) => Promise<void> } => typeof (sw as Body | null)?.gather === 'function';
+
+/**
+ * A card, the game or a build closed (POLISH2 A2): the restored reply's keep-outs go in first, the
+ * flock gathers at the stage centre (so it never crosses the words or the bar), and only then is it
+ * let go. The chips — and the bar, if the overlay covered it — come back once the outline is gone.
+ */
+function settleBody(barCovered: boolean, after?: () => void) {
+  const sw = swarm();
+  const seq = ++bodySeq;
+  stageHook?.(true);
+  S().setSettling(barCovered ? 'all' : 'chips');
+  const done = () => {
+    if (seq !== bodySeq) return;
+    S().setSettling('');
+    after?.();
+  };
+  if (canGather(sw)) {
+    void sw.gather(GATHER_MS).then(() => {
+      if (seq === bodySeq && S().overlay === 'none' && !runner?.running()) sw.release();
+      done();
+    });
+  } else {
+    sw?.release();
+    setTimeout(done, GATHER_MS);
+  }
+}
+/** Something new takes the body: a pending post-overlay release must not undo it. */
+const claimBody = () => {
+  bodySeq++;
+  if (S().settling) S().setSettling('');
+};
 
 // ---- turns (POLISH2 A1) -------------------------------------------------------
 /** Sizes a whole turn on the conversation's hidden clone (registered by Conversation). */
@@ -125,7 +165,10 @@ function runAction(a: Action) {
   const st = S();
   switch (a.type) {
     case 'become':
-      if (st.overlay === 'none' || st.overlay === 'contact') swarm()?.become(a.shape);
+      if (st.overlay === 'none' || st.overlay === 'contact') {
+        claimBody();
+        swarm()?.become(a.shape);
+      }
       break;
     case 'mood':
       swarm()?.mood(a.mood);
@@ -167,6 +210,7 @@ function resolveShape(s: Step['become']): ShapeSpec | null {
 function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: number) => StoryId) {
   closeAll();
   runner?.skip();
+  claimBody();
   const st = S();
   st.openOverlay(kind);
   st.setChips([]);
@@ -370,6 +414,7 @@ export const ctl = {
         break;
       case 'become':
         S().pushVisitor(cmd.text);
+        claimBody();
         swarm()?.become(cmd.shape);
         void speakLine('done.');
         break;
@@ -379,11 +424,17 @@ export const ctl = {
   dispatch: runAction,
 
   become(shape: ShapeSpec) {
+    claimBody();
     swarm()?.become(shape);
+  },
+  /** App's stage push (keep-outs), so a closing overlay can place them before the flock moves. */
+  onStage(fn: ((restored: boolean) => void) | null) {
+    stageHook = fn;
   },
 
   // ---- projects ------------------------------------------------------------
   openProject(id: ProjectId) {
+    claimBody();
     closeAll('card');
     S().showProject(id);
     S().setChips(projectChips(id));
@@ -408,17 +459,25 @@ export const ctl = {
     const was = st.overlay;
     if (was === 'build') stopBuild(true);
     st.closeOverlay();
-    swarm()?.release();
     swarm()?.mood('idle');
-    if (was === 'card') st.setChips(ENTRY_CHIPS);
-    if (was === 'game') st.setChips(['Next one', 'Who is Yoyo?', 'Build me something']);
+    if (was === 'card' || was === 'game' || was === 'build') {
+      // the card sheet (mobile) and the game cover the bar; the build frame and the desktop card don't
+      const covered = was === 'game' || (was === 'card' && isMobileViewport());
+      const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who is Yoyo?', 'Build me something'] : null;
+      if (chips) S().setChips([]);
+      settleBody(covered, () => chips && S().setChips(chips));
+    } else {
+      swarm()?.release();
+    }
   },
   play() {
+    claimBody();
     closeAll('game');
     S().openOverlay('game');
     swarm()?.mood('asleep');
   },
   contact() {
+    claimBody();
     closeAll('contact');
     S().openOverlay('contact');
     swarm()?.become({ kind: 'glyph', id: 'envelope' });
@@ -432,6 +491,7 @@ export const ctl = {
   },
   home() {
     turn?.abort();
+    claimBody();
     closeAll();
     const st = S();
     st.setBarMode('chat');
@@ -481,6 +541,7 @@ export const ctl = {
       await speakLine(copy.build.capped);
       return;
     }
+    claimBody();
     closeAll('build');
     buildAbort?.abort();
     const ac = new AbortController();
@@ -554,6 +615,7 @@ export const ctl = {
   openStoredBuild() {
     const last = rt.brain?.memory.builds().find((b) => b.html);
     if (!last) return;
+    claimBody();
     closeAll('build');
     const st = S();
     st.patchBuild({ ...emptyBuild, status: 'locked', instruction: last.instruction, html: last.html, bytes: last.html.length, progress: 1, title: last.title });

@@ -145,7 +145,9 @@ export function Conversation() {
     if (sec && mobile && overflows()) sec.dataset.tall = 'true';
   }); // every render: the room beneath changes as words arrive
 
-  const hidden = overlay === 'card' || overlay === 'build' || overlay === 'contact' || overlay === 'game' || overlay === 'history';
+  const settling = useStore((s) => s.settling);
+  // after a card / game / build closes, the words come back once the flock has gathered off them (POLISH2 A2)
+  const hidden = overlay === 'card' || overlay === 'build' || overlay === 'contact' || overlay === 'game' || overlay === 'history' || !!settling;
   const waiting = !runner && lines[lines.length - 1]?.role === 'visitor';
   const echo = runner ? null : visitor;
 

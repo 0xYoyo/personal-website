@@ -17,6 +17,7 @@ export function CommandBar() {
   const build = useStore((s) => s.build);
   const lines = useStore((s) => s.lines);
   const overlay = useStore((s) => s.overlay);
+  const settling = useStore((s) => s.settling);
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
   const [ph, setPh] = useState(0);
@@ -147,7 +148,7 @@ export function CommandBar() {
   const showPh = !value;
 
   return (
-    <div className="y-bar-wrap" data-ready={phase === 'ready'}>
+    <div className="y-bar-wrap" data-ready={phase === 'ready'} data-settling={settling === 'all'}>
       <form
         className="y-bar"
         data-mode={barMode}

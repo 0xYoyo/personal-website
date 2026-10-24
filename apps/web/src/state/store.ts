@@ -7,6 +7,7 @@ import { ENTRY_CHIPS, clampChips } from '../content/chips';
 export type Overlay = 'none' | 'card' | 'build' | 'contact' | 'game' | 'stories' | 'tour' | 'history';
 export type Phase = 'boot' | 'entry' | 'ready';
 export type Scene = 'dark' | 'light';
+export type Settling = '' | 'chips' | 'all';
 
 export interface Line {
   id: number;
@@ -72,8 +73,11 @@ export interface State {
   lastInput: number;
   /** whether the idle → tour path already ran or was cancelled this session */
   idleSpent: boolean;
-  /** an overlay just closed and the flock is gathering: chips and bar wait (POLISH2 A2) */
-  settling: boolean;
+  /**
+   * An overlay just closed and the flock is gathering at the stage centre (POLISH2 A2): the chips
+   * wait for it ('chips'), and the bar too when the overlay had covered it ('all').
+   */
+  settling: Settling;
   entryName: string | null; // the quiet mono line under the entry letters
   reducedMotion: boolean;
 }
@@ -91,7 +95,7 @@ export interface Actions {
   /** `keepStreaming`: a turn ended but the reply goes on; `id`: finish only that line */
   finishAgent(opts?: { keepStreaming?: boolean; id?: number }): void;
   setStreaming(on: boolean): void;
-  setSettling(on: boolean): void;
+  setSettling(s: Settling): void;
   agentLine(text: string, opts?: { quiet?: boolean }): number;
   setChips(chips: string[]): void;
   openOverlay(o: Overlay): void;
@@ -134,7 +138,7 @@ const initial = (): State => ({
   runner: null,
   lastInput: 0,
   idleSpent: false,
-  settling: false,
+  settling: '',
   entryName: null,
   reducedMotion: false,
 });

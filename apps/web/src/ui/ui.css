@@ -352,6 +352,14 @@
 .y-bar-wrap[data-ready='true'] {
   transform: translate(-50%, 0);
 }
+/* the overlay that covered the bar just closed: it comes back once the flock has gathered (POLISH2 A2) */
+.y-bar-wrap[data-settling='true'] {
+  opacity: 0;
+  transition: none;
+}
+.y-bar-wrap[data-settling='false'] {
+  transition: transform 700ms var(--ease-out), opacity var(--dur-2) var(--ease);
+}
 
 .y-bar {
   position: relative;
