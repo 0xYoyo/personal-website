@@ -14,7 +14,8 @@
 // 3. Turns (POLISH2 C1): every reply the scripted brain can give (faq.md, easter eggs, unknown,
 //    each with the resting line in front) and every mock reply, through the client's pipeline
 //    (pacer → tag parser → turn splitter): each turn ≤ 22 words, no `|` left on screen, nothing
-//    lost, and the resting line a turn of its own.
+//    lost, and the resting line a turn of its own. The Worker's pacer (apps/worker/src/pace.ts,
+//    C4) must pace every one of them — and long unpaced replies — exactly like the client's.
 
 import { fileURLToPath } from 'node:url';
 import { normalize } from 'node:path';
@@ -199,13 +200,29 @@ export function evalTurns(replies, label) {
     const shown = turns.join(' ');
     const plain = flat(A.extractActions(raw, { glyphs: A.GLYPH_IDS }).text);
     const problems = [];
-    if (longest > A.TURN_MAX_WORDS) problems.push(`a turn of ${longest} words`);
+    // an unpaced reply of up to 32 words stays one turn (C1); past that, or once paced, ≤ 22 a turn
+    const unpacedShort = !raw.includes('||') && A.countWords(raw) <= A.AUTO_PACE_WORDS;
+    if (unpacedShort ? turns.length !== 1 : longest > A.TURN_MAX_WORDS) problems.push(unpacedShort ? `${turns.length} turns` : `a turn of ${longest} words`);
     if (shown.includes('|')) problems.push('a | on screen');
     if (flat(shown) !== plain) problems.push('text changed');
     if (raw.includes(A.RESTING_LINE) && raw.trim() !== A.RESTING_LINE && !turns.includes(A.RESTING_LINE)) problems.push('resting line not its own turn');
-    rows.push({ kind: `turns/${label}`, input, want: `≤ ${A.TURN_MAX_WORDS} words a turn`, got: problems.join(', ') || `${turns.length} turns, longest ${longest}`, ok: !problems.length });
+    rows.push({ kind: `turns/${label}`, input, want: unpacedShort ? 'one turn' : `≤ ${A.TURN_MAX_WORDS} words a turn`, got: problems.join(', ') || `${turns.length} turns, longest ${longest}`, ok: !problems.length });
   }
   return rows;
+}
+
+/** Long replies with no `||`, as a model that ignores the persona would give them. */
+export const UNPACED = [
+  ...A.FAQ_INTENTS.filter((i) => i.reply.includes('||')).map((i) => [`unpaced:${i.id}`, i.reply.replace(/\s*\|\|\s*/g, ' ')]),
+];
+
+/** The Worker's pacer agrees with the client's; returns rows. */
+export function evalWorkerPace(replies) {
+  return replies.map(([input, raw]) => {
+    const w = A.workerPaceReply(raw);
+    const c = A.paceReply(raw);
+    return { kind: 'pace/worker', input, want: 'same as the client', got: w === c ? 'same' : JSON.stringify(w), ok: w === c };
+  });
 }
 
 /** Every reply the scripted brain can give, plain and behind the resting line. */
@@ -230,6 +247,8 @@ export async function runEval({ quiet = false } = {}) {
       A.FAQ_INTENTS.flatMap((i) => i.hints).map((h) => [h, mockReply(h, {}, [])]),
       'mock',
     ),
+    ...evalTurns(UNPACED, 'unpaced'),
+    ...evalWorkerPace([...scriptedReplies(), ...UNPACED]),
   ];
   const fails = rows.filter((r) => !r.ok);
   const by = (k) => rows.filter((r) => r.kind === k);
@@ -248,6 +267,8 @@ export async function runEval({ quiet = false } = {}) {
       line('chip/mock'),
       line('turns/scripted'),
       line('turns/mock'),
+      line('turns/unpaced'),
+      line('pace/worker'),
       fails.length ? `${fails.length} FAILED` : 'all passed',
     ].join('\n'),
   );

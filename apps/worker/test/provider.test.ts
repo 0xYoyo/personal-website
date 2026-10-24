@@ -146,9 +146,8 @@ describe('router with PROVIDER=anthropic', () => {
     const res = await post('/chat', chatBody('who is yoyo?'));
     expect(res.status).toBe(200);
     expect(await events(res)).toEqual([
-      { type: 'token', text: '[[become:cu' },
-      { type: 'token', text: 'rls]] Yoav' },
-      { type: 'token', text: ' Zrihan.' },
+      { type: 'token', text: '[[become:curls]] ' },
+      { type: 'token', text: 'Yoav Zrihan.' },
       { type: 'done' },
     ]);
     const c = calls[0]!;

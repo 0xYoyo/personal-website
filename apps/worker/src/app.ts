@@ -13,6 +13,7 @@
 
 import { corsHeaders, isAllowedOrigin, parseAllowlist } from './cors';
 import { createFenceStripper } from './fence';
+import { createPacer } from './pace';
 import type { GeminiContent } from './gemini';
 import { apiKey, modelName, provider, streamModel as callModel } from './provider';
 import { BUCKETS, DailyCounter, clientIp, ipKey, takeToken, type LimitKind } from './limits';
@@ -203,10 +204,28 @@ export function createApp(deps: Partial<Deps> = {}) {
         if (result.kind === 'rate') return json(429, { reason: 'rate', retryAfter: 30 }, { 'retry-after': '30' });
         return json(502, { reason: 'upstream' });
       }
-      const source = o.build ? cleanBuild(result.stream) : result.stream;
+      const source = o.build ? cleanBuild(result.stream) : paceChat(result.stream);
       return new Response(sseStream(source, { kind: o.build ? 'build' : 'chat' }), { status: 200, headers: { ...SSE_HEADERS, ...cors } });
     }
   };
+}
+
+/** `||` turn pacing for /chat replies the model didn't pace (./pace, POLISH2 C4). */
+export async function* paceChat(src: AsyncIterable<string>): AsyncGenerator<string> {
+  const p = createPacer();
+  try {
+    for await (const piece of src) {
+      const out = p.push(piece);
+      if (out) yield out;
+    }
+  } catch (e) {
+    // the upstream died mid-reply: what was said so far still goes out, then the error
+    const rest = p.end();
+    if (rest) yield rest;
+    throw e;
+  }
+  const rest = p.end();
+  if (rest) yield rest;
 }
 
 /** Fence stripping + a hard output cap for /build. */

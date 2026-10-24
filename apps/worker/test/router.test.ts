@@ -38,7 +38,8 @@ describe('router', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/event-stream');
     expect(res.headers.get('access-control-allow-origin')).toBe('https://yoyo.example');
-    expect(await events(res)).toEqual([{ type: 'token', text: '[[become:cu' }, { type: 'token', text: 'rls]] Yoav' }, { type: 'token', text: ' Zrihan.' }, { type: 'done' }]);
+    // the pacer (POLISH2 C4) lets the leading tag through at once and holds a short reply to its end
+    expect(await events(res)).toEqual([{ type: 'token', text: '[[become:curls]] ' }, { type: 'token', text: 'Yoav Zrihan.' }, { type: 'done' }]);
 
     const g = calls[0]!;
     expect(g.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse');

@@ -7,12 +7,14 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const client = join(root, 'apps', 'web', 'src', 'agent', 'client');
 const content = join(root, 'apps', 'web', 'src', 'content');
+const workerPace = join(root, 'apps', 'worker', 'src', 'pace.ts');
 
 const ENTRY = `
 export { classify, rankIntents, captureName } from './intents';
 export { scriptedReply, replyFor, withRestingLine, ADDED_LINES, RESTING_LINE } from './scripted';
 export { paceReply, countWords, TURN_MAX_WORDS, AUTO_PACE_WORDS } from './pace';
 export { createTurnSplitter } from './turns';
+export { paceReply as workerPaceReply } from ${JSON.stringify(workerPace)};
 export { EXTRA_INTENTS } from './extras';
 export { FAQ_INTENTS, FAQ_UNKNOWN, EMOJI_BEATS } from './faq';
 export { extractActions, createTagStream } from './tags';

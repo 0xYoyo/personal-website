@@ -4,7 +4,7 @@ The mind behind the site: a Cloudflare Worker that streams model replies in Yoyo
 
 | Route | What it does |
 |---|---|
-| `POST /chat` | body `ChatRequest` `{messages:[{role:'visitor'\|'agent', text}], visitor:{name?, returning, device:'desktop'\|'mobile', lang?}}` → SSE `data: {"type":"token","text":"..."}` … `data: {"type":"done"}` |
+| `POST /chat` | body `ChatRequest` `{messages:[{role:'visitor'\|'agent', text}], visitor:{name?, returning, device:'desktop'\|'mobile', lang?}}` → SSE `data: {"type":"token","text":"..."}` … `data: {"type":"done"}`. Replies are paced into turns with `\|\|` (`src/pace.ts`): a reply over 32 words that the model didn't pace gets them at sentence boundaries, and a turn over 22 words is split at its sentences |
 | `POST /build` | body `BuildRequest` `{instruction, previousHtml?}` → SSE of raw HTML chunks `data: {"type":"chunk","html":"<html…"}` … `data: {"type":"done","bytes":N}` |
 | `POST /share` | body `{html}` (≤ 60 kB) → `{id, url}`; stored in KV `SHARES` for 30 days |
 | `GET /s/:id` | the shared HTML, under `Content-Security-Policy: sandbox allow-scripts; default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:` |
