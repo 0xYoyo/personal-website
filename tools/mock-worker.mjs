@@ -7,7 +7,9 @@
 //
 // Same endpoints and wire format as apps/worker (the @yoyo/protocol ChatEvent / BuildEvent framing):
 //   POST /chat  → SSE data: {"type":"token","text":"..."} … data: {"type":"done"}   (the scripted brain's replies, as a live model would give them; live-like timing)
-//   POST /build → SSE data: {"type":"chunk","html":"<html>"} … data: {"type":"done","bytes":N}  (6 prebuilt apps, ~15 s)
+//   POST /build → SSE data: {"type":"chunk","html":"<html>"} … data: {"type":"done","bytes":N}  (6 prebuilt apps, ~15 s;
+//                 with previousHtml — "Change it" — the page being changed, really changed: dark/light,
+//                 an accent color, else a visible note; tools/lib/change-html.mjs)
 //   POST /share → {id, url}      GET /s/:id → HTML under the sandbox CSP      GET /health
 //
 // Failure modes for QA (the client's fallback paths):
@@ -25,6 +27,7 @@ import { dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import { loadAgent } from './lib/agent-bundle.mjs';
+import { changeHtml } from './lib/change-html.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -92,6 +95,23 @@ export function mockReply(text, visitor = {}, history = []) {
   const reply = AGENT.scriptedReply(raw, { name, lastShown: lastShownIn(history), random: () => 0 }).raw;
   if (c.kind === 'spell' || (c.kind === 'spell-my-name' && name)) return `${reply} [[chips:Now a rocket|Build me something|Who is Yoyo?]]`;
   return reply;
+}
+
+const titleOf = (html) => /<title>([^<]*)<\/title>/i.exec(html ?? '')?.[1]?.trim() ?? '';
+
+/**
+ * What a build streams. A change ("Change it": previousHtml) that names a different app gets that
+ * app; any other change gets the page being changed, changed (POLISH2 C3). A new build: the
+ * scripted brain's keyword rules, else rotate.
+ */
+export function buildFor(instruction, previousHtml) {
+  const id = AGENT.pickExampleId(String(instruction ?? ''));
+  const named = id ? EXAMPLES.find((e) => e.id === id) : null;
+  if (previousHtml) {
+    if (named && titleOf(named.html) !== titleOf(previousHtml)) return { id: named.id, html: named.html };
+    return { id: 'change', html: changeHtml(previousHtml, instruction) };
+  }
+  return pickExample(instruction);
 }
 
 /** The example a build instruction gets: the scripted brain's keyword rules, else rotate. */
@@ -217,7 +237,7 @@ async function handleBuild(req, res, fail) {
   if (!instruction) return sendJson(req, res, 400, { reason: 'bad_request' });
   if ([...instruction].length > 400) return sendJson(req, res, 400, { reason: 'too_long' });
   if (await failMaybe(fail, req, res)) return;
-  const ex = pickExample(instruction, typeof body?.previousHtml === 'string' ? body.previousHtml : undefined);
+  const ex = buildFor(instruction, typeof body?.previousHtml === 'string' && body.previousHtml.trim() ? body.previousHtml : undefined);
   sseHead(req, res);
   let closed = false;
   req.on('close', () => (closed = true));

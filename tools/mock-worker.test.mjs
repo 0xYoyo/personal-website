@@ -97,3 +97,36 @@ test('input caps', async () => {
   assert.equal((await post('/chat', { messages: [{ role: 'visitor', text: 'x'.repeat(601) }] })).status, 400);
   assert.equal((await post('/build', { instruction: 'x'.repeat(401) })).status, 400);
 });
+
+test('"Change it" really changes the page (POLISH2 C3)', async () => {
+  const { changeHtml, planChange } = await import('./lib/change-html.mjs');
+  const first = await sse(await post('/build', { instruction: 'a todo app' }));
+  const todo = first.filter((e) => e.type === 'chunk').map((e) => e.html).join('');
+  assert.match(todo, /<title>Today<\/title>/);
+
+  const changed = async (instruction, previousHtml = todo) =>
+    (await sse(await post('/build', { instruction, previousHtml }))).filter((e) => e.type === 'chunk').map((e) => e.html).join('');
+
+  // dark: the page's own dark palette, forced on
+  const dark = await changed('make it dark');
+  assert.notEqual(dark, todo);
+  assert.match(dark, /<style data-mock-change>:root \{ --bg: #121110;[^<]*color-scheme: dark;/);
+  assert.ok(dark.indexOf('data-mock-change') < dark.indexOf('</head>'));
+  // and back
+  const light = changeHtml(dark, 'now light mode');
+  assert.match(light.split('data-mock-change').at(-1), /--bg: #f6f4ef;[^<]*color-scheme: light;/);
+  // an accent
+  assert.match(changeHtml(todo, 'make it green'), /--accent: #1f8a5b;/);
+  assert.equal(planChange('make it blue').kind, 'accent');
+  assert.notEqual(planChange('make it blue').value, '#2b4bff');
+  // anything else: a visible note, escaped
+  const note = await changed('add <b>confetti</b>');
+  assert.match(note, /<div data-mock-note role="status">changed: add &lt;b&gt;confetti&lt;\/b&gt;<\/div>\n<\/body>/);
+  // a change naming another app gets that app
+  assert.match(await changed('turn it into a weather card'), /<title>Weather<\/title>/);
+  // still the same app when it names itself
+  const { buildFor } = await import('./mock-worker.mjs');
+  assert.equal(buildFor('make the todo list dark', todo).id, 'change');
+  // changes stack, and the html always differs
+  assert.notEqual(changeHtml(dark, 'make it dark'), dark);
+});
