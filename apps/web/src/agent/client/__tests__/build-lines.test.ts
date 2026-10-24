@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { GLYPH_IDS } from '@yoyo/protocol';
 import { createBrain, type BrainEvent, type BrainOptions } from '../brain';
-import { CHANGE_RESTING_LINE, EXAMPLE_DONE_LINE, liveDoneLine } from '../lines';
+import { CHANGE_RESTING_LINE, CHANGE_SAME_LINE, EXAMPLE_DONE_LINE, liveDoneLine } from '../lines';
 import { pickExampleId } from '../pick-example';
-import { ZERO_TIMING } from '../timing';
+import { DEFAULT_TIMING, ZERO_TIMING } from '../timing';
 import { MemStorage, json, mockFetch, recorder, sseResponse, type Handler } from './helpers';
 
 // POLISH1 C1 (scripted builds honor the instruction, honest done lines) and C5 (accept before "on it.").
@@ -94,16 +94,35 @@ describe('scripted builds', () => {
     expect(rec.actions().find((a) => a.type === 'build')).toEqual({ type: 'build', instruction: 'example' });
   });
 
-  it('"Change it" in scripted mode says so first, and keeps the app being changed when the change names none', async () => {
-    const { brain, rec } = make(() => json(502, {}), { agentUrl: '' });
+  it('"Change it" in scripted mode: the notice, its read time, then the closest example', async () => {
+    const { brain, rec } = make(() => json(502, {}), { agentUrl: '', timing: { ...FAST, readPerWordMs: 1, readMinMs: 30 } });
     await brain.build('a habit tracker');
     const prev = last(rec.events, 'buildDone')!.html;
     rec.clear();
-    await brain.build('make it blue', prev);
-    expect(rec.events.find((e) => e.type === 'buildStart')).toEqual({ type: 'buildStart', mode: 'scripted', example: 'habits', notice: CHANGE_RESTING_LINE });
-    rec.clear();
+    const t0 = Date.now();
     await brain.build('turn it into a weather card', prev);
+    expect(rec.types().filter((t) => t.startsWith('build')).slice(0, 2)).toEqual(['buildNotice', 'buildStart']);
+    expect(rec.events[0]).toEqual({ type: 'buildNotice', text: CHANGE_RESTING_LINE });
+    expect(rec.events[1]).toEqual({ type: 'buildStart', mode: 'scripted', example: 'weather' });
     expect(last(rec.events, 'buildDone')?.example).toBe('weather');
+    // the notice's read time (≥ readMinMs) passed before the example started
+    expect(Date.now() - t0).toBeGreaterThanOrEqual(30);
+  });
+
+  it('"Change it" in scripted mode whose closest is the same example: says it stays, streams nothing', async () => {
+    const { brain, rec } = make(() => json(502, {}), { agentUrl: '' });
+    await brain.build('a habit tracker');
+    const prev = last(rec.events, 'buildDone')!.html;
+    const builds = brain.memory.builds.length;
+    rec.clear();
+    await brain.build('make it blue', prev);
+    expect(rec.types()).toEqual(['buildDone']);
+    expect(rec.events[0]).toMatchObject({ type: 'buildDone', html: prev, example: 'habits', line: CHANGE_SAME_LINE, unchanged: true });
+    expect(brain.memory.builds.length).toBe(builds);
+  });
+
+  it('examples stream in ≤ 8 s at real timing', () => {
+    expect(DEFAULT_TIMING.buildFirstChunkMs * (1 + DEFAULT_TIMING.jitter) + DEFAULT_TIMING.buildTotalMs).toBeLessThanOrEqual(8_000);
   });
 });
 

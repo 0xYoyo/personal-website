@@ -12,10 +12,20 @@
 //     start the next one. It is never called before the first word, after the last one, or twice in
 //     a row. The last turn ends when the promise resolves (`Reply.turns` has them all).
 //   - Turns come from `||` in the reply text (faq.md, the live persona); the marks never reach
-//     `onWord`. A live reply over 32 words without any gets turns at sentence boundaries. The
-//     scripted "resting" line is always a turn of its own.
+//     `onWord`. A live reply over 32 words without any gets turns at sentence boundaries, and a
+//     turn over 22 words is split evenly at its sentences. The scripted "resting" line is always a
+//     turn of its own.
 //   - Actions arrive as soon as their tag closes (`onAction`), between the words around it.
 //   - A shell without `onTurn` still gets every word, in order (just no boundaries); feature-detect.
+//
+// ── Builds (POLISH2 C2) ──────────────────────────────────────────────────────────────────────
+// `build()` reports: [`onNotice`] → `onAccepted` → `onChunk`… → resolves with `line`.
+//   - `onNotice` only for a scripted "Change it" (the live builder is resting, here's the closest);
+//     the brain waits the line's read time (300 ms a word, ≥ 2.2 s) before `onAccepted`.
+//   - `onAccepted` = the example starts streaming / the Worker took the build: say `on it.` there.
+//   - Examples stream in ≤ 8 s (they're local); live takes as long as it takes.
+//   - When the closest example *is* the one on screen, nothing streams: no notice, no `onAccepted`,
+//     the promise resolves with the same html, `unchanged: true` and that line as `line`.
 import type { Action, ProjectId, StoryId } from '@yoyo/protocol';
 
 export interface ReplyHandlers {
@@ -52,7 +62,10 @@ export interface BuildHandlers {
    * rejects with `cap`), example → it starts streaming. Say `on it.` here, not before.
    */
   onAccepted?(source: 'live' | 'example'): void;
-  /** A line to say before the build streams (scripted "Change it": the live builder can't change this one). */
+  /**
+   * A line to say before the build streams (scripted "Change it": the live builder can't change
+   * this one). Its read time passes before `onAccepted`, so say it in full, then "on it.".
+   */
   onNotice?(text: string): void;
 }
 
@@ -67,6 +80,12 @@ export interface BuildResult {
    * in about 15 seconds.` (never claims seconds); live: the real elapsed time, `14 seconds. Want changes?`.
    */
   line: string;
+  /**
+   * Scripted "Change it" whose closest example is the one already on screen: nothing streamed
+   * (no `onAccepted`, no chunks), `html` is that same page, `line` is
+   * `the live builder is resting, so this one stays as it is.` Don't count it as a new build.
+   */
+  unchanged?: boolean;
 }
 
 export type BrainErrorReason = 'cap' | 'aborted' | 'failed';

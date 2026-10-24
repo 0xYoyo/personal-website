@@ -17,7 +17,7 @@ export { EXTRA_INTENTS } from './extras';
 export { FAQ_INTENTS, FAQ_UNKNOWN, EMOJI_BEATS } from './faq';
 export { extractActions, createTagStream } from './tags';
 export { pickExampleId, EXAMPLE_RULES } from './pick-example';
-export { EXAMPLE_DONE_LINE, CHANGE_RESTING_LINE, liveDoneLine } from './lines';
+export { EXAMPLE_DONE_LINE, CHANGE_RESTING_LINE, CHANGE_SAME_LINE, liveDoneLine } from './lines';
 export * as chips from ${JSON.stringify(join(content, 'chips.ts'))};
 export { GLYPH_IDS, PROJECT_IDS, STORY_IDS } from '@yoyo/protocol';
 `;

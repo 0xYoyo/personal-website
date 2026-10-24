@@ -7,5 +7,8 @@ export const EXAMPLE_DONE_LINE = 'made earlier. the live builder does this in ab
 /** "Change it" while the live builder is unavailable: said when the substitute example starts. */
 export const CHANGE_RESTING_LINE = "the live builder is resting, so I can't change this one — here's the closest I have.";
 
+/** "Change it" while the live builder is unavailable, when the closest example is the one on screen: nothing re-streams. */
+export const CHANGE_SAME_LINE = 'the live builder is resting, so this one stays as it is.';
+
 /** Done line for a live build: the real elapsed time (SPEC §2.6 `14 seconds. Want changes?`). */
 export const liveDoneLine = (ms: number): string => `${Math.max(1, Math.round(ms / 1000))} seconds. Want changes?`;

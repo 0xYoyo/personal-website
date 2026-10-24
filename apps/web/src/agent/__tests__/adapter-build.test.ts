@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Action } from '@yoyo/protocol';
 import { createBrain } from '..';
-import { CHANGE_RESTING_LINE, EXAMPLE_DONE_LINE } from '../client/lines';
+import { CHANGE_RESTING_LINE, CHANGE_SAME_LINE, EXAMPLE_DONE_LINE } from '../client/lines';
 
 // The shell adapter's build surface (POLISH1 C1, C5), scripted mode with timings × 0.0005.
 describe('adapter: builds', () => {
@@ -22,14 +22,32 @@ describe('adapter: builds', () => {
     expect(res.title).toBe('Today');
   });
 
-  it('"Change it" with the live builder resting: the notice, then the closest example', async () => {
+  it('"Change it" with the live builder resting: the notice in full, then "on it.", then the closest example', async () => {
     const brain = createBrain({ speed: 0.0005 });
     const first = await brain.build('a habit tracker');
-    const notices: string[] = [];
-    const res = await brain.build('make it blue', { onNotice: (t) => notices.push(t) }, { previousHtml: first.html });
-    expect(notices).toEqual([CHANGE_RESTING_LINE]);
-    expect(res.html).toBe(first.html);
+    const order: string[] = [];
+    const res = await brain.build(
+      'turn it into a todo list',
+      { onNotice: (t) => order.push(`notice:${t}`), onAccepted: (s) => order.push(`accepted:${s}`), onChunk: () => order.at(-1) !== 'chunk' && order.push('chunk') },
+      { previousHtml: first.html },
+    );
+    expect(order).toEqual([`notice:${CHANGE_RESTING_LINE}`, 'accepted:example', 'chunk']);
+    expect(res.title).toBe('Today');
     expect(res.line).toBe(EXAMPLE_DONE_LINE);
+    expect(res.unchanged).toBeUndefined();
+  });
+
+  it('"Change it" with the live builder resting, when the closest is the same app: it stays, nothing streams', async () => {
+    const brain = createBrain({ speed: 0.0005 });
+    const first = await brain.build('a habit tracker');
+    const calls: string[] = [];
+    const res = await brain.build(
+      'make it blue',
+      { onNotice: () => calls.push('notice'), onAccepted: () => calls.push('accepted'), onChunk: () => calls.push('chunk') },
+      { previousHtml: first.html },
+    );
+    expect(calls).toEqual([]);
+    expect(res).toMatchObject({ html: first.html, unchanged: true, line: CHANGE_SAME_LINE, source: 'example' });
   });
 
   it('a live reply that hands off a build drops its "on it." (the shell says it on accept)', async () => {

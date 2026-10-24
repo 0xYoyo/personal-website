@@ -10,9 +10,9 @@ import { shareHtml, type ShareResult } from './share';
 import { createTagStream } from './tags';
 import { createPacer, paceReply } from './pace';
 import { createTurnSplitter } from './turns';
-import { CHANGE_RESTING_LINE, EXAMPLE_DONE_LINE, liveDoneLine } from './lines';
+import { CHANGE_RESTING_LINE, CHANGE_SAME_LINE, EXAMPLE_DONE_LINE, liveDoneLine } from './lines';
 import { pickExampleId } from './pick-example';
-import { AbortedError, DEFAULT_TIMING, jittered, sleep, tokensIn, type Timing } from './timing';
+import { AbortedError, DEFAULT_TIMING, jittered, readMs, sleep, tokensIn, type Timing } from './timing';
 
 export type BrainMode = 'live' | 'scripted';
 
@@ -29,19 +29,28 @@ export type BrainEvent =
   | { type: 'action'; action: Action }
   | { type: 'end'; mode: BrainMode }
   /**
-   * Emitted once when a build is accepted: live → the Worker answered 200 (so a 429 never
-   * gets an "on it." first); scripted → the example starts. `notice` is a line to say first
-   * (scripted "Change it": the live builder can't change this one).
+   * A line to say before the build (scripted "Change it": the live builder can't change this one,
+   * here's the closest). The brain waits its read time (Timing.readPerWordMs / readMinMs) before
+   * `buildStart`, so the line completes before "on it." (POLISH2 C2).
    */
-  | { type: 'buildStart'; mode: BrainMode; example?: string; notice?: string }
+  | { type: 'buildNotice'; text: string }
+  /**
+   * Emitted once when a build is accepted: live → the Worker answered 200 (so a 429 never
+   * gets an "on it." first); scripted → the example starts streaming (its first chunk follows).
+   */
+  | { type: 'buildStart'; mode: BrainMode; example?: string }
   /**
    * `html` is everything received so far; `chunk` the new bytes; `expected` the byte total the
    * progress is measured against (exact for examples; live: max(8 kB, the previous build's size));
    * `progress` = bytes / expected, clamped to 0.95 until done when live.
    */
   | { type: 'buildChunk'; html: string; chunk: string; progress: number; expected: number }
-  /** `line` is what the agent says at the end (examples never claim seconds; live reports the real time). */
-  | { type: 'buildDone'; html: string; ms: number; mode: BrainMode; example?: string; line: string }
+  /**
+   * `line` is what the agent says at the end (examples never claim seconds; live reports the real time).
+   * `unchanged`: scripted "Change it" whose closest example is the one on screen — no buildStart,
+   * no chunks; `html` is that same page and `line` says it stays as it is.
+   */
+  | { type: 'buildDone'; html: string; ms: number; mode: BrainMode; example?: string; line: string; unchanged?: boolean }
   | { type: 'error'; reason: BrainErrorReason };
 
 export type BrainErrorReason = 'rate' | 'aborted' | 'too_long' | 'build_failed';
@@ -380,9 +389,18 @@ export function createBrain(opts: BrainOptions): Brain {
     const id = instruction === 'example' ? null : pickExampleId(instruction) ?? prevId();
     let ex = id ? EXAMPLES.find((e) => e.id === id) : undefined;
     ex ??= EXAMPLES[state.nextExampleIndex(EXAMPLES.length)]!;
-    emit({ type: 'buildStart', mode: 'scripted', example: ex.id, ...(previousHtml ? { notice: CHANGE_RESTING_LINE } : {}) });
+    if (previousHtml !== undefined && ex.html === previousHtml) {
+      // the closest is what's already on screen: say so, don't re-stream it (POLISH2 C2)
+      emit({ type: 'buildDone', html: ex.html, ms: now() - t0, mode: 'scripted', example: ex.id, line: CHANGE_SAME_LINE, unchanged: true });
+      return;
+    }
+    if (previousHtml !== undefined) {
+      emit({ type: 'buildNotice', text: CHANGE_RESTING_LINE });
+      await sleep(readMs(CHANGE_RESTING_LINE, timing), signal);
+    }
     const html = ex.html;
     await sleep(jittered(timing.buildFirstChunkMs, timing.jitter, random), signal);
+    emit({ type: 'buildStart', mode: 'scripted', example: ex.id });
     const ticks = Math.max(1, Math.round((timing.buildTotalMs - timing.buildFirstChunkMs) / Math.max(1, timing.buildTickMs)));
     const size = Math.ceil(html.length / ticks);
     let sent = 0;

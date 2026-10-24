@@ -101,8 +101,10 @@ export function createBrain(opts: BrainOptions = {}): Brain {
         // the client also ends a superseded turn; only the started one counts
         if (chat?.started) chat.mode = e.mode;
         break;
+      case 'buildNotice':
+        build?.h.onNotice?.(e.text);
+        break;
       case 'buildStart':
-        if (e.notice) build?.h.onNotice?.(e.notice);
         build?.h.onAccepted?.(e.mode === 'live' ? 'live' : 'example');
         break;
       case 'buildChunk':
@@ -116,6 +118,7 @@ export function createBrain(opts: BrainOptions = {}): Brain {
           title: titleOf(e.html, build.instruction),
           source: e.mode === 'live' ? 'live' : 'example',
           line: e.line,
+          ...(e.unchanged ? { unchanged: true } : {}),
         });
         build = null;
         break;
