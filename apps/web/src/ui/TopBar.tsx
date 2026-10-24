@@ -7,6 +7,8 @@ export function TopBar({ voiceSupported }: { voiceSupported: boolean }) {
   const sound = useStore((s) => s.sound);
   const voice = useStore((s) => s.voice);
   const phase = useStore((s) => s.phase);
+  // mobile: History lives here, never under the words (POLISH2 A6); desktop keeps it under the conversation
+  const history = useStore((s) => s.lines.length > 2 && !s.runner);
 
   return (
     <header className="y-top" data-ready={phase === 'ready'}>
@@ -29,6 +31,11 @@ export function TopBar({ voiceSupported }: { voiceSupported: boolean }) {
         {voiceSupported && (
           <button className="y-textbtn" aria-pressed={voice} onClick={() => ctl.setVoice(!voice)}>
             {copy.menu.voice}
+          </button>
+        )}
+        {history && (
+          <button className="y-textbtn y-menu-history" aria-current={overlay === 'history'} onClick={() => ctl.history()}>
+            {copy.history.open}
           </button>
         )}
       </nav>

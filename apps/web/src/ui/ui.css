@@ -67,6 +67,10 @@
 .y-menu .y-textbtn {
   font-size: var(--t-mono-s);
 }
+/* History in the top bar is the mobile one (POLISH2 A6) */
+.y-menu .y-menu-history {
+  display: none;
+}
 
 /* ---------------------------------------------------------- conversation */
 
@@ -1020,6 +1024,9 @@
     font-size: 12.5px;
     padding: 6px 0;
   }
+  .y-menu .y-menu-history {
+    display: inline-block;
+  }
   .y-wordmark {
     font-size: 18px;
   }
@@ -1060,9 +1067,9 @@
     text-align: left;
     margin-top: 16px;
   }
+  /* History sits in the top bar on mobile (POLISH2 A6) */
   .y-history-toggle {
-    display: block;
-    margin: 10px auto 0;
+    display: none;
   }
   .y-entry-name {
     top: calc(44vh + 70px);
