@@ -1128,6 +1128,13 @@
   .y-bar {
     padding-left: 16px;
   }
+  /* the one static placeholder is longer than the field beside the mic and Send: it wraps, never runs under them */
+  .y-bar-ph {
+    right: 0;
+    white-space: normal;
+    font-size: var(--t-mono-xs);
+    line-height: 1.3;
+  }
 
   .y-card-wrap {
     inset: var(--top-h) 0 0 0;

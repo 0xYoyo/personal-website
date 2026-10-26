@@ -22,6 +22,11 @@ export function Chips() {
   useLayoutEffect(() => {
     const el = row.current;
     if (!el) return;
+    // a short row (three chips or fewer) wraps centred on a phone — unless that would take more than two
+    // lines, when it scrolls like any other row (WAVE3 S5); decided once per row, so it can't flip-flop
+    el.dataset.few = String(chips.length <= 3);
+    const first = el.firstElementChild as HTMLElement | null;
+    if (chips.length <= 3 && first && el.offsetHeight > first.offsetHeight * 2 + 24) el.dataset.few = 'false';
     const update = () => {
       const can = el.scrollWidth > el.clientWidth + 1;
       setScrollable(can);
@@ -35,7 +40,7 @@ export function Chips() {
       el.removeEventListener('scroll', update);
       ro.disconnect();
     };
-  }, [key]);
+  }, [key, chips.length]);
 
   return (
     <nav className="y-chips" data-hidden={hide || !chips.length} aria-label="suggestions">
@@ -44,7 +49,6 @@ export function Chips() {
         className="y-chips-row"
         key={key}
         ref={row}
-        data-few={chips.length <= 3}
         {...(scrollable && !hide ? { tabIndex: 0, role: 'group', 'aria-label': copy.chips.scrollLabel } : {})}
       >
         {chips.map((c, i) => (
