@@ -82,7 +82,7 @@ export function mockReply(text, visitor = {}, history = []) {
   const name = typeof visitor.name === 'string' && visitor.name ? tagSafe(visitor.name) : null;
   if (c.kind === 'name') {
     const n = tagSafe(c.name);
-    return `[[become:${n}]] nice to meet you, ${n}. [[chips:Spell my name|Build me something|Who is Yoyo?]]`;
+    return `[[become:${n}]] nice to meet you, ${n}. [[chips:Spell my name|Build me something|Who are you?]]`;
   }
   if (c.kind === 'emoji') {
     return `[[become:${tagSafe(c.emoji)}]] ${c.emoji === '🚀' ? '[[mood:excited]] ' : ''}${AGENT.EMOJI_BEATS[0] ?? 'obviously.'}`;
@@ -93,7 +93,7 @@ export function mockReply(text, visitor = {}, history = []) {
   }
   if (c.kind === 'command' && c.id === 'another-build') return '[[build:another small app, different from the last one]] on it.';
   const reply = AGENT.scriptedReply(raw, { name, lastShown: lastShownIn(history), random: () => 0 }).raw;
-  if (c.kind === 'spell' || (c.kind === 'spell-my-name' && name)) return `${reply} [[chips:Now a rocket|Build me something|Who is Yoyo?]]`;
+  if (c.kind === 'spell' || (c.kind === 'spell-my-name' && name)) return `${reply} [[chips:Now a rocket|Build me something|Who are you?]]`;
   return reply;
 }
 
