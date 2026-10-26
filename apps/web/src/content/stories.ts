@@ -1,10 +1,10 @@
-// The five stories (SPEC §8.3), verbatim, in his first person. Two lines, two
-// swarm scenes each, timed by `beat()` (shape first, caption 900 ms later, then
-// read time + 600 ms). Shapes that have no glyph id yet (horizon line,
-// chain of squares, sunrise arc) are expressed with the generic ShapeSpec so the
-// engine can render them today; the engine may special-case them later.
+// The two stories (WAVE3 V2), verbatim, in his first person. Two lines each; a
+// line may carry two shapes (the first, then a shape-only step while the caption
+// stays). Timed by `beat()`: shape first, caption 900 ms later, then read time +
+// 600 ms. Reachable by "tell me a story" and the tour's end chips (not the nav).
 import type { StoryId } from '@yoyo/protocol';
-import { beat, seq, type Step } from '../ui/runner/engine';
+import { beat, CAPTION_DELAY, CAPTION_TAIL, READ_MIN, readMs, seq, type Step } from '../ui/runner/engine';
+import { STORY_CHIPS } from './chips';
 
 export interface Story {
   id: StoryId;
@@ -12,40 +12,28 @@ export interface Story {
   steps: Step[];
 }
 
-const after = ['Next story', 'Who is Yoyo?', 'What has he built?', 'How do I reach him?'];
+const STORY_AFTER = STORY_CHIPS;
+
+/** A line whose shape changes halfway: `first` while it lands, then `then` for the rest of its read time. */
+function twoShapes(say: string, first: Step['become'], then: Step['become'], mood?: Step['mood']): Omit<Step, 'at'>[] {
+  const total = CAPTION_DELAY + readMs(say) + CAPTION_TAIL;
+  const split = CAPTION_DELAY + READ_MIN + CAPTION_TAIL;
+  return [
+    beat({ say, become: first, captionHold: split - CAPTION_DELAY, ...(mood ? { mood } : {}) }),
+    beat({ become: then, hold: Math.max(READ_MIN, total - split) }),
+  ];
+}
+
+const FACTORY_1 = 'The day the code it wrote was better than mine, and took a hundredth of the time, I stopped typing.';
+const FACTORY_2 = 'Now I write the spec, agents build, another agent reviews, and I merge. 44 pull requests in four days, once.';
 
 export const stories: Story[] = [
   {
-    id: 'appeal',
-    title: 'The appeal',
+    id: 'factory',
+    title: 'When I stopped typing',
     steps: seq([
-      beat({ say: 'They put me in personnel assignment. I appealed my medical profile to serve in combat.', become: { kind: 'glyph', id: 'shield' }, mood: 'speaking' }),
-      beat({
-        say: "Unit 636, Field Intelligence. Three years. I'd do it again.",
-        // a long horizon line: the lookout
-        become: (vp) =>
-          vp.w <= 720
-            ? { kind: 'frame', rect: { x: vp.w * 0.08, y: vp.h * 0.22, w: vp.w * 0.84, h: 2 } }
-            : // inside the stage (right ~36%), never across the words
-              { kind: 'frame', rect: { x: vp.w * 0.65, y: vp.h * 0.42, w: vp.w * 0.31, h: 2 } },
-        chips: after,
-      }),
-    ]),
-  },
-  {
-    id: '2021',
-    title: '2021',
-    steps: seq([
-      beat({ say: 'I got into crypto in 2021 and never really left.', become: { kind: 'glyph', id: 'btc' }, mood: 'speaking' }),
-      beat({ say: 'Two years later I was advising one of the first Ordinals projects. Early is a habit.', become: { kind: 'text', text: '■-■-■-■' }, chips: after }),
-    ]),
-  },
-  {
-    id: 'odin',
-    title: 'The year of hand-written JavaScript',
-    steps: seq([
-      beat({ say: 'Before AI wrote code, I spent a year writing all of mine. The Odin Project, full time.', become: { kind: 'glyph', id: 'keyboard' }, mood: 'speaking' }),
-      beat({ say: 'Thirty-something small apps. The muscle memory still shows.', become: { kind: 'glyph', id: 'frame' }, chips: after }),
+      ...twoShapes(FACTORY_1, { kind: 'glyph', id: 'keyboard' }, { kind: 'glyph', id: 'cursor' }, 'speaking'),
+      beat({ say: FACTORY_2, become: { kind: 'glyph', id: 'loop' }, chips: STORY_AFTER }),
     ]),
   },
   {
@@ -53,15 +41,11 @@ export const stories: Story[] = [
     title: 'The road',
     steps: seq([
       beat({ say: '2024: most of the year alone in Southeast Asia. Twenty-one commits all year.', become: { kind: 'glyph', id: 'route' }, mood: 'speaking' }),
-      beat({ say: "Best decision I've made. Also why the gap.", become: { kind: 'text', text: '◠' }, chips: after }),
-    ]),
-  },
-  {
-    id: 'this',
-    title: 'This',
-    steps: seq([
-      beat({ say: "I spec'd this site. One model planned it. A swarm of agents built it. I merged.", become: { kind: 'glyph', id: 'wave' }, mood: 'speaking' }),
-      beat({ say: "That's how I work now — and it's getting faster.", become: { kind: 'yoyo3d' }, chips: ['Build me something', 'What has he built?', 'How do I reach him?'] }),
+      beat({
+        say: "Best decision I've made. I came back and built more in a year than in the three before it.",
+        become: { kind: 'text', text: '917' },
+        chips: STORY_AFTER,
+      }),
     ]),
   },
 ];

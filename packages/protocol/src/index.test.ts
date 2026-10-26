@@ -11,7 +11,8 @@ describe('parseActionTag', () => {
     expect(parseActionTag('show:pnl-bot')).toEqual({ type: 'show', project: 'pnl-bot' });
     expect(parseActionTag('play')).toEqual({ type: 'play' });
     expect(parseActionTag('story:next')).toEqual({ type: 'story', id: 'next' });
-    expect(parseActionTag('story:2021')).toEqual({ type: 'story', id: '2021' });
+    expect(parseActionTag('story:factory')).toEqual({ type: 'story', id: 'factory' });
+    expect(parseActionTag('story:2021')).toBeNull();
     expect(parseActionTag('tour')).toEqual({ type: 'tour' });
     expect(parseActionTag('build:a pomodoro timer')).toEqual({ type: 'build', instruction: 'a pomodoro timer' });
     expect(parseActionTag('contact')).toEqual({ type: 'contact' });

@@ -197,13 +197,13 @@ describe('the tour and the stories', () => {
     expect(last.say).toBeUndefined(); // the last caption ("Ask me anything …") rests; nothing is re-said
   });
 
-  it('the tour runs under a minute; stories have two lines each and end with reach-him chips', () => {
+  it('the tour runs under a minute; stories have two lines each and end with reach-me chips', () => {
     expect(duration(tour)).toBeGreaterThan(40_000);
     expect(duration(tour)).toBeLessThan(60_000);
     for (const s of stories) {
       expect(s.steps.filter((x) => x.say).length).toBe(2);
       expect(duration(s.steps)).toBeLessThanOrEqual(16_000);
-      expect(s.steps.at(-1)?.chips).toContain('How do I reach him?');
+      expect(s.steps.at(-1)?.chips).toContain('How do I reach you?');
     }
   });
 });

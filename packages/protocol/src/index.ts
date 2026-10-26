@@ -8,7 +8,7 @@ export type ProjectId = 'prompt-racers'|'unfiltered'|'yoyo-loop'|'runi-connector
 export type GlyphId = 'kart'|'magnifier'|'loop'|'cap'|'tent'|'chart'|'diverge'|'envelope'|'envelope-open'|'keyboard'|'cursor'|'wave'|'frame'|'question'|'shield'|'route'|'btc'|'piano'|'ramp'|'curls'|'heart'|'star'|'check'|'yoyo';
 export type Mood = 'idle'|'listening'|'thinking'|'speaking'|'excited'|'building'|'celebrate'|'asleep';
 export type ShapeSpec = { kind:'text'; text:string } | { kind:'emoji'; emoji:string } | { kind:'glyph'; id:GlyphId } | { kind:'yoyo3d' } | { kind:'frame'; rect:{x:number;y:number;w:number;h:number} } | { kind:'none' };
-export type StoryId = 'appeal'|'2021'|'odin'|'road'|'this';
+export type StoryId = 'factory'|'road';
 export type Action =
   | { type:'become'; shape:ShapeSpec } | { type:'mood'; mood:Mood } | { type:'show'; project:ProjectId }
   | { type:'play' } | { type:'story'; id:StoryId|'next' } | { type:'tour' } | { type:'build'; instruction:string }
@@ -97,7 +97,7 @@ export const MOODS = [
   'idle', 'listening', 'thinking', 'speaking', 'excited', 'building', 'celebrate', 'asleep',
 ] as const satisfies readonly Mood[];
 
-export const STORY_IDS = ['appeal', '2021', 'odin', 'road', 'this'] as const satisfies readonly StoryId[];
+export const STORY_IDS = ['factory', 'road'] as const satisfies readonly StoryId[];
 
 /** Max characters for a `[[become:text]]` (persona.md). */
 export const BECOME_TEXT_MAX = 12;

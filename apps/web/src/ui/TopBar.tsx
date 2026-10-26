@@ -19,9 +19,6 @@ export function TopBar({ voiceSupported }: { voiceSupported: boolean }) {
         <button className="y-textbtn" aria-current={overlay === 'card'} onClick={() => ctl.openProject(useStore.getState().project ?? 'prompt-racers')}>
           {copy.menu.work}
         </button>
-        <button className="y-textbtn" aria-current={overlay === 'stories'} onClick={() => ctl.startAllStories()}>
-          {copy.menu.stories}
-        </button>
         <button className="y-textbtn" aria-current={overlay === 'contact'} onClick={() => ctl.contact()}>
           {copy.menu.contact}
         </button>

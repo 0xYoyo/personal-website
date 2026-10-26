@@ -92,13 +92,13 @@ describe('tag stream', () => {
   });
 
   it('parses every action type from the protocol', () => {
-    const raw = '[[become:🚀]][[mood:thinking]][[show:polybot]][[play]][[story:2021]][[story:next]][[tour]][[build:a timer]][[contact]][[lights:light]][[lights:toggle]][[chips:a|b]]';
+    const raw = '[[become:🚀]][[mood:thinking]][[show:polybot]][[play]][[story:road]][[story:next]][[tour]][[build:a timer]][[contact]][[lights:light]][[lights:toggle]][[chips:a|b]]';
     expect(extractActions(raw, opts).actions).toEqual([
       { type: 'become', shape: { kind: 'emoji', emoji: '🚀' } },
       { type: 'mood', mood: 'thinking' },
       { type: 'show', project: 'polybot' },
       { type: 'play' },
-      { type: 'story', id: '2021' },
+      { type: 'story', id: 'road' },
       { type: 'story', id: 'next' },
       { type: 'tour' },
       { type: 'build', instruction: 'a timer' },

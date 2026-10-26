@@ -102,11 +102,8 @@ export function rankIntents(text: string, intents: readonly FaqIntent[] = FAQ_IN
 }
 
 const STORY_KEYS: [StoryId, RegExp][] = [
-  ['2021', /\b(2021|crypto|bitcoin|btc|ordinals)\b/],
-  ['road', /\b(road|travel|travelling|traveling|trip|asia|2024|backpacking)\b/],
-  ['appeal', /\b(appeal|army|idf|636|military|combat|unit)\b/],
-  ['odin', /\b(odin|javascript|hand[- ]?written|self[- ]?taught)\b/],
-  ['this', /\b(last|this site|this one|website)\b/],
+  ['factory', /\b(factory|agents?|ai|typing|code|coding|loop)\b/],
+  ['road', /\b(road|travel|travelling|traveling|trip|asia|2024|backpacking|gap)\b/],
 ];
 
 const cap = (w: string) => (/^\p{Ll}/u.test(w) ? w.charAt(0).toUpperCase() + w.slice(1) : w);

@@ -87,10 +87,9 @@ describe('intent matching', () => {
       return c.kind === 'intent' && c.id === 'story' ? c.story ?? 'next' : null;
     };
     expect(story('Tell me a story')).toBe('next');
-    expect(story('Tell me the 2021 story')).toBe('2021');
     expect(story('Tell me the road story')).toBe('road');
-    expect(story('Tell me the last story')).toBe('this');
-    expect(story('tell me the army story')).toBe('appeal');
+    expect(story('tell me the story about the factory')).toBe('factory');
+    expect(story('tell me the army story')).toBe('next');
   });
 
   it('tolerates typos (light fuzzy match)', () => {
