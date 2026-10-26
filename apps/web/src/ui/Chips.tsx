@@ -23,10 +23,12 @@ export function Chips() {
     const el = row.current;
     if (!el) return;
     // a short row (three chips or fewer) wraps centred on a phone — unless that would take more than two
-    // lines, when it scrolls like any other row (WAVE3 S5); decided once per row, so it can't flip-flop
-    el.dataset.few = String(chips.length <= 3);
+    // lines, when it scrolls like any other row (WAVE3 S5); decided once per row, so it can't flip-flop.
+    // Only over the conversation: a build frame (and its controls) is laid out for a one-line row.
+    const few = chips.length <= 3 && (overlay === 'none' || overlay === 'tour');
+    el.dataset.few = String(few);
     const first = el.firstElementChild as HTMLElement | null;
-    if (chips.length <= 3 && first && el.offsetHeight > first.offsetHeight * 2 + 24) el.dataset.few = 'false';
+    if (few && first && el.offsetHeight > first.offsetHeight * 2 + 24) el.dataset.few = 'false';
     const update = () => {
       const can = el.scrollWidth > el.clientWidth + 1;
       setScrollable(can);
@@ -40,7 +42,7 @@ export function Chips() {
       el.removeEventListener('scroll', update);
       ro.disconnect();
     };
-  }, [key, chips.length]);
+  }, [key, chips.length, overlay]);
 
   return (
     <nav className="y-chips" data-hidden={hide || !chips.length} aria-label="suggestions">

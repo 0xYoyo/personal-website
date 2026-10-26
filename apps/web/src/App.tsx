@@ -46,7 +46,7 @@ function stageRect(): Rect {
   return { x, y: 72, w: w - x - 32, h: h - 72 - 190 };
 }
 
-/** `sel`'s box; `inset` > 0 shrinks it (a keep-out inside a frame the swarm outlines). */
+/** `sel`'s box; `inset` > 0 shrinks it (a keep-out inside a frame the swarm outlines), < 0 pads it. */
 const boxOf = (sel: string, inset = 0): Rect | null => {
   const el = document.querySelector(sel);
   if (!el) return null;
@@ -67,9 +67,10 @@ function keepOutRects(restoring = false): Rect[] {
   const shown = restored ? '' : '[data-hidden="false"]';
   const sels: [string, number?][] = [
     ['.y-top'],
-    [`.y-convo${shown} .y-agent`],
-    [`.y-convo${shown} .y-echo`],
-    [`.y-convo${shown} .y-prev[data-room="true"]`],
+    // the words get 8 px of air: a line that runs to the gutter otherwise had dots brushing its last letter
+    [`.y-convo${shown} .y-agent`, -8],
+    [`.y-convo${shown} .y-echo`, -8],
+    [`.y-convo${shown} .y-prev[data-room="true"]`, -8],
     [`.y-chips${shown} .y-chips-row`],
     ['.y-bar-wrap[data-ready="true"] .y-bar'],
   ];
