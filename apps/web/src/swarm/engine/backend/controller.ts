@@ -126,7 +126,14 @@ interface ShowRT {
   gi: Float32Array;
   groups: GroupRT[];
   locals: LocalTargets[];
+  /** the layout the groups were sampled for */
+  layoutKey: string;
 }
+
+const layoutKey = (L: Viewport): string => {
+  const s = L.stage;
+  return `${Math.round(L.w)}x${Math.round(L.h)}:${s ? [s.x, s.y, s.w, s.h].map((v) => Math.round(v)).join(',') : '-'}:${L.lite ? 1 : 0}`;
+};
 
 export interface ControllerHooks {
   upload(a: Targets, b: Targets): void;
@@ -530,7 +537,7 @@ export class Controller {
     this.lastSpec = null;
     this.p.shapeCx = F.cx; this.p.shapeCy = F.cy; this.p.spinOn = 0;
     this.expoTarget = shapeExposure(n, targetArea(all, n), this.vp.w, this.vp.h);
-    this.show = { source, scene: sc, start: this.p.time, counts, trails, assign, gi, groups, locals };
+    this.show = { source, scene: sc, start: this.p.time, counts, trails, assign, gi, groups, locals, layoutKey: layoutKey(L) };
     this.hooks.groups?.(gi);
     this.updateShow(0);
     this.hooks.upload(this.A, this.B);
@@ -541,6 +548,10 @@ export class Controller {
     const S = this.show;
     if (!S) return;
     const L = this.layout();
+    // keep-outs change with every caption word: only a different free stage needs new samples
+    const key = layoutKey(L);
+    if (key === S.layoutKey) return;
+    S.layoutKey = key;
     const locals = await this.sampleScene(S.scene, L);
     if (this.show !== S || !locals) return;
     const B = this.B;
