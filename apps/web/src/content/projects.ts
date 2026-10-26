@@ -37,7 +37,7 @@ export interface Project {
   links: ProjectLink[];
   /** Prompt Racers: the card gets a Play button that opens the game */
   play?: boolean;
-  /** the second shelf's header ("Written by hand, 2022–23"); the card shows it above itself */
+  /** the second shelf's header ("Written by hand"); the card shows it above itself */
   shelf?: string;
   glyph: GlyphId;
   showcase: ShowcaseId;
@@ -62,9 +62,9 @@ export const unfilteredQueries = ['elegant summer wedding dress, not black, unde
 /** Densest 96 hours on Unfiltered (summary.md): 2026-10-03 15:53Z → 10-07 15:24Z */
 export const burst = { prs: 44, issues: 18, start: '2026-10-03', end: '2026-10-07' } as const;
 
-// Order per WAVE3 V4: the 2026 shelf, then "Written by hand, 2022–23" (the card shows `shelf`).
+// Order per WAVE3 V4: the 2026 shelf, then "Written by hand" (the card shows `shelf`).
 /** The second shelf's header (WAVE3 V4). */
-export const HAND_SHELF = 'Written by hand, 2022–23';
+export const HAND_SHELF = 'Written by hand';
 
 export const projects: Project[] = [
   {

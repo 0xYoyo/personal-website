@@ -1,6 +1,7 @@
 // The conductor: the only module that talks to the swarm, the brain, sound and
 // voice. UI components call `ctl.*`; state lives in the zustand store.
 import type { Action, ProjectId, Rect, ShapeSpec, StoryId } from '@yoyo/protocol';
+import { PROJECT_IDS } from '@yoyo/protocol';
 import { BrainError, type Brain, type ReplyHandlers } from './agent';
 import { BUILD_CHIPS, ENTRY_CHIPS, WHO_CHIPS, STORY_CHIPS, projectChips, resolveChip } from './content/chips';
 import { copy } from './content/copy';
@@ -447,8 +448,9 @@ export const ctl = {
     S().setChips(projectChips(id));
   },
   nextProject(dir: 1 | -1) {
-    const cur = S().project ?? 'prompt-racers';
-    ctl.openProject(neighbour(cur, dir).id);
+    const cur = S().project;
+    // no card open yet: "next" starts at the first project (Unfiltered), not a neighbour of it
+    ctl.openProject(cur ? neighbour(cur, dir).id : PROJECT_IDS[0]);
   },
   /** The open card reports its rect; the swarm holds its outline. */
   frameFor(rect: Rect) {

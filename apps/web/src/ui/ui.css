@@ -530,7 +530,7 @@
 .y-card-wrap[data-shelf='true'] {
   padding-top: 32px;
 }
-/* the second shelf's header ("Written by hand, 2022–23"): a tiny mono label just above the card (WAVE3 S3) */
+/* the second shelf's header ("Written by hand"): a tiny mono label just above the card (WAVE3 S3) */
 .y-card-shelf {
   position: absolute;
   left: 4px;
