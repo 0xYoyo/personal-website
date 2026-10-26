@@ -904,8 +904,9 @@ export class Controller {
     p.pointerHole += ((still < 0.5 ? 1 : 0) - p.pointerHole) * (1 - Math.exp(-dt * 3));
     p.pointerR = HOLE_R * (0.8 + 0.2 * p.pointerHole); // a still cursor keeps a slightly smaller hole
     // curious: a still cursor (> CURIOUS_AFTER s) outside the words draws a few particles into a loose orbit
+    // (not during a performed scene: a resting mouse would pull holes in it)
     const inKo = this.keepOut.some((k) => this.ptrX > k.x - 8 && this.ptrX < k.x + k.w + 8 && this.ptrY > k.y - 8 && this.ptrY < k.y + k.h + 8);
-    const curiousOk = p.pointerOn > 0.5 && still > CURIOUS_AFTER && !inKo && !this.reduced && !this.fullFrame && !(this.frame && !this.frame.dim) && this.mood !== 'celebrate' && !(gk > 0);
+    const curiousOk = p.pointerOn > 0.5 && still > CURIOUS_AFTER && !inKo && !this.reduced && !this.fullFrame && !(this.frame && !this.frame.dim) && this.mood !== 'celebrate' && !(gk > 0) && !this.show;
     p.curious += ((curiousOk ? 1 : 0) - p.curious) * (1 - Math.exp(-dt * (curiousOk ? 3.5 : 10)));
     // pulses and bursts
     p.pulse *= Math.exp(-dt * 14);

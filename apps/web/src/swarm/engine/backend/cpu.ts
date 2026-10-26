@@ -349,7 +349,7 @@ export class CpuEngine implements Engine {
       ax += flx * sw; ay += fly * sw;
       // pointer (B2): a soft hole around the cursor, stretched into a short wake behind fast motion; drag along
       // fast motion; a still cursor draws the curious few into a loose orbit
-      let hV = 0, hNx = 0, hNy = 0;
+      let hV = 0, hNx = 0, hNy = 0, hK = 0;
       if (ptrOn && qr < ptrReach + (cu > 0 ? CURIOUS_REACH : 0)) {
         // closest point on the capsule cursor → wake tail; the radius tapers to 60 % at the tail
         const s = Math.min(Math.max((qx * wx + qy * wy) / wl2, 0), 1);
@@ -363,7 +363,7 @@ export class CpuEngine implements Engine {
           ax += nx * k; ay += ny * k;
           // …and an outward velocity proportional to the penetration, applied directly (a cursor crosses a spot
           // in ~50 ms: forces alone under the cruise speed cap cannot open a hole that fast)
-          hV = (R - d) * HOLE_KICK * hk; hNx = nx; hNy = ny;
+          hV = (R - d) * HOLE_KICK * hk; hNx = nx; hNy = ny; hK = hk;
         }
         const fall = Math.exp(-(qr * qr) * fallR2) * fallK * (1 - 0.6 * wEff);
         ax += pvx * fall; ay += pvy * fall;
@@ -384,7 +384,9 @@ export class CpuEngine implements Engine {
       }
       const fk = dt * (1 - p.freeze * 0.97);
       vx += ax * fk; vy += ay * fk; vz += az * fk;
-      if (hV > 0) { const vr = vx * hNx + vy * hNy; if (vr < hV) { const dv = (hV - vr) * Math.min(1, dt * 22); vx += hNx * dv; vy += hNy * dv; } }
+      // (in proportion to the hole's strength: a nearly-off hole — a still cursor over a held shape — must not
+      // cancel the shape's pull, which pinned particles at the hole's rim for good)
+      if (hV > 0) { const vr = vx * hNx + vy * hNy; if (vr < hV) { const dv = (hV - vr) * Math.min(1, dt * 22) * Math.min(1, hK * 4); vx += hNx * dv; vy += hNy * dv; } }
       // agitation waves: cruise speed modulated by a travelling wave → density bands roll through the flock
       {
         const sp0 = Math.max(Math.sqrt(vx * vx + vy * vy + vz * vz), 1e-3);

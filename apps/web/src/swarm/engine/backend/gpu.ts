@@ -770,7 +770,7 @@ export class GpuEngine implements Engine {
       acc.xy.addAssign(fl.xy.mul(min(dist.div(250), 1).mul(wEff).mul(1.8).mul(U.flowAmp)));
       // pointer (B2): a soft hole around the cursor stretched into a short wake behind fast motion (capsule
       // cursor → wake tail, radius tapering to 60 %), drag along fast motion, and the curious orbit
-      const hV = float(0).toVar(), hN = vec2(0).toVar();
+      const hV = float(0).toVar(), hN = vec2(0).toVar(), hK = float(0).toVar();
       If(U.pointerOn.greaterThan(0), () => {
         const wv = vec2(U.wakeX, U.wakeY).sub(vec2(U.pointerX, U.pointerY)).toVar();
         const s = clamp(q.dot(wv).div(max(wv.dot(wv), 1e-6)), 0, 1);
@@ -783,7 +783,7 @@ export class GpuEngine implements Engine {
           const vn = min(v.xy.dot(nrm), 0);
           const hk = U.pointerOn.mul(keep).mul(U.pointerHole.mul(float(1).sub(wEff.mul(0.5))).add(float(1).sub(U.pointerHole).mul(STILL_HOLE).mul(float(1).sub(wEff))));
           acc.xy.addAssign(nrm.mul(t.mul(t).mul(HOLE_PUSH).sub(vn.mul(HOLE_TURN).mul(t))).mul(hk));
-          hV.assign(R.sub(d).mul(HOLE_KICK).mul(hk)); hN.assign(nrm);
+          hV.assign(R.sub(d).mul(HOLE_KICK).mul(hk)); hN.assign(nrm); hK.assign(hk);
         });
         const pv = vec2(U.pointerVx, U.pointerVy);
         const fall = exp(qr.div(U.pointerR.mul(2.2)).pow(2).negate()).mul(min(length(pv).div(900), 1)).mul(4).mul(U.pointerOn).mul(float(1).sub(wEff.mul(0.6)));
@@ -808,7 +808,8 @@ export class GpuEngine implements Engine {
       v.addAssign(acc.mul(U.dt).mul(float(1).sub(U.freeze.mul(0.97))));
       // the hole's direct outward velocity (see cpu.ts)
       const hvr = v.xy.dot(hN);
-      v.xy.addAssign(hN.mul(max(hV.sub(hvr), 0).mul(min(U.dt.mul(22), 1))));
+      // (in proportion to the hole's strength: a nearly-off hole must not cancel a held shape's pull — cpu.ts)
+      v.xy.addAssign(hN.mul(max(hV.sub(hvr), 0).mul(min(U.dt.mul(22), 1)).mul(min(hK.mul(4), 1))));
       // agitation waves: cruise speed modulated by a travelling wave → density bands roll through the flock
       const sp0 = max(length(v), 1e-3);
       const wd = vec2(cos(U.time.mul(0.21)), sin(U.time.mul(0.21)));

@@ -178,4 +178,16 @@ describe('the controller performs a scene (canvas2d simulator)', () => {
     ctrl.release();
     expect(ctrl.groupOf).toBeNull();
   });
+
+  it('a cursor that comes to rest over a held scene leaves no lasting hole (the shape closes again)', async () => {
+    const { ctrl, step, pos, n } = rig(3000);
+    void ctrl.perform({ duration: 9000, groups: [{ shape: rect(0.3, 0.3), share: 1 }] });
+    await flush(); step(2);
+    ctrl.pointer(720, 450, 0, 0); step(0.1); ctrl.pointer(730, 455, 200, 100); step(0.1);
+    step(2.5);
+    const B = ctrl.targets[1].pos, g = ctrl.groupPoses[0]!;
+    let far = 0;
+    for (let i = 0; i < n; i++) if (Math.hypot(pos[i * 4]! - (g.x + B[i * 4]! * g.scale), pos[i * 4 + 1]! - (g.y + B[i * 4 + 1]! * g.scale)) > 25) far++;
+    expect(far).toBe(0);
+  });
 });
