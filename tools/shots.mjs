@@ -176,12 +176,25 @@ const scenarios = {
       await shot(`${label}-mid`);
     }
   },
+  // the show (wave 3): one frame per scene, 1.2 s after its line lands
   async tour(page, shot) {
     await ready(page);
     await ctl(page, 'startTour');
-    await page.waitForFunction(() => window.__yoyo.store.getState().runner?.say === 'Unfiltered', null, { timeout: 60000 });
-    await wait(900);
-    await shot('tour-beat-3');
+    let last = '';
+    let n = 0;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 60000) {
+      const st = await page.evaluate(() => ({ say: window.__yoyo.store.getState().runner?.say ?? null }));
+      if (st.say === null && n) break;
+      if (st.say && st.say !== last) {
+        last = st.say;
+        n++;
+        await wait(1200);
+        await shot(`show-${n}`);
+      }
+      await wait(150);
+    }
+    if (!n) throw new Error('the show never said a line');
   },
   async light(page, shot) {
     await ready(page);
