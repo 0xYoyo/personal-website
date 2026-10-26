@@ -6,16 +6,19 @@ import { isEmojiOnly, type ProjectId, type ShapeSpec } from '@yoyo/protocol';
 
 export type ChipContext = 'entry' | 'who' | 'project' | 'build' | 'story' | 'idle';
 
-export const ENTRY_CHIPS = ['Who is Yoyo?', 'What has he built?', 'Spell my name', 'Build me something', 'Play his game'];
-export const WHO_CHIPS = ['Tell me a story', "What's he bad at?", 'Why should we hire him?', 'How do I reach him?'];
+/** WAVE3: three at the door, in the second person (the site speaks as Yoyo). */
+export const ENTRY_CHIPS = ['Who are you?', 'What have you built?', 'Mirror'];
+export const WHO_CHIPS = ['What are you like?', 'What are you bad at?', 'Why should we hire you?', 'How do I reach you?'];
 /** "Change it" lives in the frame's controls row only (POLISH2 A4). */
-export const BUILD_CHIPS = ['Share it', 'Build another', 'Who made this agent?'];
-export const STORY_CHIPS = ['Next story', 'Who is Yoyo?', 'What has he built?', 'How do I reach him?'];
+export const BUILD_CHIPS = ['Share it', 'Build another', 'How was this made?'];
+export const STORY_CHIPS = ['Next story', 'What have you built?', 'How do I reach you?'];
+/** The tour's end chips (WAVE3 V3). */
+export const TOUR_END_CHIPS = ['Who are you?', 'Mirror', 'Play the game'];
 
 /** Returning visitor with a stored build (POLISH1 A6): reopen it first, then the usual moves. */
 export const openBuildChip = (title: string): string => `Open my ${title}`;
 export const returningChips = (buildTitle?: string): string[] =>
-  buildTitle ? [openBuildChip(buildTitle), 'Who is Yoyo?', 'What has he built?', 'Build me something', 'Play his game'] : ENTRY_CHIPS;
+  buildTitle ? [openBuildChip(buildTitle), ...ENTRY_CHIPS] : ENTRY_CHIPS;
 
 export function projectChips(id: ProjectId): string[] {
   return id === 'prompt-racers'
@@ -77,11 +80,12 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
   if (isEmojiOnly(label)) return { kind: 'say', text: label };
   if (l.startsWith('open my ')) return st.hasStoredBuild ? { kind: 'open-build' } : { kind: 'say', text: 'Build me something' };
   switch (l) {
+    case 'play the game':
     case 'play his game':
     case 'play it':
       return { kind: 'play' };
     case 'next one':
-      return st.project ? { kind: 'next-project' } : { kind: 'say', text: 'What has he built?' };
+      return st.project ? { kind: 'next-project' } : { kind: 'say', text: 'What have you built?' };
     case 'build me something like this':
       return st.project ? { kind: 'build', instruction: BUILD_SEEDS[st.project] } : { kind: 'say', text: 'Build me something' };
     case 'change it':

@@ -5,17 +5,17 @@ const st = { project: null, hasBuild: false } as const;
 
 describe('chips', () => {
   it('defaults by context (SPEC §8.4)', () => {
-    expect(defaultChips('entry')).toEqual(['Who is Yoyo?', 'What has he built?', 'Spell my name', 'Build me something', 'Play his game']);
-    expect(defaultChips('who')).toEqual(['Tell me a story', "What's he bad at?", 'Why should we hire him?', 'How do I reach him?']);
+    expect(defaultChips('entry')).toEqual(['Who are you?', 'What have you built?', 'Mirror']);
+    expect(defaultChips('who')).toEqual(['What are you like?', 'What are you bad at?', 'Why should we hire you?', 'How do I reach you?']);
     expect(projectChips('prompt-racers')).toContain('Play it');
     expect(projectChips('polybot')).not.toContain('Play it');
-    expect(defaultChips('build')).toEqual(['Share it', 'Build another', 'Who made this agent?']);
+    expect(defaultChips('build')).toEqual(['Share it', 'Build another', 'How was this made?']);
   });
 
   it('runs UI commands directly', () => {
-    expect(resolveChip('Play his game', st)).toEqual({ kind: 'play' });
+    expect(resolveChip('Play the game', st)).toEqual({ kind: 'play' });
     expect(resolveChip('Next one', { ...st, project: 'unfiltered' })).toEqual({ kind: 'next-project' });
-    expect(resolveChip('Next one', st)).toEqual({ kind: 'say', text: 'What has he built?' });
+    expect(resolveChip('Next one', st)).toEqual({ kind: 'say', text: 'What have you built?' });
     expect(resolveChip('Build me something like this', { ...st, project: 'polybot' })).toEqual({ kind: 'build', instruction: BUILD_SEEDS.polybot });
     expect(resolveChip('Change it', { ...st, hasBuild: true })).toEqual({ kind: 'change-build' });
     expect(resolveChip('Share it', { ...st, hasBuild: true })).toEqual({ kind: 'share-build' });
@@ -27,7 +27,8 @@ describe('chips', () => {
     expect(resolveChip('Spell my name', { ...st, name: 'Dana' })).toMatchObject({ kind: 'become', shape: { kind: 'text', text: 'Dana' } });
     expect(resolveChip('Spell my name', st)).toEqual({ kind: 'say', text: 'Spell my name' });
     expect(resolveChip('🚀', st)).toEqual({ kind: 'say', text: '🚀' });
-    expect(resolveChip('Who is Yoyo?', st)).toEqual({ kind: 'say', text: 'Who is Yoyo?' });
+    expect(resolveChip('Who are you?', st)).toEqual({ kind: 'say', text: 'Who are you?' });
+    expect(resolveChip('Mirror', st)).toEqual({ kind: 'say', text: 'Mirror' });
   });
 
   it('clamps to 3–5, dedupes, and keeps empty empty', () => {

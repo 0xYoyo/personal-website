@@ -31,7 +31,7 @@ test('/chat streams 4-char tokens of a faq reply, then done', async () => {
   assert.deepEqual(ev.at(-1), { type: 'done' });
   const toks = ev.filter((e) => e.type === 'token');
   const text = toks.map((e) => e.text).join('');
-  assert.ok(text.startsWith('[[become:curls]] Yoav Zrihan.'));
+  assert.ok(text.startsWith("[[become:curls]] I'm Yoyo."));
   assert.ok(toks.every((e) => e.text.length <= 4));
 });
 
@@ -39,19 +39,19 @@ test('replies like the live model for builds, names, emoji', () => {
   assert.equal(mockReply('make me a pomodoro timer'), '[[build:pomodoro timer]] on it.');
   assert.match(mockReply("I'm Dana"), /^\[\[become:Dana\]\] nice to meet you, Dana\./);
   assert.match(mockReply('🚀'), /^\[\[become:🚀\]\] \[\[mood:excited\]\]/);
-  assert.match(mockReply('what has he built?'), /\[\[show:prompt-racers\]\]/);
-  assert.equal(mockReply('do you play fortnite'), '[[become:ramp]] he could build a ramp before you could aim.');
+  assert.match(mockReply('what have you built?'), /\[\[show:unfiltered\]\]/);
+  assert.equal(mockReply('do you play fortnite'), '[[become:ramp]] I could build a ramp before you could aim.');
   assert.equal(mockReply('cs2?'), "[[become:rush B]] rush B. don't stop.");
   assert.equal(mockReply('curls'), "[[become:curls]] yes, they're real.");
-  assert.match(mockReply('what does he look like'), /^\[\[become:curls\]\] Long curly hair/);
+  assert.match(mockReply('what do you look like'), /^\[\[become:curls\]\] Long curly hair/);
 });
 
-test('"How do I reach him?" is the contact reply, not "who" (POLISH1 C2)', () => {
-  assert.equal(mockReply('How do I reach him?'), '[[become:envelope-open]] yoavyoav310@gmail.com. He reads everything. Say you met the agent. [[contact]]');
+test('"How do I reach you?" is the contact reply, not "who" (POLISH1 C2)', () => {
+  assert.equal(mockReply('How do I reach you?'), '[[become:envelope-open]] yoavyoav310@gmail.com. I read everything. [[contact]]');
 });
 
 test('"Next one" walks on from the last card in the conversation', () => {
-  const history = [{ role: 'visitor', text: 'what has he built?' }, { role: 'agent', text: '[[become:kart]] Seven things. [[show:prompt-racers]]' }];
+  const history = [{ role: 'visitor', text: 'what have you built?' }, { role: 'agent', text: '[[become:kart]] Seven things. [[show:prompt-racers]]' }];
   assert.equal(mockReply('Next one', {}, history), '[[show:unfiltered]]');
 });
 

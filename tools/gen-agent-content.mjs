@@ -14,12 +14,18 @@ const sections = md.split(/^## /m).slice(1);
 const intents = [];
 let unknown = null;
 let emojiBeats = [];
+let eggs = {};
 for (const sec of sections) {
   const [head, ...rest] = sec.split('\n');
   const id = head.trim();
   const body = rest.join('\n');
   if (id.startsWith('emoji_beats')) {
     emojiBeats = [...body.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
+    continue;
+  }
+  if (id.startsWith('easter eggs')) {
+    // `word → \`reply\`` pairs; the easter eggs live in agent/client/extras.ts (a test keeps them equal).
+    eggs = Object.fromEntries([...body.matchAll(/([\w-]+)\s*→\s*`([^`]+)`/g)].map((m) => [m[1], m[2]]));
     continue;
   }
   const hintsLine = /^hints:\s*(.+)$/m.exec(body);
@@ -64,6 +70,9 @@ export const FAQ_INTENTS: readonly FaqIntent[] = ${JSON.stringify(intents, null,
 export const FAQ_UNKNOWN = ${JSON.stringify(unknown)};
 
 export const EMOJI_BEATS: readonly string[] = ${JSON.stringify(emojiBeats)};
+
+/** The easter-egg lines from faq.md's last section (served by extras.ts). */
+export const FAQ_EGGS: Readonly<Record<string, string>> = ${JSON.stringify(eggs, null, 2)};
 `,
 );
 

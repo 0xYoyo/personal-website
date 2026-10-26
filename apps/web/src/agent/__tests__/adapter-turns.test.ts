@@ -22,8 +22,8 @@ describe('adapter: turns', () => {
     const r = record();
     const reply = await brain.send('who is yoyo?', r.h);
     expect(reply.turns).toEqual([
-      'Yoav Zrihan. Self-taught, building since 2022. Crypto since 2021. Second-year CS and Entrepreneurship at Reichman.',
-      "He doesn't write most of his code anymore. He directs the agents that do.",
+      "I'm Yoyo. I build software, mostly by directing AI agents, and I've been in crypto since 2021.",
+      'Second year of Computer Science and Entrepreneurship at Reichman. Self-taught before that.',
     ]);
     expect(r.turns()).toEqual(reply.turns);
     expect(r.log[0]).not.toBe('|');
@@ -38,7 +38,7 @@ describe('adapter: turns', () => {
     const reply = await brain.send('who is yoyo?', { onWord: (w) => words.push(w) });
     expect(words.join(' ')).toBe(reply.text);
     expect(words).toContain('Reichman.');
-    expect(words).toContain('He');
+    expect(words).toContain("I'm");
   });
 
   it('live: a turn mark split across tokens; a build hand-off keeps dropping its "on it."', async () => {

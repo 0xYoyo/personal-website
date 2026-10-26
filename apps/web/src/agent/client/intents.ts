@@ -20,7 +20,7 @@ export type Classification =
 /** Hints too common to carry much signal on their own. */
 const GENERIC = new Set([
   'about', 'him', 'guy', 'why', 'when', 'where', 'want', 'you', 'tell me', 'start', 'done', 'made', 'work',
-  'life', 'past', 'fun', 'cool', 'nice', 'call', 'number', 'rate', 'days', 'hours', 'location', 'create',
+  'life', 'past', 'cool', 'nice', 'call', 'number', 'rate', 'days', 'hours', 'location', 'create',
   'app', 'page', 'tool', 'website', 'begin', 'watch', 'options', 'reveal', 'instructions', 'future', 'bright',
 ]);
 
@@ -149,7 +149,9 @@ export function classify(text: string): Classification {
   if (/^(play it|play now|lets play|play the game)$/.test(n)) return { kind: 'command', id: 'play-it' };
   if (/^(next|next one|next project|another one|show me another)$/.test(n)) return { kind: 'command', id: 'next-one' };
   if (/^(now )?a rocket$|^rocket$/.test(n)) return { kind: 'command', id: 'rocket' };
-  if (/^(who|what) are you$|^are you (an? )?(ai|bot|agent|real)$/.test(n)) return { kind: 'intent', id: 'this_site', score: 3 };
+  // WAVE3: the site speaks as Yoyo, so "who are you?" is `who`; "are you an AI?" is how the site works.
+  if (/^who are you$/.test(n)) return { kind: 'intent', id: 'who', score: 3 };
+  if (/^what are you$|^are you (an? )?(ai|bot|agent|real)$/.test(n)) return { kind: 'intent', id: 'this_site', score: 3 };
   if (/^(another example|build another|change it|make another|another build|one more)$/.test(n)) return { kind: 'command', id: 'another-build' };
 
   const spell = /^(?:please\s+)?(spell|write|show|become)\s+(.+?)[.!]*$/i.exec(raw);

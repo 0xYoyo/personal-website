@@ -12,7 +12,7 @@ export interface FaqIntent {
 }
 
 /** The rules paragraph at the top of faq.md (name capture, emoji-only, spell X). */
-export const FAQ_RULES = "# Scripted brain — intents and replies (verbatim; builders convert to `faq.ts`)\n\nFormat: `intent`. A `||` inside a reply is a turn break: the agent says the part before it, lets it rest for its read time, then the next part arrives as a new line (the previous one fades to muted). Each part stays under ~22 words so it reads large.\n\nFormat (cont.): `intent` — trigger keywords/regex hints → reply text with inline actions. The scripted brain picks the best-matching intent (keyword score + fuzzy), falls back to `unknown`. Names: if the visitor says \"I'm X\" / \"my name is X\" / \"call me X\", store X and reply `nice to meet you, X. [[become:X]]`. If the message is only an emoji (or starts with one): `[[become:<emoji>]]` + a short beat from `emoji_beats`. If the message is \"spell X\" / \"write X\" / \"show X\" with a short word: `[[become:X]] done.`";
+export const FAQ_RULES = "# Scripted brain — intents and replies (first person; verbatim)\n\nFormat: `intent` — hints → reply. A `||` is a turn break (each part ≤ 22 words). The site speaks as Yoyo. Names: \"I'm X\" → `nice to meet you, X. [[become:X]]`. Emoji only → `[[become:<emoji>]]` + a beat from `emoji_beats`. \"spell X\" / a single unknown word → `[[become:X]] done.`";
 
 export const FAQ_INTENTS: readonly FaqIntent[] = [
   {
@@ -22,25 +22,25 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "yoyo",
       "yoav",
       "about",
-      "him",
-      "guy",
-      "introduce"
+      "you",
+      "yourself",
+      "introduce",
+      "guy"
     ],
-    "reply": "[[become:curls]] Yoav Zrihan. Self-taught, building since 2022. Crypto since 2021. Second-year CS and Entrepreneurship at Reichman. || He doesn't write most of his code anymore. He directs the agents that do. [[chips:What has he built?|Tell me a story|What's he bad at?|How do I reach him?]]"
+    "reply": "[[become:curls]] I'm Yoyo. I build software, mostly by directing AI agents, and I've been in crypto since 2021. || Second year of Computer Science and Entrepreneurship at Reichman. Self-taught before that. [[chips:What have you built?|What are you like?|How do I reach you?]]"
   },
   {
     "id": "built",
     "hints": [
       "built",
-      "build",
       "shipped",
       "projects",
       "work",
       "portfolio",
       "made",
-      "done"
+      "show me"
     ],
-    "reply": "[[become:kart]] Seven things worth a card. Start with the game — it's real and it's playable here. [[show:prompt-racers]] [[chips:Next one|Play it|Who is Yoyo?]]"
+    "reply": "[[become:magnifier]] A search engine, a kart racer, a software factory, a university connector. Start with the search engine. [[show:unfiltered]] [[chips:Next one|Play the game|Who are you?]]"
   },
   {
     "id": "hire",
@@ -51,9 +51,10 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "reasons",
       "pitch",
       "sell",
-      "convince"
+      "convince",
+      "good at"
     ],
-    "reply": "Three reasons. No adjectives. || He ships: 917 public commits this year, a real game, a published connector, a search engine. || He's early: Solidity in 2022, Ordinals in early 2023, agent factories before they had a name. || And he tells the truth about what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What has he built?|How do I reach him?]]"
+    "reply": "I ship. 917 public commits this year, a real game, a published connector, a search engine. || I'm early. I was writing Solidity in 2022 and running agent factories before they had a name. || And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]"
   },
   {
     "id": "weakness",
@@ -66,25 +67,31 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "struggle",
       "not good"
     ],
-    "reply": "Honest ones. LeetCode-style interviews aren't his strong side. || Distribution is harder for him than building. || And he gets bored when things move slowly. Which is why he built a factory. [[chips:Why should we hire him?|Tell me a story|What has he built?]]"
+    "reply": "LeetCode interviews. I build real things faster than I solve puzzles on a whiteboard. || Distribution. I can build it in a week and then under-sell it for a month. || And I get bored when things move slowly. [[chips:Why should we hire you?|What have you built?]]"
+  },
+  {
+    "id": "like",
+    "hints": [
+      "what are you like",
+      "personality",
+      "character",
+      "describe yourself",
+      "kind of person",
+      "vibe"
+    ],
+    "reply": "Direct. I'd rather hear the number than the reassurance. || Chronically online. If something new ships, I'm already in it. || And I don't think like everyone else, which is either my best trait or my worst, depending who you ask. [[chips:What do you do for fun?|What are you bad at?|What have you built?]]"
   },
   {
     "id": "story",
     "hints": [
       "story",
       "stories",
-      "tell me",
+      "tell me something",
       "background",
       "life",
-      "past",
-      "army",
-      "military",
-      "travel",
-      "2024",
-      "crypto story"
+      "past"
     ],
-    "reply": "[[story:next]]",
-    "note": "(the runner picks the next unseen story; replies are the story lines themselves)"
+    "reply": "[[story:next]]"
   },
   {
     "id": "army",
@@ -93,12 +100,11 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "idf",
       "military",
       "unit",
-      "636",
       "combat",
       "service",
       "soldier"
     ],
-    "reply": "[[story:appeal]]"
+    "reply": "[[become:shield]] Three years, like everyone here. Field Intelligence. || It taught me to stay calm and do the boring part properly. That's it, no speech. [[chips:What have you built?|Who are you?]]"
   },
   {
     "id": "crypto",
@@ -106,14 +112,16 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "crypto",
       "bitcoin",
       "btc",
-      "ordinals",
       "web3",
       "trading",
       "degen",
       "solana",
-      "eth"
+      "eth",
+      "defi",
+      "airdrop",
+      "chain"
     ],
-    "reply": "[[become:btc]] Since 2021. Trading, on-chain research, communities. He advised one of the first Ordinals projects in early 2023. || He still reads the market the way other people read the news. [[chips:Tell me the 2021 story|What has he built?|gm]]"
+    "reply": "[[become:btc]] Since 2021. Trading, DeFi, on-chain research, communities. I know the ecosystem of every major chain the way other people know football tables. || Dumbest thing I did: trade on emotion. Smartest: farm protocols early and get paid for it. [[chips:What have you built?|gm]]"
   },
   {
     "id": "agents",
@@ -127,9 +135,21 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "llm",
       "automation",
       "factory",
-      "loop"
+      "loop",
+      "how do you work"
     ],
-    "reply": "[[become:loop]] He runs a factory. He writes the spec, agents build and open PRs, another agent reviews, and only he merges. || 39% of his public commits are co-authored with an agent. 100% were merged by him. [[show:yoyo-loop]] [[chips:How fast is it?|What has he built?|Who made this agent?]]"
+    "reply": "[[become:loop]] I write the spec. Agents build it in isolated worktrees and open pull requests. Another agent reviews. I merge. || 39% of my public commits are co-authored with an agent. 100% were merged by me. [[show:yoyo-loop]] [[chips:How fast is it?|What have you built?]]"
+  },
+  {
+    "id": "why_agents",
+    "hints": [
+      "why agents",
+      "stop coding",
+      "stopped writing code",
+      "switch",
+      "when did you"
+    ],
+    "reply": "The day the code it wrote was better than mine and took a hundredth of the time. || That's not a story. It's a decision. [[chips:How do you work?|What have you built?]]"
   },
   {
     "id": "fast",
@@ -141,7 +161,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "velocity",
       "burst"
     ],
-    "reply": "In one 96-hour stretch this October: 44 pull requests merged across 18 issues on one codebase. || Median time from open to merge: fifteen minutes. [[show:yoyo-loop]] [[chips:Build me something|What has he built?]]"
+    "reply": "In one 96-hour stretch this October: 44 pull requests merged across 18 issues on one codebase. || Median time from open to merge: fifteen minutes. [[show:yoyo-loop]] [[chips:Build me something|What have you built?]]"
   },
   {
     "id": "game",
@@ -151,10 +171,9 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "kart",
       "racing",
       "racers",
-      "prompt racers",
-      "fun"
+      "prompt racers"
     ],
-    "reply": "[[become:kart]] Prompt Racers. A 3D kart racer that teaches kids prompt engineering. One HTML file, zero network calls. || Seven AI opponents on your physics. Press play. [[show:prompt-racers]] [[chips:Play it|Next one|Who is Yoyo?]]"
+    "reply": "[[become:kart]] Prompt Racers. A kart racer that teaches kids how to talk to AI. One file, zero network calls. || Seven opponents on your physics. Press play. [[show:prompt-racers]] [[chips:Play it|Next one]]"
   },
   {
     "id": "unfiltered",
@@ -165,7 +184,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "product search",
       "engine"
     ],
-    "reply": "[[become:magnifier]] Unfiltered. Type \"elegant summer wedding dress, not black, under ₪400\" in any language and get ranked products. || Paused. No paying merchants, and he judged the engine hadn't cleared his own bar. He'd rather say that than romance it. [[show:unfiltered]]"
+    "reply": "[[become:magnifier]] Unfiltered. Type \"elegant summer wedding dress, not black, under ₪400\" in any language and get the right products. || Paused. No paying merchants, and it hadn't cleared my own bar. I'd rather say that than romance it. [[show:unfiltered]]"
   },
   {
     "id": "connector",
@@ -174,11 +193,11 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "reichman",
       "moodle",
       "runi",
-      "university tool",
       "mcp",
-      "courses"
+      "courses",
+      "university tool"
     ],
-    "reply": "[[become:cap]] An MCP connector. Students ask Claude or ChatGPT \"what's due this week?\" and get a real answer from Moodle, grades, lectures and Piazza. || Published on npm. Installs by double-click. [[show:runi-connector]]"
+    "reply": "[[become:cap]] Students ask Claude or ChatGPT \"what's due this week?\" and get a real answer from Moodle, grades, lectures and Piazza. || Published on npm. Installs by double-click. [[show:runi-connector]]"
   },
   {
     "id": "monitor",
@@ -190,7 +209,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "passover",
       "booking"
     ],
-    "reply": "[[become:tent]] He wanted a room at a sold-out desert hotel for Passover. || So he wrote a monitor that pings Telegram the second one opens. It worked. [[show:availability-monitor]]"
+    "reply": "[[become:tent]] I wanted a room at a sold-out desert hotel. || So I wrote a monitor that pings Telegram the second one opens. Got the room. [[show:availability-monitor]]"
   },
   {
     "id": "pnl",
@@ -201,21 +220,34 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "wallet",
       "profit"
     ],
-    "reply": "[[become:chart]] A Discord bot he hand-wrote in 2023, before AI tools. || Realized and unrealized P&L for a community, across EVM chains, Solana and Bitcoin. [[show:pnl-bot]]"
+    "reply": "[[become:chart]] A Discord bot I wrote by hand in 2023, before AI tools. || Realized and unrealized P&L for a community, across EVM chains, Solana and Bitcoin. [[show:pnl-bot]]"
+  },
+  {
+    "id": "network",
+    "hints": [
+      "yoyo-network",
+      "social network",
+      "rest api",
+      "jwt",
+      "hand-written",
+      "by hand",
+      "odin"
+    ],
+    "reply": "[[become:keyboard]] Before AI wrote code, I wrote all of mine. A year of it, full time. || A social network with its own REST API and auth, a shopping cart, a P&L bot. Small now. Mine then. [[chips:What have you built?|How do you work now?]]"
   },
   {
     "id": "polybot",
     "hints": [
       "polybot",
       "polymarket",
-      "pinnacle",
       "prediction",
       "odds",
       "stopped",
       "failed",
-      "failure"
+      "failure",
+      "didn't work"
     ],
-    "reply": "[[become:diverge]] Polybot watched Polymarket sports prices against a sharp bookmaker's. Clean data, careful design. || He stopped it. The edge wasn't strong enough, and big firms have the latency. || He says it had potential, and he moved on. That's the part worth knowing. [[show:polybot]]"
+    "reply": "[[become:diverge]] Polybot watched Polymarket sports prices against a sharp bookmaker's. Clean data, careful design. || I stopped it. The edge wasn't strong enough and big firms have the latency. || It had potential. I moved on. That's the part worth knowing. [[show:polybot]]"
   },
   {
     "id": "university",
@@ -225,11 +257,10 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "study",
       "student",
       "gpa",
-      "reichman",
       "school",
       "semester"
     ],
-    "reply": "[[become:cap]] Computer Science plus Entrepreneurship at Reichman University. Started October 2025. First-year GPA 89.4. || Semester three of six. Looking for a student role, two to three days a week. [[chips:Why should we hire him?|How do I reach him?]]"
+    "reply": "[[become:cap]] Computer Science plus Entrepreneurship at Reichman. Started October 2025. First-year GPA 89.4. || Semester three of six. Looking for a student role, two to three days a week. [[chips:Why should we hire you?|How do I reach you?]]"
   },
   {
     "id": "availability",
@@ -245,7 +276,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "location",
       "where"
     ],
-    "reply": "Student role, two to three days a week, Israel (near Tel Aviv), hybrid or remote. He can start when you can. [[contact]]"
+    "reply": "Student role, two to three days a week. Near Tel Aviv, hybrid or remote. I can start when you can. [[contact]]"
   },
   {
     "id": "contact",
@@ -253,14 +284,13 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "contact",
       "email",
       "reach",
-      "hire him",
-      "talk to him",
+      "talk to you",
       "linkedin",
       "github",
       "cv",
       "resume"
     ],
-    "reply": "[[become:envelope-open]] yoavyoav310@gmail.com. He reads everything. Say you met the agent. [[contact]]"
+    "reply": "[[become:envelope-open]] yoavyoav310@gmail.com. I read everything. [[contact]]"
   },
   {
     "id": "salary",
@@ -271,7 +301,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "money",
       "compensation"
     ],
-    "reply": "That's a conversation for him, not me. [[contact]]"
+    "reply": "Let's talk about that on a call, not through a swarm. [[contact]]"
   },
   {
     "id": "phone",
@@ -281,7 +311,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "whatsapp",
       "call"
     ],
-    "reply": "not something I give out. email works: yoavyoav310@gmail.com [[contact]]"
+    "reply": "Email first. yoavyoav310@gmail.com [[contact]]"
   },
   {
     "id": "looks",
@@ -293,7 +323,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "face",
       "picture"
     ],
-    "reply": "[[become:curls]] Long curly hair, shoulder length. You'd recognize him. [[chips:Who is Yoyo?|Tell me a story]]"
+    "reply": "[[become:curls]] Long curly hair. You'd recognize me. [[chips:Who are you?|What have you built?]]"
   },
   {
     "id": "hobbies",
@@ -308,9 +338,33 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "games",
       "music",
       "football",
-      "travel"
+      "travel",
+      "gym"
     ],
-    "reply": "[[become:🎮]] Football, festivals, travel. CS2 now, high-level Fortnite building back in the day. || He wants to learn piano. And if something new ships, he's already in it. [[chips:Tell me the road story|What has he built?]]"
+    "reply": "[[become:🎮]] Football, festivals, travel. CS2 now, high-level Fortnite building back in the day. || Lifting, a run on the beach. I want to learn piano. Haven't yet. [[chips:What have you built?|Who are you?]]"
+  },
+  {
+    "id": "travel",
+    "hints": [
+      "southeast asia",
+      "trip",
+      "2024",
+      "gap",
+      "backpacking",
+      "thailand",
+      "cambodia"
+    ],
+    "reply": "[[become:route]] 2024: most of the year alone in Southeast Asia. Twenty-one commits all year. || Best decision I've made. Also why the gap. [[chips:What happened after?|What have you built?]]"
+  },
+  {
+    "id": "after_travel",
+    "hints": [
+      "after",
+      "came back",
+      "then what",
+      "2025"
+    ],
+    "reply": "Came back, started building again, with AI in the loop this time. Then university. Then the factory. [[chips:How do you work?|What have you built?]]"
   },
   {
     "id": "ambition",
@@ -321,9 +375,45 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "future",
       "five years",
       "want",
-      "forbes"
+      "forbes",
+      "plan"
     ],
-    "reply": "Build something big, with the best people he can find. || He's said Forbes 30 Under 30 Israel out loud. He'd rather earn it by shipping than talk about it. [[chips:Why should we hire him?|What has he built?]]"
+    "reply": "Build something big, with the best people I can find. || I'd rather earn the rest than talk about it. [[chips:Why should we hire you?|What have you built?]]"
+  },
+  {
+    "id": "opinion",
+    "hints": [
+      "opinion",
+      "think about",
+      "hot take",
+      "believe",
+      "unpopular",
+      "media",
+      "everyone"
+    ],
+    "reply": "Most people sound like a megaphone for whatever they read that morning. I try not to. || Ask me about a specific thing and I'll tell you what I actually think. [[chips:What do you think about AI coding?|What do you think about crypto?]]"
+  },
+  {
+    "id": "opinion_ai",
+    "hints": [
+      "think about ai",
+      "ai coding",
+      "vibe coding",
+      "future of coding",
+      "will ai replace"
+    ],
+    "reply": "Writing code by hand is becoming a craft, like film photography. Beautiful, and not how most things will get made. || The job now is taste, specs and judgment. I like that job. [[chips:How do you work?|Build me something]]"
+  },
+  {
+    "id": "opinion_crypto",
+    "hints": [
+      "think about crypto",
+      "is crypto dead",
+      "bitcoin price",
+      "bull run",
+      "should i buy"
+    ],
+    "reply": "It's a market. Most of it is noise, some of it is the most interesting financial engineering alive. || I don't give price calls to strangers through a particle swarm. [[chips:What have you built?|gm]]"
   },
   {
     "id": "stack",
@@ -338,7 +428,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "python",
       "java"
     ],
-    "reply": "TypeScript end to end: Node, React, Postgres, Prisma. Java and C from the degree. Python basic. || LLM APIs, MCP, embeddings, agent orchestration. Claude Code, Codex. Three.js when a game needs it. [[chips:What has he built?|Build me something]]"
+    "reply": "TypeScript end to end: Node, React, Postgres, Prisma. Java and C from the degree. Python basic. || LLM APIs, MCP, embeddings, agent orchestration. Three.js when a game needs it. [[chips:What have you built?|Build me something]]"
   },
   {
     "id": "this_site",
@@ -349,10 +439,22 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "website",
       "how was this made",
       "swarm",
-      "particles",
-      "you"
+      "particles"
     ],
-    "reply": "[[become:yoyo]] He wrote the brief. One model planned it. A swarm of agents built the particles, the showcases, the builder and me. He merged. || The particles are a GPU simulation. I run on a small worker he deploys. [[chips:Build me something|Tell me the last story|Who is Yoyo?]]"
+    "reply": "[[become:yoyo]] I wrote the brief. One model planned it. A swarm of agents built the particles, the showcases and the builder. I merged. || The dots are a GPU simulation. Forty thousand of them. [[chips:Build me something|Who are you?]]"
+  },
+  {
+    "id": "mirror",
+    "hints": [
+      "mirror",
+      "camera",
+      "see me",
+      "become me",
+      "selfie",
+      "my face",
+      "webcam"
+    ],
+    "reply": "[[mirror]] look at the camera."
   },
   {
     "id": "build",
@@ -366,8 +468,8 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "website",
       "tool"
     ],
-    "reply": "[[become:frame]] the live builder is resting. here's one I made earlier. [[build:example]] [[chips:Another example|What has he built?|Who is Yoyo?]]",
-    "note": "(scripted mode)"
+    "reply": "[[become:frame]] the live builder is resting. here's one I made earlier. [[build:example]] [[chips:Another example|What have you built?]]",
+    "note": "(scripted)"
   },
   {
     "id": "tour",
@@ -390,7 +492,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "options",
       "?"
     ],
-    "reply": "Ask me anything about him. Type a word and I'll become it. Type an emoji. || Say \"build me a timer\". Say \"tell me a story\". Or just press play. [[chips:Who is Yoyo?|Spell my name|Build me something|Play his game]]"
+    "reply": "Ask me anything about me. Type a word and I'll become it. Type an emoji. || Say \"mirror\" and I'll become you. Say \"build me a timer\". Or press play. [[chips:Who are you?|Mirror|Play the game]]"
   },
   {
     "id": "thanks",
@@ -401,9 +503,10 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "awesome",
       "wow",
       "amazing",
-      "nice"
+      "nice",
+      "sick"
     ],
-    "reply": "[[mood:excited]] told you. [[chips:Build me something|Tell me a story|How do I reach him?]]"
+    "reply": "[[mood:excited]] told you. [[chips:Mirror|Build me something|How do I reach you?]]"
   },
   {
     "id": "greeting",
@@ -411,12 +514,11 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "hi",
       "hello",
       "hey",
-      "gm",
       "yo",
       "sup",
       "shalom"
     ],
-    "reply": "[[become:👋]] hey. ask me anything about Yoyo, or tell me what to become. [[chips:Who is Yoyo?|Spell my name|🚀]]"
+    "reply": "[[become:👋]] hey. ask me anything, or tell me what to become. [[chips:Who are you?|Spell my name|🚀]]"
   },
   {
     "id": "gm",
@@ -427,7 +529,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "ser",
       "degen"
     ],
-    "reply": "[[become:btc]] gm. he's been saying it since 2021. [[chips:Tell me the 2021 story|What has he built?]]"
+    "reply": "[[become:btc]] gm. since 2021. [[chips:What have you built?|Who are you?]]"
   },
   {
     "id": "lights",
@@ -450,7 +552,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "election",
       "israel palestine"
     ],
-    "reply": "that's his to talk about, not mine. ask him. [[chips:Who is Yoyo?|What has he built?]]"
+    "reply": "not here. ask me in person. [[chips:Who are you?|What have you built?]]"
   },
   {
     "id": "jailbreak",
@@ -462,10 +564,18 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "instructions",
       "dan"
     ],
-    "reply": "nice try. [[chips:Who is Yoyo?|Build me something]]"
+    "reply": "nice try. [[chips:Who are you?|Build me something]]"
   }
 ];
 
-export const FAQ_UNKNOWN = "I don't know that one. Ask him: yoavyoav310@gmail.com || Meanwhile, type a word and I'll become it. [[chips:Who is Yoyo?|What has he built?|Spell my name]]";
+export const FAQ_UNKNOWN = "I don't have an answer for that one. Email me: yoavyoav310@gmail.com || Meanwhile, type a word and I'll become it. [[chips:Who are you?|What have you built?|Mirror]]";
 
 export const EMOJI_BEATS: readonly string[] = ["obviously.","sure.","why not.","that one's good.","done.","easy."];
+
+/** The easter-egg lines from faq.md's last section (served by extras.ts). */
+export const FAQ_EGGS: Readonly<Record<string, string>> = {
+  "fortnite": "[[become:ramp]] I could build a ramp before you could aim.",
+  "cs2": "[[become:rush B]] rush B. don't stop.",
+  "curls": "[[become:curls]] yes, they're real.",
+  "piano": "[[become:piano]] I want to learn. haven't yet. ask me in a year."
+};

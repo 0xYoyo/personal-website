@@ -1,6 +1,6 @@
-# YOYO v3: ask his agent
+# YOYO v3
 
-The personal site of Yoav "Yoyo" Zrihan. It has one input, an agent that answers in his voice, and a particle swarm that turns into whatever the agent is talking about. The full brief is the v3 spec (`portfolio-spec/v3/SPEC.md`, kept outside this repo).
+The personal site of Yoav "Yoyo" Zrihan. It has one input, an agent that answers as Yoyo in the first person, and a particle swarm that turns into whatever it is talking about (or, on "mirror", into you). The full brief is the v3 spec (`portfolio-spec/v3/SPEC.md`, kept outside this repo).
 
 ```
 packages/protocol/   shared types (Action, ShapeSpec, SwarmApi, wire events), guards, the [[tag]] parser
@@ -79,10 +79,10 @@ A deploy without `VITE_AGENT_URL` still works on the scripted brain.
 | The facts it may state (live brain) | `apps/worker/prompt/facts.md` |
 | Builder instructions / message fencing | `apps/worker/prompt/build.md`, `runtime.md` |
 | Scripted brain replies (offline / over quota) | `apps/web/src/content/faq.md`, then `npm run gen` |
-| Easter eggs with no faq line (fortnite, cs2, piano) | `apps/web/src/agent/client/extras.ts` (mirrored in `persona.md` examples and `tools/mock-worker.mjs`) |
+| Easter eggs (fortnite, cs2, curls, piano) | the last section of `faq.md`, served by `apps/web/src/agent/client/extras.ts` (a test keeps the two equal; mirrored in `persona.md` examples) |
 | Example apps the scripted builder streams | `apps/web/src/agent/client/examples/*.html`, then `npm run gen` |
 | Projects (cards, facts, links, glyph, showcase) | `apps/web/src/content/projects.ts` |
-| The five stories / the tour | `apps/web/src/content/stories.ts` / `tour.ts` |
+| The two stories / the tour | `apps/web/src/content/stories.ts` / `tour.ts` |
 | UI strings, chips | `apps/web/src/content/copy.ts`, `chips.ts` |
 | Swarm glyphs | `apps/web/src/swarm/engine/glyphs/*.svg` (any new file is picked up) |
 | Showcases | `apps/web/src/showcases/parts/<project>/` |

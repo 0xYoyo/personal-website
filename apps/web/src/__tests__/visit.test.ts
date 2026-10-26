@@ -42,12 +42,12 @@ describe('the open-build chip', () => {
   it('leads the returning chips and reopens the stored build', () => {
     const chips = returningChips('pomodoro');
     expect(chips[0]).toBe(openBuildChip('pomodoro'));
-    expect(chips).toHaveLength(5);
+    expect(chips).toHaveLength(4);
     expect(resolveChip('Open my pomodoro', { project: null, hasBuild: false, hasStoredBuild: true })).toEqual({ kind: 'open-build' });
     expect(resolveChip('Open my pomodoro', { project: null, hasBuild: false })).toEqual({ kind: 'say', text: 'Build me something' });
   });
 
   it('no stored build: the usual entry chips', () => {
-    expect(returningChips()).toContain('Spell my name');
+    expect(returningChips()).toEqual(['Who are you?', 'What have you built?', 'Mirror']);
   });
 });

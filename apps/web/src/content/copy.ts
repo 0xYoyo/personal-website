@@ -3,19 +3,19 @@
 
 export const copy = {
   meta: {
-    title: 'Yoyo — ask his agent',
+    title: 'Yoyo',
   },
   entry: {
     /** SPEC §2.1, under the YOYO letters */
     nameLine: 'Yoav Zrihan · 0xYoyo',
-    /** SPEC §2.1 */
-    greeting: "hey. I'm Yoyo's agent — the one he keeps around to answer what the CV can't.",
+    /** WAVE3 V1: the site speaks as Yoyo */
+    greeting: "hey. I'm Yoyo. Ask me anything — or type a word and I'll become it.",
     /** SPEC §2.1: "welcome back, Dana." */
     welcomeBack: (name: string) => `welcome back, ${name}.`,
     /** ui: returning visitor without a stored name */
     welcomeBackAnon: 'welcome back.',
     /** ui: appended when the visitor left a build last time */
-    lastBuild: (title: string) => `your ${title} is still here.`,
+    lastBuild: (title: string) => `I kept your ${title}.`,
     /** SPEC §2.2 */
     idle: 'or just watch.',
   },
@@ -23,7 +23,7 @@ export const copy = {
     /** SPEC §2.1 placeholder cycle */
     placeholders: ['ask me anything', 'type your name', '🚀', 'make me a pomodoro timer', 'who is Yoyo?'],
     changePlaceholder: 'what should change?',
-    inputLabel: 'Ask Yoyo’s agent',
+    inputLabel: 'Ask Yoyo',
     send: 'Send',
     mic: 'Hold to talk',
     micListening: 'Listening',
@@ -79,9 +79,9 @@ export const copy = {
   },
   contact: {
     /** SPEC §2.7 */
-    line: 'He reads everything. Say you met the agent.',
+    line: 'I read everything. Say hi.',
     email: 'yoavyoav310@gmail.com',
-    mailto: 'mailto:yoavyoav310@gmail.com?subject=Re%3A%20your%20agent',
+    mailto: 'mailto:yoavyoav310@gmail.com?subject=Hi%20Yoyo',
     github: 'GitHub',
     githubHref: 'https://github.com/0xYoyo',
     linkedin: 'LinkedIn',
@@ -105,13 +105,13 @@ export const copy = {
     title: 'Conversation',
     close: 'Close (Esc)',
     you: 'you',
-    agent: 'agent',
+    agent: 'Yoyo',
     empty: 'nothing yet. ask me something.',
   },
   a11y: {
     skip: 'Skip to the conversation',
-    liveLabel: 'Conversation with Yoyo’s agent',
-    swarm: 'A swarm of particles that becomes whatever the agent is saying.',
+    liveLabel: 'Conversation with Yoyo',
+    swarm: 'A swarm of particles that becomes whatever Yoyo is saying.',
   },
   /** ui: the "Spell my name" chip when no name is known yet */
   askName: "type your name. I'll become it.",
@@ -120,6 +120,6 @@ export const copy = {
   /** SPEC §7 */
   brainResting: 'the live brain is resting — I still know everything.',
   share: {
-    title: 'Built by Yoyo’s agent',
+    title: 'Built on Yoyo’s site',
   },
 } as const;

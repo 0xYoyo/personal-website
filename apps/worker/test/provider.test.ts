@@ -153,7 +153,7 @@ describe('router with PROVIDER=anthropic', () => {
     const c = calls[0]!;
     expect(c.url).toBe('https://api.anthropic.com/v1/messages');
     expect(c.body).toMatchObject({ model: 'claude-sonnet-4-5', temperature: 0.8, max_tokens: 512, stream: true });
-    expect(String(c.body.system)).toContain("You are Yoyo's agent");
+    expect(String(c.body.system)).toContain("You are Yoyo.");
     expect((c.body.messages as { content: string }[])[0]!.content).toContain('<visitor_message>');
   });
 

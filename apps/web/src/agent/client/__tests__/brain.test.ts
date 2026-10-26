@@ -96,8 +96,8 @@ describe('fallback state machine', () => {
     // the resting line is a turn of its own, then the reply's own turns, with the `||` stripped
     const turns = rec.turns();
     expect(turns[0]).toBe(RESTING_LINE);
-    expect(turns[1]).toBe('Yoav Zrihan. Self-taught, building since 2022. Crypto since 2021. Second-year CS and Entrepreneurship at Reichman.');
-    expect(turns[2]).toBe("He doesn't write most of his code anymore. He directs the agents that do.");
+    expect(turns[1]).toBe("I'm Yoyo. I build software, mostly by directing AI agents, and I've been in crypto since 2021.");
+    expect(turns[2]).toBe('Second year of Computer Science and Entrepreneurship at Reichman. Self-taught before that.');
     expect(turns).toHaveLength(3);
     expect(rec.text()).not.toContain('|');
     expect(rec.types().filter((t) => t === 'turn')).toHaveLength(2);
@@ -161,7 +161,7 @@ describe('fallback state machine', () => {
     const { brain, rec } = make(() => sseResponse([{ type: 'done' }]));
     await brain.send('gm');
     expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
-    expect(rec.text()).toContain('gm. he');
+    expect(rec.text()).toContain('gm. since 2021.');
   });
 
   it('no agentUrl → scripted, without the resting line', async () => {
@@ -169,7 +169,7 @@ describe('fallback state machine', () => {
     expect(brain.mode()).toBe('scripted');
     await brain.send('hi');
     expect(calls).toHaveLength(0);
-    expect(rec.text()).toBe('hey. ask me anything about Yoyo, or tell me what to become.');
+    expect(rec.text()).toBe('hey. ask me anything, or tell me what to become.');
     expect(rec.text()).not.toContain(RESTING_LINE);
   });
 
@@ -193,7 +193,7 @@ describe('fallback state machine', () => {
     await Promise.all([a, b]);
     const types = rec.types().filter((t) => t === 'start' || t === 'end');
     expect(types).toEqual(['start', 'end', 'start', 'end']);
-    expect(rec.text().endsWith("gm. he's been saying it since 2021.")).toBe(true);
+    expect(rec.text().endsWith('gm. since 2021.')).toBe(true);
   });
 
   it('scripted replies stream word by word with live-like timing', async () => {

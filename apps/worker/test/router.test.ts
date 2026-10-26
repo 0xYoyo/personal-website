@@ -60,7 +60,7 @@ describe('router', () => {
     });
     const body = calls[0]!.body as { systemInstruction: { parts: { text: string }[] }; contents: { role: string; parts: { text: string }[] }[] };
     const sys = body.systemInstruction.parts[0]!.text;
-    expect(sys.startsWith("# You are Yoyo's agent.")).toBe(true);
+    expect(sys.startsWith('# You are Yoyo.')).toBe(true);
     expect(sys).toContain('Facts about Yoav "Yoyo" Zrihan');
     expect(sys).toContain('Runtime rules');
     expect(sys).toContain('name: Danascript');

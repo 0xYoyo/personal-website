@@ -15,7 +15,7 @@ describe('brain adapter (scripted)', () => {
     const actions: Action[] = [];
     const r = await brain.send('who is yoyo?', { onWord: (w) => words.push(w), onAction: (a) => actions.push(a) });
     expect(r.source).toBe('scripted');
-    expect(words[0]).toBe('Yoav');
+    expect(words[0]).toBe("I'm");
     expect(r.text).toBe(words.join(' '));
     expect(r.text).not.toContain('[[');
     expect(actions[0]).toEqual({ type: 'become', shape: { kind: 'glyph', id: 'curls' } });
@@ -33,10 +33,10 @@ describe('brain adapter (scripted)', () => {
     const brain = createBrain({ speed: 0.001 });
     const actions: Action[] = [];
     const r = await brain.send('fortnite', { onAction: (a) => actions.push(a) });
-    expect(r.text).toBe('he could build a ramp before you could aim.');
+    expect(r.text).toBe('I could build a ramp before you could aim.');
     expect(actions).toEqual([{ type: 'become', shape: { kind: 'glyph', id: 'ramp' } }]);
     expect((await brain.send('cs2')).text).toBe("rush B. don't stop.");
-    expect((await brain.send('piano')).text).toBe("he wants to learn. hasn't yet. ask him in a year.");
+    expect((await brain.send('piano')).text).toBe("I want to learn. haven't yet. ask me in a year.");
   });
 
   it('streams an example build, reports progress, records it, and caps at 5/hour', async () => {
