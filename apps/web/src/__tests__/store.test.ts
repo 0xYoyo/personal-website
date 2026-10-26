@@ -59,6 +59,7 @@ describe('store', () => {
     v = visibleExchange(S().lines);
     expect(v.agent?.text).toBe('Yoav.');
     expect(v.visitor?.text).toBe('and?');
-    expect(v.prevAgent).toBeUndefined();
+    // the muted turn stays until the next reply (WAVE3 S2)
+    expect(v.prevAgent?.text).toBe('hey.');
   });
 });

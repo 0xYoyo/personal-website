@@ -8,6 +8,7 @@ import {
   splitTurn,
   stripMarks,
   turnWait,
+  TURN_MS_PER_WORD,
   TURN_READ_MIN,
   type MeasureTurn,
   type ShownTurn,
@@ -61,10 +62,11 @@ describe('turn markers', () => {
     expect(stripMarks('Three reasons. || He ships. ||')).toBe('Three reasons. He ships.');
   });
 
-  it('waits ≥ 2.2 s after a turn lands and 300 ms a word from its start', () => {
+  it('waits ≥ 2.8 s after a turn lands and 320 ms a word from its start (WAVE3 S2)', () => {
     expect(turnWait(5, 0, 0)).toBe(TURN_READ_MIN);
-    expect(turnWait(20, 500, 0)).toBe(5500); // 6 s of words from the start
+    expect(turnWait(20, 500, 0)).toBe(5900); // 6.4 s of words from the start
     expect(turnWait(20, 7000, 3000)).toBe(0);
+    expect(turnWait(5, 2000, 2799)).toBe(1);
   });
 });
 
@@ -87,8 +89,8 @@ describe('the pacer (POLISH2 A1)', () => {
     await done;
     const b1 = at('begin:Three'), e1 = at('end:Three'), b2 = at('begin:He'), e2 = at('end:He'), b3 = at('begin:And');
     expect(b1).toBe(0);
-    expect(b2 - e1).toBeGreaterThanOrEqual(TURN_READ_MIN); // 4 words: the 2.2 s floor rules
-    expect(b3 - b2).toBeGreaterThanOrEqual(13 * 300); // 13 words: 300 ms a word from its start
+    expect(b2 - e1).toBeGreaterThanOrEqual(TURN_READ_MIN); // 4 words: the 2.8 s floor rules
+    expect(b3 - b2).toBeGreaterThanOrEqual(13 * TURN_MS_PER_WORD); // 13 words: 320 ms a word from its start
     expect(b3 - e2).toBeGreaterThanOrEqual(TURN_READ_MIN);
   });
 

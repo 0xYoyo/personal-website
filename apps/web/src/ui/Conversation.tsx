@@ -2,8 +2,8 @@
 // turn is one block of large type, sized once for its whole text on a hidden
 // clone before it is shown (ui/fit.ts), that streams in word by word and
 // never retracts a word or changes size while it is read. When the next turn
-// arrives the previous one fades to muted beneath (one at most; History has
-// the rest). The visitor's line echoes in mono between them. The pacing lives
+// arrives the previous one goes muted beneath (one at most; History has the
+// rest) and stays there until the next reply replaces it — never on a timer. The visitor's line echoes in mono between them. The pacing lives
 // in ui/turns.ts, driven by the controller.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { copy } from '../content/copy';
@@ -182,7 +182,7 @@ export function Conversation() {
             {echo.text}
           </p>
         )}
-        {prevAgent && !runner && !waiting && (
+        {prevAgent && !runner && (
           <p className="y-prev" key={`p-${prevAgent.id}`} ref={prevRef} aria-hidden="true">
             {prevAgent.text}
           </p>

@@ -236,9 +236,14 @@ export function visibleExchange(lines: Line[]): { prevAgent?: Line; agent?: Line
       if (visitor) break;
     }
   }
-  // If the visitor just spoke and the agent hasn't answered yet, show their echo under the last agent line.
+  // If the visitor just spoke and the agent hasn't answered yet, show their echo under the last agent line;
+  // the muted turn before that line stays until the reply arrives (WAVE3 S2: it never fades on its own).
   const last = lines[lines.length - 1];
-  if (last?.role === 'visitor') return agent ? { agent, visitor: last } : { visitor: last };
+  if (last?.role === 'visitor') {
+    if (!agent) return { visitor: last };
+    const before = lines.slice(0, lines.lastIndexOf(agent)).reverse().find((l) => l.role === 'agent');
+    return before ? { prevAgent: before, agent, visitor: last } : { agent, visitor: last };
+  }
   const out: { prevAgent?: Line; agent?: Line; visitor?: Line } = {};
   if (prevAgent) out.prevAgent = prevAgent;
   if (agent) out.agent = agent;

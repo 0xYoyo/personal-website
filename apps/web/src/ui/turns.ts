@@ -9,10 +9,10 @@ import { realClock, type Clock } from './runner/engine';
 
 /** The turn marker in reply text. */
 export const TURN_MARK = '||';
-/** A turn rests at least this long once it is fully on screen. */
-export const TURN_READ_MIN = 2200;
-/** …and at least this long per word, counted from its first word. */
-export const TURN_MS_PER_WORD = 300;
+/** A turn rests at least this long once it is fully on screen (WAVE3 S2: 2.2 → 2.8 s). */
+export const TURN_READ_MIN = 2800;
+/** …and at least this long per word, counted from its first word (WAVE3 S2: 300 → 320 ms). */
+export const TURN_MS_PER_WORD = 320;
 /** Pace of the words within a turn (the buffer has the whole turn; this is only the reveal). */
 export const TURN_WORD_MS = 55;
 
