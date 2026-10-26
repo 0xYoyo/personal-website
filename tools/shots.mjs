@@ -10,6 +10,7 @@
 //                                                  headless Chromium; the GPU tiers run at ~1 fps in
 //                                                  SwiftShader, so their shots are about layout only)
 //   SHOTS_URL=http://127.0.0.1:4173 npm run shots  use a running site (its own agent URL)
+//   SHOTS_Y4M=/path/clip.y4m npm run shots         the fake camera's video (default: Chromium's test pattern)
 //
 // Output: tools/out/<viewport>-<name>.png, tools/out/cast/<name>/*.jpg, tools/out/sheets/*.png
 import { spawn } from 'node:child_process';
@@ -61,7 +62,6 @@ const viewports = {
   mobile: { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
 };
 
-const PROJECTS = ['prompt-racers', 'unfiltered', 'yoyo-loop', 'runi-connector', 'availability-monitor', 'pnl-bot', 'polybot'];
 const q = (extra = '') => `${base}/?tier=${tier}${extra}`;
 const ctl = (page, fn, arg) => page.evaluate(([f, a]) => window.__yoyo.ctl[f](a), [fn, arg]);
 
@@ -89,6 +89,30 @@ const scenarios = {
       await shot(`entry-${t}s`);
     }
   },
+  // WAVE3 S1: three chips, a static placeholder; untouched, the tour starts 5 s after the greeting lands
+  async arrival(page, shot) {
+    await page.goto(q('&skipEntry=1'));
+    await page.waitForFunction(() => window.__yoyo?.store.getState().phase === 'ready', null, { timeout: 30000 });
+    // the greeting has landed once the idle clock is touched after it
+    const landed = await page.evaluate(
+      () =>
+        new Promise((r) => {
+          const st = window.__yoyo.store;
+          const t = () => st.getState().lines.some((l) => l.role === 'agent') && !st.getState().streaming;
+          const iv = setInterval(() => t() && (clearInterval(iv), r(Date.now())), 50);
+        }),
+    );
+    await wait(400);
+    await shot('arrival-greeting');
+    await page.waitForFunction(() => window.__yoyo.store.getState().overlay === 'tour', null, { timeout: 15000 });
+    const started = await page.evaluate(() => Date.now());
+    console.log(`arrival: tour started ${((started - landed) / 1000).toFixed(1)} s after the greeting landed`);
+    await wait(1500);
+    await shot('arrival-tour');
+    await page.waitForFunction(() => window.__yoyo.store.getState().overlay === 'none', null, { timeout: 60000 });
+    await wait(1200);
+    await shot('arrival-tour-end');
+  },
   async who(page, shot) {
     await ready(page);
     await say(page, 'who is yoyo');
@@ -109,7 +133,8 @@ const scenarios = {
   },
   async cards(page, shot) {
     await ready(page);
-    for (const id of PROJECTS) {
+    const ids = await page.evaluate(async () => (await import('/src/content/projects.ts')).projects.map((p) => p.id));
+    for (const id of ids) {
       await ctl(page, 'openProject', id);
       await wait(2600);
       await shot(`card-${id}`);
@@ -117,7 +142,7 @@ const scenarios = {
   },
   async build(page, shot) {
     await ready(page);
-    await page.getByRole('button', { name: 'Build me something' }).click();
+    await say(page, 'build me something');
     await wait(7000);
     await shot('build-mid');
     await page.waitForFunction(() => window.__yoyo.store.getState().build.status === 'locked', null, { timeout: 40000 });
@@ -132,7 +157,9 @@ const scenarios = {
   },
   async stories(page, shot) {
     await ready(page);
-    for (const [id, label] of [['2021', 'story-2'], ['road', 'story-4']]) {
+    const ids = await page.evaluate(async () => (await import('/src/content/stories.ts')).stories.map((x) => x.id));
+    for (const id of ids) {
+      const label = `story-${id}`;
       await ctl(page, 'startStory', id);
       await wait(3200);
       await shot(`${label}-mid`);
@@ -141,9 +168,21 @@ const scenarios = {
   async tour(page, shot) {
     await ready(page);
     await ctl(page, 'startTour');
-    await page.waitForFunction(() => window.__yoyo.store.getState().runner?.sub === 'Unfiltered', null, { timeout: 60000 });
+    await page.waitForFunction(() => window.__yoyo.store.getState().runner?.say === 'Unfiltered', null, { timeout: 60000 });
     await wait(900);
     await shot('tour-beat-3');
+  },
+  // WAVE3 M: the mirror, on Chromium's fake camera (a test pattern)
+  async mirror(page, shot) {
+    await ready(page);
+    await say(page, 'mirror');
+    await wait(1200);
+    await shot('mirror-pending');
+    await wait(3000);
+    await shot('mirror');
+    await page.keyboard.press('Escape');
+    await wait(1800);
+    await shot('mirror-done');
   },
   async light(page, shot) {
     await ready(page);
@@ -220,11 +259,12 @@ let base = '';
 const server = await startServers();
 base = server.url;
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ executablePath: exe, args: ['--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required', '--no-proxy-server'] });
+const fakeCam = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', ...(process.env.SHOTS_Y4M ? [`--use-file-for-fake-video-capture=${process.env.SHOTS_Y4M}`] : [])];
+const browser = await chromium.launch({ executablePath: exe, args: ['--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required', '--no-proxy-server', ...fakeCam] });
 const errors = [];
 const newPage = async (vpName, label) => {
   const vp = viewports[vpName];
-  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.deviceScaleFactor, isMobile: vp.isMobile, hasTouch: vp.hasTouch });
+  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.deviceScaleFactor, isMobile: vp.isMobile, hasTouch: vp.hasTouch, permissions: ['camera'] });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${vpName}/${label}: ${e.message}`));
   page.on('console', (m) => m.type() === 'error' && errors.push(`${vpName}/${label}: console ${m.text()}`));
