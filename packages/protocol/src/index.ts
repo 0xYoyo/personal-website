@@ -12,7 +12,8 @@ export type StoryId = 'appeal'|'2021'|'odin'|'road'|'this';
 export type Action =
   | { type:'become'; shape:ShapeSpec } | { type:'mood'; mood:Mood } | { type:'show'; project:ProjectId }
   | { type:'play' } | { type:'story'; id:StoryId|'next' } | { type:'tour' } | { type:'build'; instruction:string }
-  | { type:'contact' } | { type:'lights'; mode:'dark'|'light'|'toggle' } | { type:'chips'; chips:string[] };
+  | { type:'contact' } | { type:'lights'; mode:'dark'|'light'|'toggle' } | { type:'chips'; chips:string[] }
+  | { type:'mirror' }; // wave 3: the camera mirror (the swarm becomes the visitor)
 export interface SwarmApi {
   become(shape: ShapeSpec, opts?: { hold?: number; depth?: number }): void;
   release(): void;
@@ -139,7 +140,7 @@ export function isAction(v: unknown): v is Action {
     case 'become': return isShapeSpec(v.shape);
     case 'mood': return isMood(v.mood);
     case 'show': return isProjectId(v.project);
-    case 'play': case 'tour': case 'contact': return true;
+    case 'play': case 'tour': case 'contact': case 'mirror': return true;
     case 'story': return v.id === 'next' || isStoryId(v.id);
     case 'build': return typeof v.instruction === 'string' && v.instruction.trim().length > 0;
     case 'lights': return v.mode === 'dark' || v.mode === 'light' || v.mode === 'toggle';
@@ -197,6 +198,7 @@ export function parseActionTag(body: string): Action | null {
     case 'tour': a = { type: 'tour' }; break;
     case 'build': a = arg ? { type: 'build', instruction: arg.slice(0, 400) } : null; break;
     case 'contact': a = { type: 'contact' }; break;
+    case 'mirror': a = { type: 'mirror' }; break;
     case 'lights': a = arg === 'dark' || arg === 'light' || arg === 'toggle' ? { type: 'lights', mode: arg } : null; break;
     case 'chips': {
       const chips = arg.split('|').map((c) => c.trim()).filter(Boolean).slice(0, 5);

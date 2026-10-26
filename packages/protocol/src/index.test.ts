@@ -15,6 +15,7 @@ describe('parseActionTag', () => {
     expect(parseActionTag('tour')).toEqual({ type: 'tour' });
     expect(parseActionTag('build:a pomodoro timer')).toEqual({ type: 'build', instruction: 'a pomodoro timer' });
     expect(parseActionTag('contact')).toEqual({ type: 'contact' });
+    expect(parseActionTag('mirror')).toEqual({ type: 'mirror' });
     expect(parseActionTag('lights:toggle')).toEqual({ type: 'lights', mode: 'toggle' });
     expect(parseActionTag('chips:a|b| c |')).toEqual({ type: 'chips', chips: ['a', 'b', 'c'] });
   });
