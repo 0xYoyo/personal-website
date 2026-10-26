@@ -77,10 +77,15 @@ function keepOutRects(restoring = false): Rect[] {
   if (!restored && useStore.getState().overlay === 'build') {
     sels.splice(1, 3, ['.y-build-caption'], ['.y-build-frame[data-visible="true"]', 14], ['.y-build-controls[data-on="true"]']);
   }
-  return sels
-    .map(([sel, inset]) => boxOf(sel, inset))
-    .filter((r): r is Rect => !!r)
-    .slice(0, 6);
+  const rects = sels.map(([sel, inset]) => boxOf(sel, inset));
+  // the show's / a story's controls (a phone has them right under the top bar): one keep-out with the top bar
+  const run = boxOf('.y-runner');
+  const top = rects[0];
+  if (run && top && run.y < top.y + top.h + 60) {
+    const x0 = Math.min(top.x, run.x), y0 = Math.min(top.y, run.y);
+    rects[0] = { x: x0, y: y0, w: Math.max(top.x + top.w, run.x + run.w) - x0, h: Math.max(top.y + top.h, run.y + run.h) - y0 };
+  }
+  return rects.filter((r): r is Rect => !!r).slice(0, 6);
 }
 
 type StageFn = (rect: Rect, keepOut?: Rect[]) => void;

@@ -226,8 +226,11 @@ export class GpuEngine implements Engine {
           return vec3(q.x.add(lx.mul(c)).sub(ly.mul(sn)), q.y.add(lx.mul(sn)).add(ly.mul(c)), T.z.mul(q.w));
         };
         const now = posed(pose, sxN).toVar();
+        // the feed-forward is the group's own motion now (for a trail particle too: it rides the path just behind,
+        // at about the same speed — without it the trail lagged a gap behind the shape)
+        const cur = textureLoad(GT, ivec2(T_POSE, gy));
         const before = posed(prev, plook.x);
-        ff.assign(select(U.dt.greaterThan(1e-5).and(trail.not()), now.sub(before).div(max(U.dt, 1e-5)), vec3(0)));
+        ff.assign(select(U.dt.greaterThan(1e-5), posed(cur, look.x).sub(before).div(max(U.dt, 1e-5)), vec3(0)));
         T.assign(now);
         visG.assign(step(GI.z.add(1e-5), look.z).mul(look.y).mul(select(trail, float(1).sub(GI.y.mul(0.85)), float(1))).sub(1));
       });
