@@ -209,7 +209,10 @@ function kartScene(box: StageBox, ms: number): Scene {
     shape: glyph('kart'), share, path: oval(lag, scale, lane), trail, trailMs: 520, brightness: lag ? 0.85 : 1.05,
   });
   // canvas2d (a few thousand big dots): one big kart, and one small one across the oval
-  const lite: Scene = { duration: ms, tableau: 1500, groups: [kart(0, s0 * 1.25, 0.78, 0, 0.9), kart(Math.PI, s0 * 0.7, 0.22, 0, 0.9)] };
+  // (a phone's short stage: one kart, as big as the stage takes, on a flatter oval)
+  const lite: Scene = wide
+    ? { duration: ms, tableau: 1500, groups: [{ ...kart(0, scaleForW(box, AR.kart, Math.min(box.w * 0.46, box.h * 0.62)), 1, 0, 0.82), brightness: 1 }] }
+    : { duration: ms, tableau: 1500, groups: [kart(0, s0 * 1.25, 0.78, 0, 0.9), kart(Math.PI, s0 * 0.7, 0.22, 0, 0.9)] };
   return {
     duration: ms, tableau: 1500, lite,
     groups: [kart(0, s0, 0.5, 0.3, 1), kart(1.35, s0 * 0.6, 0.25, 0.26, 0.92), kart(2.5, s0 * 0.6, 0.25, 0.26, 0.92)],
@@ -236,26 +239,31 @@ function loopScene(box: StageBox, ms: number): Scene {
     ],
   };
   const CHECK_FROM = 0.72; // fill at which a card's outline and lines are in and its check is not
-  const pr = (k: number): SceneGroup => {
+  const pr = (k: number, merges = k === 2): SceneGroup => {
     const y = (k - 1) * gap, t0 = 350 + k * 650, tc = t0 + 1000;
     const path: Path = [at(0, cx + 0.35, y, { scale: 0.9 }), at(t0, cx + 0.35, y, { scale: 0.9 }), at(t0 + 450, cx, y, { scale: 1, ease: 'out' })];
     const fill: Keys = keys([0, 0], [t0, 0], [t0 + 150, 0.5], [t0 + 800, CHECK_FROM], [tc, CHECK_FROM], [tc + 60, 1]);
     const brightness: Keys = keys([0, 1], [tc, 1], [tc + 80, 1.55], [tc + 500, 1]);
-    if (k === 2) {
+    if (merges) {
       // merges: slides into the loop and is taken in
       path.push(at(tc + 650, cx, y, { scale: 1 }), at(tc + 1500, lx, 0, { scale: 0.16, ease: 'in' }));
       fill.push({ t: tc + 1300, v: 1 }, { t: tc + 1550, v: 0 });
     }
     return { shape: card, share: 0.18, path, fill, brightness };
   };
-  const merged = 350 + 2 * 650 + 1000 + 1500;
   const spin: Path = [at(0, lx, 0, { scale: ls, rot: 0 }), at(ms, lx, 0, { scale: ls, rot: Math.PI * 1.25, ease: 'linear' })];
-  const loop: SceneGroup = { shape: glyph('loop'), share: 0.46, path: spin, brightness: keys([0, 1], [merged - 100, 1], [merged + 50, 1.5], [merged + 700, 1.05]) };
+  // the loop flares as the merging PR is taken in
+  const loopFor = (mk: number): SceneGroup => {
+    const merged = 350 + mk * 650 + 1000 + 1500;
+    return { shape: glyph('loop'), share: 0.46, path: spin, brightness: keys([0, 1], [merged - 100, 1], [merged + 50, 1.5], [merged + 700, 1.05]) };
+  };
+  const loop = loopFor(2);
   const lite: Scene = {
     duration: ms,
-    groups: [loop, pr(1), { ...pr(2) }],
+    groups: [loopFor(1), pr(0), pr(1, true)],
+    tableau: 2500,
   };
-  return { duration: ms, groups: [loop, pr(0), pr(1), pr(2)], lite, tableau: 3600 };
+  return { duration: ms, groups: [loop, pr(0), pr(1), pr(2)], lite, tableau: 3200 };
 }
 
 // ---------------------------------------------------------------- reduced motion: one still tableau a scene
