@@ -119,6 +119,17 @@ const scenarios = {
     await wait(1700);
     await shot('who-mid');
   },
+  // the first turn of a long reply, while the flock is still moving off it
+  async hire(page, shot) {
+    await ready(page);
+    await say(page, 'why should we hire you');
+    let prev = 0;
+    for (const t of [500, 900, 1400, 2200, 3200]) {
+      await wait(t - prev);
+      prev = t;
+      await shot(`hire-${t}ms`);
+    }
+  },
   async rocket(page, shot) {
     await ready(page);
     await say(page, '🚀');
