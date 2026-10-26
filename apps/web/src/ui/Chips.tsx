@@ -44,6 +44,7 @@ export function Chips() {
         className="y-chips-row"
         key={key}
         ref={row}
+        data-few={chips.length <= 3}
         {...(scrollable && !hide ? { tabIndex: 0, role: 'group', 'aria-label': copy.chips.scrollLabel } : {})}
       >
         {chips.map((c, i) => (

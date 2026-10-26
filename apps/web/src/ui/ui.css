@@ -1113,6 +1113,14 @@
   .y-chips-row:focus-visible {
     outline-offset: -2px;
   }
+  /* three chips or fewer (the entry): all of them in view, wrapped and centred, never scrolled off (WAVE3 S1) */
+  .y-chips-row[data-few='true'] {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 
   .y-bar-wrap {
     width: calc(100vw - 32px);
