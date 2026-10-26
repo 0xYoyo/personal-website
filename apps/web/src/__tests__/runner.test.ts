@@ -173,7 +173,7 @@ describe('the tour and the stories', () => {
     const seen: string[] = [];
     const r = createRunner(tour, { onStep: () => undefined, onSay: (s) => seen.push(s.say!), onEnd: () => undefined }, { clock });
     r.start();
-    expect(seen).toEqual(['This is what I do.']); // at t = 0, with the wave
+    expect(seen).toEqual(["I'm Yoyo."]); // at t = 0, with the 3D yoyo
     advance(10);
     r.skip();
   });
@@ -182,24 +182,25 @@ describe('the tour and the stories', () => {
     expect(tour.some((s) => s.release)).toBe(false);
   });
 
-  it('the project names hold 2.6 s each from the moment the caption has typed in, under one lead', () => {
+  it('the project names hold 2.4 s each from the moment the caption has typed in, under one lead (WAVE3 V3)', () => {
     const names = tour.filter((s) => s.lead === "Things I've shipped:");
-    expect(names.map((s) => s.say)).toEqual(['Prompt Racers', 'Unfiltered', 'yoyo-loop', 'Reichman Courses connector', 'Availability Monitor']);
-    expect(PROJECT_HOLD).toBe(2600);
-    for (const s of names) expect(s.hold - (s.sayAt ?? 0) - typeMs(s.say!)).toBe(2600);
+    expect(names.map((s) => s.say)).toEqual(['Unfiltered', 'Prompt Racers', 'yoyo-loop', 'Reichman Courses connector']);
+    expect(PROJECT_HOLD).toBe(2400);
+    for (const s of names) expect(s.hold - (s.sayAt ?? 0) - typeMs(s.say!)).toBe(2400);
   });
 
-  it('"8 streams" is one window frame; the tour ends on the cursor with chips', () => {
-    expect(tour.filter((s) => s.become && typeof s.become !== 'function' && s.become.kind === 'glyph' && s.become.id === 'frame')).toHaveLength(1);
+  it('first person, no army line; the tour ends on the question with the three end chips (WAVE3 V3)', () => {
+    expect(tour[0]!.become).toEqual({ kind: 'yoyo3d' });
+    expect(tour.some((s) => /combat|army|unit/i.test(s.say ?? ''))).toBe(false);
     const last = tour[tour.length - 1]!;
-    expect(last.become).toEqual({ kind: 'glyph', id: 'cursor' });
-    expect(last.chips?.length).toBeGreaterThanOrEqual(3);
-    expect(last.say).toBeUndefined(); // the last caption ("Ask me anything …") rests; nothing is re-said
+    expect(last.become).toEqual({ kind: 'glyph', id: 'question' });
+    expect(last.say).toBe('Ask me anything.');
+    expect(last.chips).toEqual(['Who are you?', 'What have you built?', 'Play the game']);
   });
 
-  it('the tour runs under a minute; stories have two lines each and end with reach-me chips', () => {
-    expect(duration(tour)).toBeGreaterThan(40_000);
-    expect(duration(tour)).toBeLessThan(60_000);
+  it('the tour runs ~35 s; stories have two lines each and end with reach-me chips', () => {
+    expect(duration(tour)).toBeGreaterThan(33_000);
+    expect(duration(tour)).toBeLessThan(37_000);
     for (const s of stories) {
       expect(s.steps.filter((x) => x.say).length).toBe(2);
       expect(duration(s.steps)).toBeLessThanOrEqual(16_000);

@@ -13,7 +13,7 @@ export const WHO_CHIPS = ['What are you like?', 'What are you bad at?', 'Why sho
 export const BUILD_CHIPS = ['Share it', 'Build another', 'How was this made?'];
 export const STORY_CHIPS = ['Next story', 'What have you built?', 'How do I reach you?'];
 /** The tour's end chips (WAVE3 V3). */
-export const TOUR_END_CHIPS = ['Who are you?', 'Mirror', 'Play the game'];
+export const TOUR_END_CHIPS = ['Who are you?', 'What have you built?', 'Play the game'];
 
 /** Returning visitor with a stored build (POLISH1 A6): reopen it first, then the usual moves. */
 export const openBuildChip = (title: string): string => `Open my ${title}`;
