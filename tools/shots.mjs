@@ -208,9 +208,13 @@ const scenarios = {
     await page.evaluate(() => {
       localStorage.setItem('yoyo.v3.name', 'Dana');
       localStorage.setItem('yoyo.v3.visits', '2');
+
       localStorage.setItem('yoyo.v3.builds', JSON.stringify([{ instruction: 'a pomodoro timer', at: Date.now() - 86400000, ms: 15000, bytes: 8000, mode: 'scripted', example: 'pomodoro' }]));
       sessionStorage.clear();
     });
+    // a returning visit needs a 30-minute gap since lastSeen, which the first load stamps as it leaves:
+    // back-date it before the second load's scripts run
+    await page.addInitScript(() => localStorage.setItem('yoyo.v3.lastSeen', new Date(Date.now() - 86400000).toISOString()));
     await page.goto(q());
     await page.waitForFunction(() => window.__yoyo?.store.getState().phase === 'ready', null, { timeout: 30000 });
     await wait(4500);
