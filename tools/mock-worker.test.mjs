@@ -52,7 +52,7 @@ test('"How do I reach you?" is the contact reply, not "who" (POLISH1 C2)', () =>
 
 test('"Next one" walks on from the last card in the conversation', () => {
   const history = [{ role: 'visitor', text: 'what have you built?' }, { role: 'agent', text: '[[become:kart]] Seven things. [[show:prompt-racers]]' }];
-  assert.equal(mockReply('Next one', {}, history), '[[show:unfiltered]]');
+  assert.equal(mockReply('Next one', {}, history), '[[show:yoyo-loop]]');
 });
 
 test('every chip the site can show resolves to the right intent through the mock', async () => {

@@ -151,9 +151,10 @@ describe('special rules from faq.md', () => {
   });
 
   it('"Next one" walks the project order', () => {
-    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: null, random: () => 0 })).toBe('[[show:prompt-racers]]');
-    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'prompt-racers', random: () => 0 })).toBe('[[show:unfiltered]]');
-    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'polybot', random: () => 0 })).toBe('[[show:prompt-racers]]');
+    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: null, random: () => 0 })).toBe('[[show:unfiltered]]');
+    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'unfiltered', random: () => 0 })).toBe('[[show:prompt-racers]]');
+    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'polybot', random: () => 0 })).toBe('[[show:yoyo-network]]');
+    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'vortex', random: () => 0 })).toBe('[[show:unfiltered]]');
   });
 
   it('every scripted reply parses to clean text and valid actions', () => {

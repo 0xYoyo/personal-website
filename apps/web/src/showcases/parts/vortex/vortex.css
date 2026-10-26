@@ -1,0 +1,60 @@
+.sc-vx-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  gap: 3cqw;
+  padding: 6cqw 5cqw;
+}
+.sc-vx-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4cqw;
+}
+.sc-vx-label {
+  font-size: 1.8cqw;
+  color: var(--sc-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.sc-vx-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1cqw;
+  min-height: 10cqw;
+  padding: 1.6cqw;
+  border-radius: 1.4cqw;
+  border: 1px solid var(--sc-line);
+  background: var(--sc-soft);
+  font-size: 2.3cqw;
+  font-weight: 600;
+}
+.sc-vx-x {
+  font-family: var(--sc-display);
+  font-weight: 800;
+}
+.sc-vx-votes {
+  flex-wrap: wrap;
+  gap: 0.8cqw;
+}
+.sc-vx-votes i {
+  width: 2.6cqw;
+  height: 2.6cqw;
+  border-radius: 50%;
+  border: 1px solid var(--sc-line-2);
+}
+.sc-vx-votes i.is-on {
+  background: var(--sc-accent);
+  border-color: var(--sc-accent);
+}
+.sc-vx-admin.is-on {
+  background: var(--sc-accent);
+  border-color: var(--sc-accent);
+  color: var(--sc-on-accent);
+}
+.sc-vx-small {
+  font-size: 1.6cqw;
+  color: var(--sc-muted);
+}

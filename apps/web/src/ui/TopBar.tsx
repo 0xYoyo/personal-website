@@ -1,4 +1,5 @@
 import { copy } from '../content/copy';
+import { projects } from '../content/projects';
 import { ctl } from '../controller';
 import { useStore } from '../state/store';
 
@@ -16,7 +17,7 @@ export function TopBar({ voiceSupported }: { voiceSupported: boolean }) {
         {copy.menu.home}
       </button>
       <nav className="y-menu" aria-label="Menu">
-        <button className="y-textbtn" aria-current={overlay === 'card'} onClick={() => ctl.openProject(useStore.getState().project ?? 'prompt-racers')}>
+        <button className="y-textbtn" aria-current={overlay === 'card'} onClick={() => ctl.openProject(useStore.getState().project ?? projects[0]!.id)}>
           {copy.menu.work}
         </button>
         <button className="y-textbtn" aria-current={overlay === 'contact'} onClick={() => ctl.contact()}>

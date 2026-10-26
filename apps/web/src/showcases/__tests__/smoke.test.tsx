@@ -5,7 +5,7 @@ import { ShowcaseFrame, showcaseOrder, showcases, showcaseTiming } from '../part
 describe('showcases', () => {
   it('exports all seven project ids', () => {
     expect(Object.keys(showcases).sort()).toEqual([...showcaseOrder].sort());
-    expect(showcaseOrder).toHaveLength(7);
+    expect(showcaseOrder).toHaveLength(9);
   });
 
   for (const id of showcaseOrder) {

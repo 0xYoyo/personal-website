@@ -1,0 +1,100 @@
+.sc-yn-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 3cqw;
+  padding: 5cqw;
+}
+.sc-yn-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6cqw;
+}
+.sc-yn-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1.4cqw;
+  border-bottom: 1px solid var(--sc-line);
+}
+.sc-yn-logo {
+  font-family: var(--sc-display);
+  font-weight: 700;
+  font-size: 3cqw;
+}
+.sc-yn-follow {
+  font-size: 1.9cqw;
+  padding: 0.5cqw 1.4cqw;
+  border-radius: 99px;
+  border: 1px solid var(--sc-line-2);
+  color: var(--sc-muted);
+}
+.sc-yn-follow.is-on {
+  background: var(--sc-accent);
+  border-color: var(--sc-accent);
+  color: var(--sc-on-accent);
+}
+.sc-yn-post {
+  display: flex;
+  align-items: center;
+  gap: 1.6cqw;
+  padding: 1.6cqw;
+  border-radius: 1.4cqw;
+  background: var(--sc-soft);
+  border: 1px solid var(--sc-line);
+}
+.sc-yn-av {
+  width: 4.6cqw;
+  height: 4.6cqw;
+  border-radius: 50%;
+  flex: none;
+  background: var(--sc-line-2);
+}
+.sc-yn-av.is-yoyo {
+  background: var(--sc-accent);
+}
+.sc-yn-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.sc-yn-who {
+  font-size: 1.8cqw;
+  color: var(--sc-muted);
+}
+.sc-yn-text {
+  font-size: 2.3cqw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-yn-like {
+  font-size: 2cqw;
+  color: var(--sc-muted);
+  flex: none;
+}
+.sc-yn-like.is-on {
+  color: var(--sc-accent);
+}
+.sc-yn-api {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqw;
+  font-size: 1.7cqw;
+}
+.sc-yn-call {
+  display: flex;
+  justify-content: space-between;
+  gap: 1cqw;
+  padding: 1cqw 1.2cqw;
+  border-radius: 0.8cqw;
+  border: 1px solid var(--sc-line);
+  background: var(--sc-panel);
+  white-space: nowrap;
+}
+.sc-yn-ok {
+  color: var(--sc-accent);
+}

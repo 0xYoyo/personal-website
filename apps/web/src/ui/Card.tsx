@@ -61,7 +61,7 @@ export function Card() {
   const p = projectById(id);
   // a project on the second shelf (WAVE3 S3: "Written by hand, 2022–23") carries its shelf's label,
   // shown as a tiny mono header above the card; the ←/→ sequence runs straight through both shelves
-  const shelf = (p as typeof p & { shelf?: string }).shelf;
+  const shelf = p.shelf;
   const Showcase = getShowcase(p.showcase);
 
   return (

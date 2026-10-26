@@ -51,6 +51,8 @@ export const BUILD_SEEDS: Record<ProjectId, string> = {
   'availability-monitor': 'a calendar that highlights the dates a room becomes available',
   'pnl-bot': 'a profit and loss calculator for a list of trades, with realized and unrealized totals',
   polybot: 'a chart of two price lines that highlights where they diverge',
+  'yoyo-network': 'a tiny social feed where you can post, like and follow, all in the page',
+  vortex: 'an application form with a members vote tally and an approve button',
 };
 
 export type ChipCommand =

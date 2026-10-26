@@ -1,8 +1,8 @@
-// The seven carded projects (SPEC §2.4, §3.5). Facts are ported from v2's
+// The carded projects: seven from 2026, then two written by hand (WAVE3 V4). Facts are ported from v2's
 // projects.ts (verified against the baked GitHub data, 2026-10-23); commit and
 // PR counts are baked literals computed from data/commits.json and prs.json so
-// the site doesn't ship 300 kB of JSON. Status words are his: be honest.
-// `voiceLine` comes from the scripted-brain replies in faq.md.
+// the site doesn't ship 300 kB of JSON. Status words are mine: be honest.
+// `voiceLine` is first person and human (what it does for a person); the stack stays in `stack`.
 import type { GlyphId, ProjectId } from '@yoyo/protocol';
 
 export type ProjectStatus = 'active' | 'shipped' | 'paused' | 'stopped' | 'archived';
@@ -25,18 +25,20 @@ export interface Project {
   statusNote?: string;
   /** "Jul 2026 – present" */
   period: string;
-  /** One sentence in his voice (the card's line) */
+  /** One line in my voice: what it does for a person, no stack words (WAVE3 V4) */
   voiceLine: string;
   /** One plain sentence of what it is (screen readers, history, OG) */
   oneLiner: string;
-  /** The three tiny mono facts on the card */
-  cardFacts: [string, string, string];
+  /** The two small facts on the card: human, numbers allowed, no jargon (WAVE3 V4) */
+  cardFacts: [string, string];
   /** All verified facts (the agent may quote these) */
   facts: string[];
   stack: string[];
   links: ProjectLink[];
   /** Prompt Racers: the card gets a Play button that opens the game */
   play?: boolean;
+  /** the second shelf's header ("Written by hand, 2022–23"); the card shows it above itself */
+  shelf?: string;
   glyph: GlyphId;
   showcase: ShowcaseId;
   /** Public commits on the default branch, from commits.json */
@@ -60,51 +62,20 @@ export const unfilteredQueries = ['elegant summer wedding dress, not black, unde
 /** Densest 96 hours on Unfiltered (summary.md): 2026-10-03 15:53Z → 10-07 15:24Z */
 export const burst = { prs: 44, issues: 18, start: '2026-10-03', end: '2026-10-07' } as const;
 
-// Order per SPEC §3.5.
+// Order per WAVE3 V4: the 2026 shelf, then "Written by hand, 2022–23" (the card shows `shelf`).
+/** The second shelf's header (WAVE3 V4). */
+export const HAND_SHELF = 'Written by hand, 2022–23';
+
 export const projects: Project[] = [
-  {
-    id: 'prompt-racers',
-    name: 'Prompt Racers',
-    nameHe: 'מרוץ הפרומפטים',
-    status: 'shipped',
-    period: 'Aug 2026',
-    voiceLine: 'A 3D kart racer that teaches kids prompt engineering, in one HTML file with zero network calls.',
-    oneLiner:
-      'A 3D kart racer that teaches Israeli kids aged 8–15 prompt engineering. Built for the Base44 "Hour of Vibe Code" 2026 contest.',
-    cardFacts: [
-      'One HTML file, zero network calls, no asset files.',
-      "Seven AI opponents share the player's physics.",
-      '17 test suites and a gate that fails on any network request.',
-    ],
-    facts: [
-      'One HTML file, zero network calls, no asset files. Graphics are procedural; audio is synthesized.',
-      'Hebrew-first with full RTL and an English toggle.',
-      "Seven AI opponents share the player's physics. Drift boosts, item boxes, prompt-building progression.",
-      'Three quality tiers to hold 60 fps.',
-      '17 test suites, plus a verify gate that intercepts every network request and fails on any.',
-    ],
-    stack: ['JavaScript', 'Three.js', 'Web Audio API', 'procedural generation', 'Puppeteer'],
-    links: [gh('prompt-racers')],
-    play: true,
-    glyph: 'kart',
-    showcase: 'prompt-racers',
-    commits: 59,
-    commitSpan: ['2026-08-06', '2026-08-25'],
-    mergedPRs: 3,
-  },
   {
     id: 'unfiltered',
     name: 'Unfiltered',
     status: 'paused',
-    statusNote: "no paying merchants, and the engine hadn't cleared his own bar",
+    statusNote: "no paying merchants, and the engine hadn't cleared my own bar",
     period: 'Jul – Oct 2026',
-    voiceLine: 'Type "elegant summer wedding dress, not black, under ₪400" in any language and get ranked products.',
+    voiceLine: "Type what you want the way you'd say it to a friend. It finds the product.",
     oneLiner: 'A natural-language product search engine. Platform-independent, first distributed as a Shopify app.',
-    cardFacts: [
-      'p95 latency down ~70% on warm bilingual benchmarks.',
-      'Bilingual evaluation suite with 98 regression cases.',
-      '245 PRs merged, mostly through yoyo-loop.',
-    ],
+    cardFacts: ['Any language, and follow-ups like "same but cheaper".', '245 pull requests merged, most of them built by my agents.'],
     facts: [
       'Turns a request in any language into ranked products; a follow-up like "same but cheaper" modifies the search.',
       'Schema-validated LLM intent extraction, hybrid vector and keyword retrieval, SQL constraints, model fallbacks, cost metering.',
@@ -122,24 +93,46 @@ export const projects: Project[] = [
     mergedPRs: 245,
   },
   {
+    id: 'prompt-racers',
+    name: 'Prompt Racers',
+    nameHe: 'מרוץ הפרומפטים',
+    status: 'shipped',
+    period: 'Aug 2026',
+    voiceLine: 'A kart racer that teaches kids how to talk to AI. Play it.',
+    oneLiner:
+      'A 3D kart racer that teaches Israeli kids aged 8–15 prompt engineering. Built for the Base44 "Hour of Vibe Code" 2026 contest.',
+    cardFacts: ['One file. Nothing loads from the internet.', 'Seven AI opponents race on the same physics as you.'],
+    facts: [
+      'One HTML file, zero network calls, no asset files. Graphics are procedural; audio is synthesized.',
+      'Hebrew-first with full RTL and an English toggle.',
+      "Seven AI opponents share the player's physics. Drift boosts, item boxes, prompt-building progression.",
+      'Three quality tiers to hold 60 fps.',
+      '17 test suites, plus a verify gate that intercepts every network request and fails on any.',
+    ],
+    stack: ['JavaScript', 'Three.js', 'Web Audio API', 'procedural generation', 'Puppeteer'],
+    links: [gh('prompt-racers')],
+    play: true,
+    glyph: 'kart',
+    showcase: 'prompt-racers',
+    commits: 59,
+    commitSpan: ['2026-08-06', '2026-08-25'],
+    mergedPRs: 3,
+  },
+  {
     id: 'yoyo-loop',
     name: 'yoyo-loop',
     status: 'active',
     period: 'Jul 2026 – present',
-    voiceLine: 'He writes the spec, agents build in isolated worktrees and open PRs, another agent reviews, and only he merges.',
+    voiceLine: 'How I build now: I write the spec, agents do the rest, I merge.',
     oneLiner: 'An autonomous, human-gated software factory: eight Claude Code skills over Linear, GitHub and Slack.',
-    cardFacts: [
-      '44 PRs across 18 issues in 96 hours on Unfiltered.',
-      'Eight Claude Code skills over Linear, GitHub and Slack.',
-      'Agent review tied to the exact commit and CI. A human merges.',
-    ],
+    cardFacts: ['44 pull requests in four days on one product.', 'Nothing ships until I merge it.'],
     facts: [
-      '/yoyo-spec interviews him and files a Linear issue with AC-N acceptance criteria and NG-N non-goals.',
+      '/yoyo-spec interviews me and files a Linear issue with AC-N acceptance criteria and NG-N non-goals.',
       '/yoyo-build claims an agent-ready issue, implements it in an isolated git worktree and opens a PR.',
       '/yoyo-review posts a three-group verdict tied to the exact commit and CI results. A human merges.',
       'Command guards, bounded repair cycles, stall detection, Slack alerts, sensitive-path escalation.',
       '44 PRs merged across 18 issues in 4 days on Unfiltered (3 Oct – 7 Oct 2026).',
-      '55 PRs merged in its own repo. Started as an adaptation of Finn-loop; now his own.',
+      '55 PRs merged in its own repo. Started as an adaptation of Finn-loop; now mine.',
     ],
     stack: ['Claude Code skills', 'Linear', 'GitHub', 'Slack', 'git worktrees'],
     links: [gh('yoyo-loop')],
@@ -154,15 +147,10 @@ export const projects: Project[] = [
     name: 'Reichman Courses connector',
     status: 'shipped',
     period: 'Oct 2026',
-    voiceLine:
-      'An MCP connector so students can ask Claude or ChatGPT "what\'s due this week?" and get a real answer from Moodle, the grade system, lecture recordings and Piazza.',
+    voiceLine: "Ask Claude what's due this week. It checks your actual courses.",
     oneLiner:
       'An unofficial MCP connector so Reichman students can ask Claude, ChatGPT or Claude Code about their own courses in plain language.',
-    cardFacts: [
-      'Published on npm; installs by double-click.',
-      'Submits or posts only after explicit confirmation.',
-      'Never retries a wrong password, so it cannot lock an account.',
-    ],
+    cardFacts: ['Installs by double-click. Published on npm.', 'Never submits anything without asking you first.'],
     facts: [
       'Reads Moodle, syllabi, the Student Info Station, Panopto lecture transcripts and Piazza.',
       'Submits assignments or posts to forums only after explicit confirmation.',
@@ -183,14 +171,9 @@ export const projects: Project[] = [
     name: 'Availability Monitor',
     status: 'shipped',
     period: 'Mar – Apr 2026',
-    voiceLine:
-      'He wanted a room at a sold-out desert hotel for Passover, so he wrote a monitor that pings Telegram the second one opens.',
+    voiceLine: 'A sold-out hotel, a Telegram ping the second a room opens.',
     oneLiner: 'Telegram alerts when a room opens up at the Metzoke Dragot hotel.',
-    cardFacts: [
-      'Flexible date windows, stay length and guest count.',
-      'Runs locally or on GitHub Actions.',
-      'Found a last-minute Passover stay.',
-    ],
+    cardFacts: ['Got me a last-minute Passover room.', 'Any dates, any stay length, any number of guests.'],
     facts: ['Flexible date windows, stay length and guest count.', 'Runs locally or on GitHub Actions.', 'Found a last-minute Passover stay.'],
     stack: ['TypeScript', 'Node 22', 'GitHub Actions', 'Telegram Bot API'],
     links: [gh('availability-monitor')],
@@ -205,10 +188,9 @@ export const projects: Project[] = [
     name: 'Discord PnL bot',
     status: 'shipped',
     period: 'Sep 2023',
-    voiceLine:
-      'A Discord bot he hand-wrote in 2023, before AI tools: realized and unrealized P&L for a community from wallet activity across EVM chains, Solana and Bitcoin.',
+    voiceLine: "What a community's wallets actually made. Written by hand in 2023.",
     oneLiner: 'Realized and unrealized P&L reports for a community, from wallet-level buys, sells, fees and holdings.',
-    cardFacts: ['Tokens and NFTs across EVM chains, Solana and Bitcoin.', 'Hand-written, before AI.', 'A community of ~100–200 members.'],
+    cardFacts: ['Tokens and NFTs on Ethereum-style chains, Solana and Bitcoin.', 'Built for a community of about 100–200 members.'],
     facts: ['Tokens and NFTs across EVM chains, Solana and Bitcoin.', 'Hand-written, before AI.', 'Built for a community of ~100–200 members.'],
     stack: ['JavaScript'],
     links: [gh('discord-PnL-bot-0xYoyo')],
@@ -224,14 +206,9 @@ export const projects: Project[] = [
     status: 'stopped',
     statusNote: "the edge wasn't strong enough",
     period: 'Mar 2026',
-    voiceLine:
-      "Polybot watched Polymarket sports prices against a sharp bookmaker's; he stopped it when the edge wasn't strong enough and big firms had the latency.",
+    voiceLine: 'A bet I stopped when the numbers said stop.',
     oneLiner: 'Polymarket sports prices, observed against Pinnacle-derived reference prices.',
-    cardFacts: [
-      'Immutable time-series snapshots, as a hard rule.',
-      'Allowlists, dry-run, budget caps and a kill switch.',
-      '11 leagues, including 3-way soccer markets.',
-    ],
+    cardFacts: ["Watched 11 sports leagues against a sharp bookmaker's prices.", "Stopped in October 2026: the edge wasn't strong enough."],
     facts: [
       'Immutable time-series snapshots, as a hard rule.',
       'Request broker with allowlists, dry-run, budget caps and a kill switch.',
@@ -244,6 +221,52 @@ export const projects: Project[] = [
     showcase: 'polybot',
     commits: 5,
     commitSpan: ['2026-03-10', '2026-03-12'],
+    mergedPRs: 0,
+  },
+  {
+    id: 'yoyo-network',
+    name: 'yoyo-network',
+    status: 'shipped',
+    period: 'Jul – Aug 2023',
+    voiceLine: 'A social network I wrote from scratch: sign up, post, follow, like.',
+    oneLiner: 'A full-stack social network with its own REST API and login, written by hand during The Odin Project.',
+    cardFacts: ['Posts with photos, likes, comments and follows.', 'Its own backend and login, written by hand in 2023.'],
+    facts: [
+      'A RESTful, stateless API and a React front end that talks to it.',
+      'Sign up, log in, or look around as a guest with a demo profile.',
+      'Home feed of followed users, profiles, follow and unfollow, posts with pictures, likes and comments.',
+      'Login with Passport, bcrypt and JWTs; image uploads through Multer and Cloudinary.',
+    ],
+    stack: ['JavaScript', 'React', 'Node.js', 'Express', 'MongoDB', 'Passport', 'JWT'],
+    links: [gh('yoyo-network-0xYoyo'), { kind: 'live', label: 'Live', href: 'https://yoyo-network.netlify.app/' }],
+    glyph: 'keyboard',
+    showcase: 'yoyo-network',
+    shelf: HAND_SHELF,
+    commits: 58,
+    commitSpan: ['2023-07-30', '2023-08-25'],
+    mergedPRs: 0,
+  },
+  {
+    id: 'vortex',
+    name: 'Vortex application system',
+    status: 'shipped',
+    period: 'Dec 2023 – Apr 2025',
+    voiceLine: 'How a community lets new people in: apply with X, members vote in Discord, an admin decides.',
+    oneLiner: 'Community admissions: X (Twitter) sign-in, Discord member voting and an admin dashboard.',
+    cardFacts: ['Members vote on every applicant in Discord.', 'The bot written by hand in 2023; the site in 2025.'],
+    facts: [
+      'Applicants sign in with X (Twitter) OAuth.',
+      'Community members vote on each application in Discord.',
+      'An admin dashboard shows the votes and decides.',
+      'The Discord bot is from Dec 2023; the application site from Mar–Apr 2025.',
+    ],
+    stack: ['React', 'Node.js', 'MongoDB', 'Discord.js', 'X OAuth'],
+    links: [gh('vortex-application'), { kind: 'repo', label: 'Bot', href: 'https://github.com/0xYoyo/vortex-bot' }],
+    glyph: 'check',
+    showcase: 'vortex',
+    shelf: HAND_SHELF,
+    commits: 89,
+    commitSpan: ['2023-09-04', '2025-04-08'],
     mergedPRs: 0,
   },
 ];
