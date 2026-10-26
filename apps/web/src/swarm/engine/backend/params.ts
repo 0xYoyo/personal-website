@@ -72,6 +72,8 @@ export interface SimParams {
   bloomK: number;
   /** held-particle brightness (a dim locked frame border: < 1) */
   heldDim: number;
+  /** a scene is performed (wave 3 show): held targets are group-local, posed per group (see engine/perform.ts) */
+  grpOn: number;
 }
 
 /**
@@ -121,7 +123,7 @@ export function defaultParams(): SimParams {
     boundCx: 0, boundCy: 0, boundHw: 460, boundHh: 252,
     freeze: 0, snap: 0,
     pulse: 0, brightness: 1, camX: 0, camY: 0, sizeScale: 1,
-    freeDim: 1, farFrac: 0, shapeExpo: 1, frameGlow: 0, bloomK: 1, heldDim: 1,
+    freeDim: 1, farFrac: 0, shapeExpo: 1, frameGlow: 0, bloomK: 1, heldDim: 1, grpOn: 0,
   };
 }
 

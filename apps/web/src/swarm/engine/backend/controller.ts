@@ -1,10 +1,15 @@
-import type { Mood, ShapeSpec } from '@yoyo/protocol';
+import type { Mood, Scene, SceneGroup, ShapeSpec } from '@yoyo/protocol';
 import type { SimParams } from './params';
 import { BOUND_INSET, defaultParams, HOLE_R, MAX_KEEPOUT, shapeExposure, targetArea } from './params';
 import type { Targets, Viewport } from '../shapes';
 import { emptyTargets, frameTargets, ringTargets, shapeTargets, stageCentre } from '../shapes';
 import { hash01 } from '../hash';
 import type { Scheduler } from './scheduler';
+import {
+  GROUP_FLOATS, GROUP_TEXELS, HIST, PoseHistory, T_POSE, applyPose, evalPath, groupCounts, groupLook, matchSlots, partition,
+  poseToWorld, reassign, sceneFor, writeGroup, type Pose,
+} from '../perform';
+import { sceneShapeTargets, stageFrame, type LocalTargets } from '../sceneShapes';
 
 export type Rect = { x: number; y: number; w: number; h: number };
 
@@ -103,8 +108,32 @@ export function dimFrameBlocks(f: Rect, others: readonly Rect[], gap = 40): { t:
   return o;
 }
 
+interface GroupRT {
+  g: SceneGroup;
+  /** the group's shape particles, and for each the index of its local target */
+  members: number[]; slots: Int32Array;
+  trail: number[];
+  prev: Pose | null;
+  hist: PoseHistory;
+  chase: { x: number; y: number; on: number; lean: number } | null;
+}
+
+interface ShowRT {
+  source: Scene; scene: Scene; start: number;
+  counts: number[]; trails: number[];
+  assign: Uint8Array;
+  /** n × [group, trail u, reveal, 0] */
+  gi: Float32Array;
+  groups: GroupRT[];
+  locals: LocalTargets[];
+}
+
 export interface ControllerHooks {
   upload(a: Targets, b: Targets): void;
+  /** Per-particle group info for a performed scene (n × [group, trail u, reveal, 0]); null = no groups. */
+  groups?(info: Float32Array | null): void;
+  /** The group data (poses, looks, trail history), every frame while a scene is performed. */
+  groupData?(data: Float32Array): void;
   /** Called when a frame reaches progress 1 (the "lock" flash). */
   onLock?(): void;
 }
@@ -153,6 +182,9 @@ export class Controller {
   private fullFrame = false;
   /** Murmuration roost centre (world px), eased toward the stage centre. */
   private roostX = 0; private roostY = 0;
+  /** The scene being performed (wave 3 show): groups, their particles, poses. */
+  private show: ShowRT | null = null;
+  private groupData = new Float32Array(GROUP_FLOATS);
 
   constructor(n: number, hooks: ControllerHooks, sched: Scheduler) {
     this.n = n; this.hooks = hooks; this.sched = sched;
@@ -211,6 +243,12 @@ export class Controller {
     return v;
   }
 
+  /** The free stage scenes are laid out in (CSS px): the stage minus keep-outs, or the viewport. */
+  get stageBox(): Rect {
+    const L = this.layout();
+    return L.stage ? { ...L.stage } : { x: 0, y: 0, w: this.vp.w, h: this.vp.h };
+  }
+
   /** The layout shapes are fitted into (QA / warm-up). */
   get shapeLayout(): Viewport { return this.layout(); }
 
@@ -218,6 +256,7 @@ export class Controller {
   setLite(on: boolean): void { if (this.lite === on) return; this.lite = on; this.relayout(); }
 
   private relayout(): void {
+    if (this.show) { void this.relayoutShow(); return; }
     if (!this.holding || !this.lastSpec || this.frame || this.ringActive) return;
     // re-layout the held shape for the new viewport/stage, without a re-knit
     const spec = this.lastSpec;
@@ -230,6 +269,8 @@ export class Controller {
   get now(): number { return this.p.time; }
   get targets(): [Targets, Targets] { return [this.A, this.B]; }
   get spec(): ShapeSpec | null { return this.lastSpec; }
+  /** The scene being performed (null outside the show). */
+  get scene(): Scene | null { return this.show?.source ?? null; }
 
   // ------------------------------------------------------------ shapes
 
@@ -270,6 +311,7 @@ export class Controller {
     void shapeTargets(spec, this.n, this.layout(), depth).then((t) => {
       if (tok !== this.token || !t) { knitted(false); return; }
       this.lastSpec = spec; this.lastDepth = depth;
+      this.leaveShow();
       this.knit(t);
       if (this.mood === 'idle' || this.mood === 'thinking' || this.mood === 'listening') { this.mood = 'speaking'; this.setMoodKnobs('speaking'); }
       if (opts?.hold && opts.hold > 0) {
@@ -283,6 +325,7 @@ export class Controller {
 
   release(): void {
     this.token++;
+    this.leaveShow();
     this.clearHold();
     this.ringActive = false; this.p.ringOn = 0;
     this.frame = null;
@@ -316,6 +359,7 @@ export class Controller {
     const dim = !!opts?.dim && pr >= 1;
     if (!same) {
       this.token++;
+      this.leaveShow();
       this.clearHold();
       this.ringActive = false; this.p.ringOn = 0;
       const t = frameTargets(this.n, rect, this.vp, dim ? DIM_THICKNESS : 11);
@@ -355,6 +399,242 @@ export class Controller {
   }
   get gathering(): boolean { return this.p.time < this.gatherEnd; }
 
+  // ------------------------------------------------------------ the show (wave 3): groups, paths, trails
+
+  /**
+   * Perform a scene: the particles split into its groups (nearest-first when the group count changes, so a
+   * split or merge reads as one flow; kept as they are when it doesn't), each group knits into its shape, and
+   * from then on every frame only the groups' poses move (the backends transform the sampled points — the
+   * shape moves, it never re-knits). Resolves true once knitted in, false if something else took the body.
+   */
+  perform(scene: Scene): Promise<boolean> {
+    const tok = ++this.token;
+    this.clearHold();
+    this.ringActive = false; this.p.ringOn = 0;
+    this.frame = null;
+    this.p.selectFrac = 1.01;
+    const sc = sceneFor(scene, this.lite);
+    const L = this.layout();
+    let knitted: (ok: boolean) => void = () => undefined;
+    const done = new Promise<boolean>((r) => { knitted = r; });
+    void this.sampleScene(sc, L).then((locals) => {
+      if (tok !== this.token || !locals) { knitted(false); return; }
+      this.installShow(scene, sc, locals, L);
+      if (this.mood === 'idle' || this.mood === 'thinking' || this.mood === 'listening') { this.mood = 'speaking'; this.setMoodKnobs('speaking'); }
+      this.sched.after(this.p.spread + this.p.ramp, () => knitted(tok === this.token));
+    }).catch((e: unknown) => { console.warn('[swarm] scene failed', e); knitted(false); });
+    return done;
+  }
+
+  /** Group sizes for a scene on this tier: [shape particles, trail particles] per group. */
+  private sceneCounts(sc: Scene): { counts: number[]; trails: number[] } {
+    const counts = groupCounts(this.n, sc.groups.map((g) => g.share));
+    const trails = sc.groups.map((g, k) => (this.lite ? 0 : Math.round(Math.min(0.6, Math.max(0, g.trail ?? 0)) * counts[k]!)));
+    return { counts, trails };
+  }
+
+  private async sampleScene(sc: Scene, L: Viewport): Promise<LocalTargets[] | null> {
+    const { counts, trails } = this.sceneCounts(sc);
+    return Promise.all(sc.groups.map((g, k) => sceneShapeTargets(g.shape, counts[k]! - trails[k]!, L, k + 1)));
+  }
+
+  /** Where every particle is held now (world, n × 4), or null when nothing is held. */
+  private heldWorld(): Float32Array | null {
+    if (!this.holding || this.p.goal <= 0) return null;
+    if (!this.show) return this.B.pos;
+    const out = new Float32Array(this.n * 4);
+    const S = this.show, B = this.B.pos, d = this.groupData;
+    const pose: Pose = { x: 0, y: 0, rot: 0, scale: 1, sx: 1 };
+    for (let i = 0; i < this.n; i++) {
+      const o = i * 4, g = S.gi[o]!;
+      if (g < 0) { out.set(B.subarray(o, o + 4), o); continue; }
+      const r = g * GROUP_TEXELS * 4 + T_POSE * 4;
+      pose.x = d[r]!; pose.y = d[r + 1]!; pose.rot = d[r + 2]!; pose.scale = d[r + 3]!; pose.sx = d[r + 4]!;
+      applyPose(B[o]!, B[o + 1]!, B[o + 2]!, pose, out, o);
+      out[o + 3] = B[o + 3]!;
+    }
+    return out;
+  }
+
+  private installShow(source: Scene, sc: Scene, locals: LocalTargets[], L: Viewport): void {
+    const n = this.n, G = sc.groups.length;
+    const { counts, trails } = this.sceneCounts(sc);
+    const F = stageFrame(L);
+    const pose0 = sc.groups.map((g) => poseToWorld(evalPath(g.path, this.reduced ? (sc.tableau ?? sc.duration * 0.85) : 0), F.cx, F.cy, F.hw, F.hh));
+    // each group's shape targets in the world at the scene's first pose (for the nearest-first split / merge)
+    const world0 = locals.map((lt, k) => {
+      const m = lt.pos.length / 4, w = new Float32Array(m * 4);
+      for (let j = 0; j < m; j++) applyPose(lt.pos[j * 4]!, lt.pos[j * 4 + 1]!, lt.pos[j * 4 + 2]!, pose0[k]!, w, j * 4);
+      return w;
+    });
+    const prev = this.heldWorld();
+    const old = this.show;
+    const keep = !!old && old.counts.length === G && old.counts.every((c, k) => c === counts[k]);
+    const assign = keep ? old.assign : prev ? reassign(prev, n, world0, counts) : partition(n, sc.groups.map((g) => g.share));
+    const B = emptyTargets(n);
+    const gi = new Float32Array(n * 4);
+    const groups: GroupRT[] = [];
+    for (let k = 0; k < G; k++) {
+      const members: number[] = [];
+      for (let i = 0; i < n; i++) if (assign[i] === k) members.push(i);
+      // trail particles: the group's members with the lowest trail hash
+      const byTrail = trails[k]! > 0 ? [...members].sort((a, b) => hash01(a, 55) - hash01(b, 55)) : [];
+      const trailSet = new Set(byTrail.slice(0, trails[k]!));
+      const shapeMembers = members.filter((i) => !trailSet.has(i));
+      const lt = locals[k]!;
+      const m = lt.pos.length / 4;
+      const slots = prev && !keep ? matchSlots(shapeMembers, prev, world0[k]!) : Int32Array.from(shapeMembers, (_, j) => j % Math.max(m, 1));
+      // the trail rides at the shape's rear (local −x, the lower half: a kart's exhaust)
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (let j = 0; j < m; j++) { x0 = Math.min(x0, lt.pos[j * 4]!); x1 = Math.max(x1, lt.pos[j * 4]!); y0 = Math.min(y0, lt.pos[j * 4 + 1]!); y1 = Math.max(y1, lt.pos[j * 4 + 1]!); }
+      const diag = Math.max(Math.hypot(x1 - x0, y1 - y0), 1);
+      shapeMembers.forEach((i, j) => {
+        const s = slots[j]!, o = i * 4, so = s * 4;
+        B.pos[o] = lt.pos[so]!; B.pos[o + 1] = lt.pos[so + 1]!; B.pos[o + 2] = lt.pos[so + 2]!;
+        // the hand-off delay: nearest first after a split / merge, else the usual hash + left→right sweep
+        const near = prev && !keep ? Math.min(1, Math.hypot(prev[o]! - world0[k]![so]!, prev[o + 1]! - world0[k]![so + 1]!) / (diag * 1.6)) : (lt.pos[so]! - x0) / Math.max(x1 - x0, 1);
+        B.pos[o + 3] = 0.3 * hash01(i, 11) + 0.7 * near;
+        B.col.set(lt.col.subarray(so, so + 4), o);
+        gi[o] = k; gi[o + 1] = 0; gi[o + 2] = lt.pos[so + 3]!;
+      });
+      for (const i of trailSet) {
+        const o = i * 4, u = 0.04 + 0.96 * hash01(i, 56);
+        B.pos[o] = x0 + (x1 - x0) * (0.06 + 0.06 * hash01(i, 57));
+        B.pos[o + 1] = y0 + (y1 - y0) * (0.12 + (0.22 + 0.25 * u) * (hash01(i, 58) - 0.5) + 0.12);
+        B.pos[o + 2] = (hash01(i, 59) - 0.5) * 20;
+        B.pos[o + 3] = 0.4 + 0.6 * hash01(i, 11);
+        gi[o] = k; gi[o + 1] = u; gi[o + 2] = 0;
+      }
+      if (!lt.col.some((v, j) => j % 4 === 3 && v > 0)) { /* uncoloured */ } else B.colored = true;
+      groups.push({ g: sc.groups[k]!, members: shapeMembers, slots, trail: [...trailSet], prev: null, hist: new PoseHistory(), chase: null });
+    }
+    // meta: the scene's footprint at its first pose
+    const all = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) {
+      const k = gi[i * 4]!;
+      applyPose(B.pos[i * 4]!, B.pos[i * 4 + 1]!, B.pos[i * 4 + 2]!, pose0[k]!, all, i * 4);
+    }
+    B.cx = F.cx; B.cy = F.cy; B.spin = false;
+    // hand-off: from where the particles are held now (baked to the world) to the groups
+    const wasHolding = this.holding && this.p.goal > 0;
+    const A = emptyTargets(n);
+    if (prev) { A.pos.set(prev); A.col.set(this.B.col); } else { A.pos.set(all); }
+    this.A = wasHolding ? A : B; this.B = B;
+    this.p.prevGoal = wasHolding ? 1 : 0;
+    this.p.goal = 1;
+    this.p.transit = wasHolding ? 1 : 0;
+    this.p.phaseStart = this.p.time;
+    this.p.spread = this.reduced ? 0 : 0.6;
+    this.p.ramp = this.reduced ? 0.05 : 0.35;
+    this.holding = true;
+    this.lastSpec = null;
+    this.p.shapeCx = F.cx; this.p.shapeCy = F.cy; this.p.spinOn = 0;
+    this.expoTarget = shapeExposure(n, targetArea(all, n), this.vp.w, this.vp.h);
+    this.show = { source, scene: sc, start: this.p.time, counts, trails, assign, gi, groups, locals };
+    this.hooks.groups?.(gi);
+    this.updateShow(0);
+    this.hooks.upload(this.A, this.B);
+  }
+
+  /** The stage changed mid-scene: re-sample the groups for the new layout, same particles, no re-knit. */
+  private async relayoutShow(): Promise<void> {
+    const S = this.show;
+    if (!S) return;
+    const L = this.layout();
+    const locals = await this.sampleScene(S.scene, L);
+    if (this.show !== S || !locals) return;
+    const B = this.B;
+    S.groups.forEach((G, k) => {
+      const lt = locals[k]!;
+      G.members.forEach((i, j) => {
+        const so = G.slots[j]! * 4, o = i * 4;
+        B.pos[o] = lt.pos[so]!; B.pos[o + 1] = lt.pos[so + 1]!; B.pos[o + 2] = lt.pos[so + 2]!;
+      });
+    });
+    S.locals = locals;
+    const F = stageFrame(L);
+    B.cx = F.cx; B.cy = F.cy;
+    this.p.shapeCx = F.cx; this.p.shapeCy = F.cy;
+    if (this.A !== B) this.A = B;
+    this.hooks.upload(this.A, this.B);
+  }
+
+  /** Leave the scene: its current pose is baked into world targets (what follows morphs from exactly there). */
+  private leaveShow(): void {
+    if (!this.show) return;
+    const w = this.heldWorld();
+    const t = emptyTargets(this.n);
+    if (w) t.pos.set(w); else t.pos.set(this.B.pos);
+    t.col.set(this.B.col); t.colored = this.B.colored; t.cx = this.B.cx; t.cy = this.B.cy;
+    this.show = null;
+    this.p.grpOn = 0;
+    this.A = t; this.B = t;
+    this.hooks.groups?.(null);
+    this.hooks.upload(this.A, this.B);
+  }
+
+  /** Per frame: every group's pose, look and trail history → the group data the backends read. */
+  private updateShow(dt: number): void {
+    const S = this.show!;
+    const p = this.p;
+    const tms = this.reduced ? (S.scene.tableau ?? S.scene.duration * 0.85) : (p.time - S.start) * 1000;
+    const F = stageFrame(this.layout());
+    const d = this.groupData;
+    d.fill(0);
+    S.groups.forEach((G, k) => {
+      let pose = poseToWorld(evalPath(G.g.path, tms), F.cx, F.cy, F.hw, F.hh);
+      if (G.g.follow === 'pointer') pose = this.chase(G, pose, dt);
+      const look = groupLook(G.g, tms);
+      G.hist.push(p.time, pose);
+      const span = (G.g.trailMs ?? 420) / 1000;
+      const hist: Pose[] = [];
+      for (let j = 0; j < HIST; j++) hist.push(G.hist.at(p.time - (j / (HIST - 1)) * span));
+      const prev = G.prev ?? pose;
+      writeGroup(d, k, pose, prev, look.bright, look.fill, prev.sx, hist);
+      G.prev = pose;
+    });
+    p.grpOn = 1;
+    this.hooks.groupData?.(d);
+  }
+
+  /**
+   * A group that follows the pointer: while a cursor is present it chases it (lagging ~0.3 s, stopping short
+   * of the hole the pointer opens, leaning into its turns); otherwise, and as it blends back, the path.
+   */
+  private chase(G: GroupRT, path: Pose, dt: number): Pose {
+    const p = this.p;
+    const c = G.chase ??= { x: path.x, y: path.y, on: 0, lean: 0 };
+    const present = p.pointerOn > 0.5 && p.time - this.ptrMoved < 3 && !this.reduced;
+    c.on += ((present ? 1 : 0) - c.on) * (1 - Math.exp(-dt * 3));
+    let gx = path.x, gy = path.y;
+    if (present) {
+      const dx = p.pointerX - c.x, dy = p.pointerY - c.y, dl = Math.max(Math.hypot(dx, dy), 1e-3);
+      const stop = HOLE_R * 1.25;
+      gx = p.pointerX - (dx / dl) * stop; gy = p.pointerY - (dy / dl) * stop;
+      gx = Math.max(-p.boundHw, Math.min(p.boundHw, gx)); gy = Math.max(-p.boundHh, Math.min(p.boundHh, gy));
+    }
+    const e = 1 - Math.exp(-dt / 0.3);
+    const ox = c.x;
+    c.x += (gx - c.x) * e; c.y += (gy - c.y) * e;
+    const vx = dt > 0 ? (c.x - ox) / dt : 0;
+    c.lean += (Math.max(-0.35, Math.min(0.35, -vx / 2400)) - c.lean) * (1 - Math.exp(-dt * 6));
+    const k = c.on;
+    return { x: path.x + (c.x - path.x) * k, y: path.y + (c.y - path.y) * k, rot: path.rot + c.lean * k, scale: path.scale, sx: path.sx };
+  }
+
+  /** QA: the current world pose of each performed group. */
+  get groupPoses(): Pose[] {
+    const S = this.show;
+    if (!S) return [];
+    return S.groups.map((_, k) => {
+      const r = k * GROUP_TEXELS * 4;
+      const d = this.groupData;
+      return { x: d[r]!, y: d[r + 1]!, rot: d[r + 2]!, scale: d[r + 3]!, sx: d[r + 4]! };
+    });
+  }
+  /** QA: the group of every particle (−1 = none) while a scene is performed. */
+  get groupOf(): Float32Array | null { return this.show ? this.show.gi.filter((_, j) => j % 4 === 0) : null; }
+
   // ------------------------------------------------------------ moods
 
   mood_(m: Mood): void {
@@ -376,6 +656,7 @@ export class Controller {
         const t = ringTargets(this.n, Math.min(rr, Math.min(this.vp.w, this.vp.h) * 0.16), 18, 5, c.x, c.y);
         this.token++;
         this.frame = null;
+        this.leaveShow();
         this.knit(t, { transit: true });
         this.ringActive = true;
         this.p.ringOn = 1;
@@ -396,6 +677,7 @@ export class Controller {
         this.mood = 'building';
         break;
       case 'excited': {
+        this.leaveShow();
         this.burstPending = this.reduced ? 0 : 1100;
         if (this.holding) {
           // burst, then re-knit the same shape
@@ -408,6 +690,7 @@ export class Controller {
         break;
       }
       case 'celebrate': {
+        this.leaveShow();
         const wasHolding = this.holding;
         if (wasHolding) { this.p.prevGoal = 0; this.p.goal = 0; this.p.phaseStart = this.p.time; }
         this.burstPending = this.reduced ? 0 : 900;
@@ -580,6 +863,8 @@ export class Controller {
     const ex = this.holding && !this.frame && !this.ringActive ? this.expoTarget : 1;
     p.shapeExpo += (ex - p.shapeExpo) * (1 - Math.exp(-dt * 1.5)); // follows the ~1 s knit, so the outgoing shape never flares
     p.bloomK = p.shapeExpo ** 2;
+    if (this.show) this.updateShow(dt);
+    else p.grpOn = 0;
     // speaking breathing + listening ring
     // breathing while speaking, plus the per-word pulse (~6 % scale, decays in ~120 ms)
     p.targetScale = this.reduced ? 1 : (this.mood === 'speaking' ? 1 + 0.012 * Math.sin(t * 2.4) : 1) * (1 + 0.1 * p.pulse);

@@ -75,8 +75,72 @@ export interface SwarmGather {
   gather(ms: number): Promise<void>;
 }
 
+// ---------------------------------------------------------------------------
+// The show (wave 3): the swarm performs scenes made of particle groups.
+// ---------------------------------------------------------------------------
+
+/**
+ * A keyframe of a group's pose, `t` ms from the scene start. Stage-relative units: x / y ∈ [-1, 1] across the
+ * free stage's half width / half height (0 = its centre, +y = down the screen); `rot` radians, clockwise on
+ * screen; `scale` × the shape's size fitted to the whole stage; `sx` an extra x scale (−1 = mirrored: a kart
+ * turning round passes through 0). `ease` shapes the segment that ends at this key (default 'inOut').
+ */
+export interface PathKey { t: number; x: number; y: number; rot?: number; scale?: number; sx?: number; ease?: 'linear' | 'in' | 'out' | 'inOut' | 'back' }
+export type Path = PathKey[];
+/** A scalar over the scene's time: [{ t ms, v }], linear between keys, held outside them. */
+export type Keys = { t: number; v: number }[];
+
+/** What a group can be: any ShapeSpec, a bar outline / filled rect (fractions of the free stage), or parts. */
+export type SceneShape =
+  | ShapeSpec
+  | { kind: 'bar'; w: number; h: number; thickness?: number }
+  | { kind: 'rect'; w: number; h: number }
+  | {
+      kind: 'parts';
+      /**
+       * Laid out in the group's frame (x / y in stage units, scale × the stage fit). Parts are revealed in
+       * order as the group's `fill` grows: part k shows once fill passes its share range. `reveal: 'x'` makes a
+       * part appear left → right within its range (a line being typed); default random (it fills in).
+       */
+      parts: { shape: SceneShape; share: number; x?: number; y?: number; scale?: number; reveal?: 'random' | 'x' }[];
+    };
+
+export interface SceneGroup {
+  shape: SceneShape;
+  /** share of the particles (normalised over the scene's groups) */
+  share: number;
+  /** pose over time; omitted = centred, scale 1 */
+  path?: Path;
+  /** brightness multiplier (number or keys); 1 = normal */
+  brightness?: number | Keys;
+  /** share of the group shown (0..1 or keys): the density ramp; parts reveal in order */
+  fill?: number | Keys;
+  /** share of the group that trails behind it (GPU tiers only), decaying along its last `trailMs` of path */
+  trail?: number;
+  trailMs?: number;
+  /** follow the visitor's pointer (while it is present) instead of the path; the path is the fallback */
+  follow?: 'pointer';
+}
+
+export interface Scene {
+  groups: SceneGroup[];
+  /** ms; the last pose holds after it */
+  duration: number;
+  /** reduced motion: the pose shown, ms into the scene (default 0.85 × duration) */
+  tableau?: number;
+  /** the canvas2d tier's version of this scene (≤ 3 groups); without it, groups beyond 3 are dropped */
+  lite?: Scene;
+}
+
+/** An engine may perform scenes (wave 3 show). Resolves true once the scene's groups have knitted in. */
+export interface SwarmPerform {
+  perform(scene: Scene): Promise<boolean>;
+  /** The free stage (stage minus keep-outs, CSS px) that scenes are laid out in. */
+  stageBox(): Rect;
+}
+
 /** What the UI holds: the required API plus the optional extensions. */
-export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage> & Partial<SwarmPause> & Partial<SwarmGather>;
+export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage> & Partial<SwarmPause> & Partial<SwarmGather> & Partial<SwarmPerform>;
 
 // ---------------------------------------------------------------------------
 // Id lists (the single source the guards and pickers use)

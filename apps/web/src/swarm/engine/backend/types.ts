@@ -23,6 +23,10 @@ export interface Engine {
   /** Overwrite positions/velocities (entry pour-in, reduced-motion scatter). */
   setState(pos: Float32Array, vel: Float32Array): void;
   setScene(scene: Scene): void;
+  /** A performed scene's per-particle group info (n × [group, trail u, reveal, 0]); null = no groups. */
+  setGroups?(info: Float32Array | null): void;
+  /** The performed groups' poses / looks / trail history (engine/perform.ts layout), every frame. */
+  setGroupData?(data: Float32Array): void;
   /** Simulate one step; draw unless `draw` is false (fast-forward under the manual clock). */
   frame(p: SimParams, draw?: boolean): void;
   screenshot(): Promise<Blob>;

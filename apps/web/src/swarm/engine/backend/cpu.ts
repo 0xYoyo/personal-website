@@ -8,6 +8,7 @@ import {
 import { FLOW_WAVES, WAVE_K, WAVE_W } from './flow';
 import type { Targets } from '../shapes';
 import { makeSeeds } from '../hash';
+import { GROUP_FLOATS, GROUP_TEXELS, T_LOOK, T_POSE, T_PREV, T_PREV_LOOK } from '../perform';
 
 /**
  * Dot scale for the 2D fallback (POLISH1 B6): fewer dots draw bigger and a little more opaque so 3k dots
@@ -23,6 +24,9 @@ export const LITE_HELD_SIZE = 1.22;
 
 /** Channels per node of the derived neighbourhood grid: mean-velocity sums (3), density, ±1-cell and ±3-cell density gradients. */
 const GC = 8;
+/** Draw classes: held, free near, free far, held dim (a scene group shown at < 70 %), held bright (> 120 %). */
+const NCLS = 5;
+const NB = NCLS * 4;
 const FW = FLOW_WAVES.flat();
 const NWAVES = FLOW_WAVES.length;
 
@@ -44,6 +48,8 @@ export class CpuEngine implements Engine {
   private pos: Float32Array; private vel: Float32Array; private col: Float32Array;
   private seed: Float32Array;
   private ta: Float32Array = new Float32Array(0); private tb: Float32Array = new Float32Array(0);
+  /** a performed scene (wave 3 show): per-particle group info and the groups' poses (engine/perform.ts) */
+  private gi: Float32Array | null = null; private gd = new Float32Array(GROUP_FLOATS);
   private ca: Float32Array = new Float32Array(0); private cb: Float32Array = new Float32Array(0);
   private field = new Float32Array(FIELD_W * FIELD_H * 4);
   private grid = new Float32Array(FIELD_W * FIELD_H * GC);
@@ -58,7 +64,7 @@ export class CpuEngine implements Engine {
   // per-particle constants
   private grp: Uint8Array; private tu: Float32Array; private toff: Float32Array; private farS: Float32Array; private cur: Uint8Array;
   // draw scratch (reused every frame)
-  private bucket: Int32Array; private bstart = new Int32Array(13); private bcls: Uint8Array;
+  private bucket: Int32Array; private bstart = new Int32Array(NB + 1); private bcls: Uint8Array;
   private sx: Float32Array; private sy: Float32Array;
 
   constructor(o: EngineInit) {
@@ -96,6 +102,8 @@ export class CpuEngine implements Engine {
   }
 
   setState(pos: Float32Array, vel: Float32Array): void { this.pos.set(pos); this.vel.set(vel); }
+  setGroups(info: Float32Array | null): void { this.gi = info; }
+  setGroupData(data: Float32Array): void { this.gd.set(data.subarray(0, this.gd.length)); }
   setScene(s: Scene): void { this.scene = s; }
 
   /** Splat velocity + density into the field, then derive the per-node gradients (see the class note). */
@@ -175,6 +183,7 @@ export class CpuEngine implements Engine {
     const bHw = p.boundHw, bHh = p.boundHh, bCx = p.boundCx, bCy = p.boundCy;
     const zx = Math.max(bHw - BOUND_ZONE, 1), zy = Math.max(bHh - BOUND_ZONE, 1);
     const stepW = dt / p.ramp;
+    const grpOn = p.grpOn > 0, GI = this.gi, GD = this.gd;
     for (let i = 0; i < n; i++) {
       const o = i * 4;
       const dly = B[o + 3]! * p.spread;
@@ -189,6 +198,20 @@ export class CpuEngine implements Engine {
       const wEff = w * (1 - p.transit * Math.sin(Math.PI * local) * TRANSIT_DIP);
       // target transform
       let tx = T[o]!, ty = T[o + 1]!, tz = T[o + 2]!;
+      // a performed scene's group: pose the local target, and feed the shape's own motion forward
+      let ffx = 0, ffy = 0, visG = 0;
+      const gk = grpOn && switched && GI ? GI[o]! : -1;
+      if (gk >= 0) {
+        const r = gk * GROUP_TEXELS * 4, a = r + T_POSE * 4, l = r + T_LOOK * 4, b = r + T_PREV * 4;
+        const c = Math.cos(GD[a + 2]!), s = Math.sin(GD[a + 2]!), lx = tx * GD[a + 3]! * GD[l]!, ly = ty * GD[a + 3]!;
+        const wx = GD[a]! + lx * c - ly * s, wy = GD[a + 1]! + lx * s + ly * c;
+        if (dt > 1e-5) {
+          const cb = Math.cos(GD[b + 2]!), sb = Math.sin(GD[b + 2]!), bx = tx * GD[b + 3]! * GD[r + T_PREV_LOOK * 4]!, by = ty * GD[b + 3]!;
+          ffx = (wx - (GD[b]! + bx * cb - by * sb)) / dt; ffy = (wy - (GD[b + 1]! + bx * sb + by * cb)) / dt;
+        }
+        tz *= GD[a + 3]!; tx = wx; ty = wy;
+        visG = (GI![o + 2]! < GD[l + 2]! - 1e-5 ? 1 : 0) * GD[l + 1]! - 1;
+      }
       if (p.spinOn > 0) { const dx = tx - p.shapeCx; tx = p.shapeCx + dx * cosR - tz * sinR; tz = dx * sinR + tz * cosR; }
       tx = p.shapeCx + (tx - p.shapeCx) * p.targetScale; ty = p.shapeCy + (ty - p.shapeCy) * p.targetScale;
       if (p.ringOn > 0) {
@@ -320,6 +343,7 @@ export class CpuEngine implements Engine {
       let dvx = dx * 6, dvy = dy * 6, dvz = dz * 6;
       const dl = dist * 6;
       if (dl > 1800) { const k = 1800 / dl; dvx *= k; dvy *= k; dvz *= k; }
+      dvx += ffx; dvy += ffy;
       ax += (dvx - vx) * 9 * wEff; ay += (dvy - vy) * 9 * wEff; az += (dvz - vz) * 9 * wEff;
       const sw = Math.min(dist / 250, 1) * wEff * 1.8 * p.flowAmp;
       ax += flx * sw; ay += fly * sw;
@@ -385,6 +409,9 @@ export class CpuEngine implements Engine {
         if (ny - bCy > ly && vy > 0) { ny = bCy + ly; vy = -vy * 0.5; } else if (ny - bCy < -ly && vy < 0) { ny = bCy - ly; vy = -vy * 0.5; }
       }
       if (p.snap > 0 && wDes > 0.5) { nx = tx; ny = ty; nz = tz; vx = vy = vz = 0; w = 1; }
+      // group visibility (mult − 1 in pos.w): eased; outside a scene back to 1; not yet handed off: as it was
+      const visGoal = gk >= 0 ? visG : grpOn && !switched ? P[o + 3]! : 0;
+      P[o + 3] = p.snap > 0 ? visGoal : P[o + 3]! + (visGoal - P[o + 3]!) * Math.min(1, dt * 12);
       P[o] = nx; P[o + 1] = ny; P[o + 2] = nz;
       V[o] = vx; V[o + 1] = vy; V[o + 2] = vz; V[o + 3] = w;
       const ck = p.snap > 0 ? 1 : Math.min(dt * 6, 1);
@@ -420,7 +447,7 @@ export class CpuEngine implements Engine {
       if (hw <= 0 || (p.koFrame > 0 && (k + 1 >= MAX_KEEPOUT || PP[`ko${k + 1}w`]! <= 0))) continue;
       cull[nc * 4] = PP[`ko${k}x`]!; cull[nc * 4 + 1] = PP[`ko${k}y`]!; cull[nc * 4 + 2] = hw - CULL_INSET; cull[nc * 4 + 3] = PP[`ko${k}h`]! - CULL_INSET; nc++;
     }
-    // 4 speed buckets × 3 classes (held, free near, free far) for uncoloured particles, one path each
+    // 4 speed buckets × 5 classes (held, free near, free far, held dim, held bright) for uncoloured particles, one path each
     // (counting sort into one reused index array: no per-frame allocation)
     const cls = this.bcls, start = this.bstart, order = this.bucket;
     start.fill(0);
@@ -432,25 +459,28 @@ export class CpuEngine implements Engine {
         for (let k = 0; k < nc && !hid; k++) hid = Math.abs(x - cull[k * 4]!) < cull[k * 4 + 2]! && Math.abs(y - cull[k * 4 + 1]!) < cull[k * 4 + 3]!;
         if (hid) { cls[i] = 254; continue; }
       }
+      const vis = 1 + P[o + 3]!;
+      if (vis < 0.15) { cls[i] = 254; continue; }
       if (C[o + 3]! > 0.15) { cls[i] = 255; continue; }
       const sp = Math.sqrt(V[o]! * V[o]! + V[o + 1]! * V[o + 1]!);
       const held = Math.min(Math.max(V[o + 3]!, 0), 1);
       // particles flying to a shape keep most of their warm colour (a full speed hue read as a blue burst)
       const st = Math.min(Math.max((sp - 120) / 580, 0), 1) * (1 - 0.75 * held);
-      const c = held > 0.5 ? 0 : this.farS[i]! < p.farFrac ? 2 : 1;
+      const c = held > 0.5 ? (vis < 0.7 ? 3 : vis > 1.2 ? 4 : 0) : this.farS[i]! < p.farFrac ? 2 : 1;
       const b = c * 4 + Math.min(3, Math.floor(st * 4));
       cls[i] = b; start[b + 1]!++;
     }
-    for (let b = 0; b < 12; b++) start[b + 1]! += start[b]!;
-    const fill = start.slice(0, 12);
+    for (let b = 0; b < NB; b++) start[b + 1]! += start[b]!;
+    const fill = start.slice(0, NB);
     for (let i = 0; i < n; i++) { const b = cls[i]!; if (b < 254) order[fill[b]!++] = i; }
     const ds = dotScale(n);
     const lite = n <= 6000 ? 1 : 0;
     const dimK = 1 - p.heldDim;
     const heldSize = (1 + 0.3 * p.frameGlow) * (1 + (LITE_HELD_SIZE - 1) * lite * (1 - p.frameGlow)) * (1 - 0.35 * dimK);
-    const clsAlpha = [p.shapeExpo * (1 + 0.5 * p.frameGlow) * ds.alpha * p.heldDim, p.freeDim * ds.alpha, p.freeDim * FAR_DIM * ds.alpha];
-    const clsSize = [heldSize * ds.size, ds.size, FAR_SIZE * ds.size];
-    for (let b = 0; b < 12; b++) {
+    const heldA = p.shapeExpo * (1 + 0.5 * p.frameGlow) * ds.alpha * p.heldDim;
+    const clsAlpha = [heldA, p.freeDim * ds.alpha, p.freeDim * FAR_DIM * ds.alpha, heldA * 0.42, Math.min(1.25, heldA * 1.5)];
+    const clsSize = [heldSize * ds.size, ds.size, FAR_SIZE * ds.size, heldSize * ds.size * 0.85, heldSize * ds.size * 1.15];
+    for (let b = 0; b < NB; b++) {
       const c = Math.floor(b / 4), st = ((b % 4) + 0.5) / 4;
       const s0 = start[b]!, s1 = start[b + 1]!;
       if (s1 <= s0) continue;
@@ -473,7 +503,7 @@ export class CpuEngine implements Engine {
       const o = i * 4, x = SX[i]!, y = SY[i]!;
       const m = C[o + 3]!;
       const r = base[0] + (C[o]! - base[0]) * m, gg = base[1] + (C[o + 1]! - base[1]) * m, bl = base[2] + (C[o + 2]! - base[2]) * m;
-      ctx.fillStyle = `rgba(${(r * 255) | 0},${(gg * 255) | 0},${(bl * 255) | 0},${Math.min(1, (0.6 + 0.4 * S[o + 2]!) * ds.alpha)})`;
+      ctx.fillStyle = `rgba(${(r * 255) | 0},${(gg * 255) | 0},${(bl * 255) | 0},${Math.min(1, (0.6 + 0.4 * S[o + 2]!) * ds.alpha * Math.min(1, 1 + P[o + 3]!))})`;
       ctx.fillRect(x - sz / 2, y - sz / 2, sz, sz);
     }
   }

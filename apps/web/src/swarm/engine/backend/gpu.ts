@@ -11,6 +11,7 @@ import {
 import { FLOW_WAVES, WAVE_K, WAVE_W } from './flow';
 import type { Targets } from '../shapes';
 import { makeSeeds } from '../hash';
+import { GROUP_FLOATS, GROUP_ROWS, GROUP_TEXELS, HIST, T_HIST, T_LOOK, T_POSE, T_PREV, T_PREV_LOOK } from '../perform';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- TSL node types are too loose to annotate usefully */
 type N = any;
@@ -18,7 +19,7 @@ type N = any;
 const TSL: N = TSLTyped;
 const {
   Fn, If, instancedArray, instanceIndex, uniform, float, vec2, vec3, vec4, texture, uv, sin, cos, atan, length,
-  clamp, smoothstep, mix, max, min, select, step, exp, pow, cameraViewMatrix, pass, PI, textureLoad, ivec2, fract, sqrt, abs,
+  clamp, smoothstep, mix, max, min, select, step, exp, pow, cameraViewMatrix, pass, PI, textureLoad, ivec2, fract, sqrt, abs, floor,
 } = TSL;
 
 /** Width of the data textures that hold read-only per-particle data for the compute kernel. */
@@ -94,7 +95,9 @@ export class GpuEngine implements Engine {
    * runs compute as transform feedback and binds every storage buffer the kernel touches as a feedback
    * varying (max 4), so only pos/vel/col may be storage. Same layout on WebGPU keeps one code path.
    */
-  private tex: Record<'seed' | 'ta' | 'tb' | 'ca' | 'cb', THREE.DataTexture> = {} as never;
+  private tex: Record<'seed' | 'ta' | 'tb' | 'ca' | 'cb' | 'tg', THREE.DataTexture> = {} as never;
+  /** a performed scene's groups (wave 3 show): poses / looks / trail history, one row per group (engine/perform.ts) */
+  private grpTex!: THREE.DataTexture;
   private sceneMode: Scene;
   private cssW = 1; private cssH = 1;
   private shot: ((b: Blob | null) => void) | null = null;
@@ -122,8 +125,11 @@ export class GpuEngine implements Engine {
       t.minFilter = THREE.NearestFilter; t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
       return t;
     };
-    for (const k of ['seed', 'ta', 'tb', 'ca', 'cb'] as const) this.tex[k] = mkTex();
+    for (const k of ['seed', 'ta', 'tb', 'ca', 'cb', 'tg'] as const) this.tex[k] = mkTex();
     (this.tex.seed.image.data as Float32Array).set(seeds);
+    this.setGroups(null);
+    this.grpTex = new THREE.DataTexture(new Float32Array(GROUP_FLOATS), GROUP_TEXELS, GROUP_ROWS, THREE.RGBAFormat, THREE.FloatType);
+    this.grpTex.minFilter = THREE.NearestFilter; this.grpTex.magFilter = THREE.NearestFilter; this.grpTex.generateMipmaps = false; this.grpTex.needsUpdate = true;
     for (const k of Object.keys(defaultParams()) as (keyof SimParams)[]) this.U[k] = uniform(0);
 
     this.fieldRT = new THREE.RenderTarget(FIELD_W * FIELD_RES, FIELD_H * FIELD_RES, { type: THREE.HalfFloatType, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: false });
@@ -188,6 +194,41 @@ export class GpuEngine implements Engine {
       const local = clamp(elapsed.sub(dly).div(U.ramp), 0, 1);
       // shape → shape: a shallow mid-flight dip only (paths swoop, nothing disperses; POLISH1 B4)
       const wEff = w.mul(float(1).sub(U.transit.mul(sin(local.mul(PI))).mul(TRANSIT_DIP))).toVar();
+      // a performed scene's group (wave 3 show): pose the local target, and feed the shape's own motion forward
+      // (trail particles take their pose from the group's recent history instead, and fade along it)
+      const GI = textureLoad(X.tg, tc).toVar();
+      const GT = this.grpTex;
+      const inG = U.grpOn.greaterThan(0).and(GI.x.greaterThan(-0.5)).and(switched);
+      const ff = vec3(0).toVar();
+      const visG = float(0).toVar();
+      If(inG, () => {
+        const gy = GI.x.add(0.5).toInt();
+        const pose = textureLoad(GT, ivec2(T_POSE, gy)).toVar();
+        const look = textureLoad(GT, ivec2(T_LOOK, gy));
+        const prev = textureLoad(GT, ivec2(T_PREV, gy));
+        const plook = textureLoad(GT, ivec2(T_PREV_LOOK, gy));
+        const sxN = look.x.toVar();
+        const trail = GI.y.greaterThan(0);
+        If(trail, () => {
+          const k = GI.y.mul(HIST - 1);
+          const i0 = floor(k);
+          const h0 = textureLoad(GT, ivec2(i0.toInt().add(T_HIST), gy));
+          const h1 = textureLoad(GT, ivec2(min(i0.add(1), HIST - 1).toInt().add(T_HIST), gy));
+          const h = mix(h0, h1, k.sub(i0));
+          pose.assign(vec4(h.x, h.y, h.z, pose.w));
+          sxN.assign(h.w.div(max(abs(pose.w), 1e-4)));
+        });
+        const posed = (q: N, sxv: N): N => {
+          const c = cos(q.z), sn = sin(q.z);
+          const lx = T.x.mul(q.w).mul(sxv), ly = T.y.mul(q.w);
+          return vec3(q.x.add(lx.mul(c)).sub(ly.mul(sn)), q.y.add(lx.mul(sn)).add(ly.mul(c)), T.z.mul(q.w));
+        };
+        const now = posed(pose, sxN).toVar();
+        const before = posed(prev, plook.x);
+        ff.assign(select(U.dt.greaterThan(1e-5).and(trail.not()), now.sub(before).div(max(U.dt, 1e-5)), vec3(0)));
+        T.assign(now);
+        visG.assign(step(GI.z.add(1e-5), look.z).mul(look.y).mul(select(trail, float(1).sub(GI.y.mul(0.85)), float(1))).sub(1));
+      });
       // target transform: Y sway (3D), breathing scale, listening ring pulse
       If(U.spinOn.greaterThan(0), () => {
         const dx = T.x.sub(U.shapeCx).toVar();
@@ -722,7 +763,7 @@ export class GpuEngine implements Engine {
       const toT = T.sub(p).toVar();
       const dist = length(toT);
       const dl = dist.mul(6);
-      const des = toT.mul(6).mul(min(float(1800).div(max(dl, 1e-3)), 1));
+      const des = toT.mul(6).mul(min(float(1800).div(max(dl, 1e-3)), 1)).add(ff);
       acc.addAssign(des.sub(v).mul(wEff.mul(9)));
       acc.xy.addAssign(fl.xy.mul(min(dist.div(250), 1).mul(wEff).mul(1.8).mul(U.flowAmp)));
       // pointer (B2): a soft hole around the cursor stretched into a short wake behind fast motion (capsule
@@ -789,7 +830,10 @@ export class GpuEngine implements Engine {
           .ElseIf(rq.y.lessThan(l2.y.negate()).and(v.y.lessThan(0)), () => { np.y.assign(bc.y.sub(l2.y)); v.y.assign(v.y.mul(-0.5)); });
       });
       If(U.snap.greaterThan(0).and(wDes.greaterThan(0.5)), () => { np.assign(T); v.assign(vec3(0)); w.assign(1); });
-      pos.element(i).assign(vec4(np, P.w));
+      // group visibility (mult − 1 in pos.w): eased; outside a scene back to 1; not yet handed off: as it was
+      const visGoal = select(inG, visG, select(U.grpOn.greaterThan(0).and(switched.not()), P.w, float(0)));
+      const visK = max(min(U.dt.mul(12), 1), U.snap);
+      pos.element(i).assign(vec4(np, mix(P.w, visGoal, visK)));
       vel.element(i).assign(vec4(v, w));
       const C = col.element(i);
       const ck = max(min(U.dt.mul(6), 1), U.snap);
@@ -834,7 +878,9 @@ export class GpuEngine implements Engine {
       const inside = abs(P.x.sub(UU[`ko${k}x`])).lessThan(UU[`ko${k}w`].sub(CULL_INSET)).and(abs(P.y.sub(UU[`ko${k}y`])).lessThan(UU[`ko${k}h`].sub(CULL_INSET))).and(UU[`ko${k}w`].greaterThan(0)).and(isFrame.not());
       cull = cull.mul(select(inside, float(0), float(1)));
     }
-    m.fragmentNode = vec4(color.mul(mix(float(1), bright, L.dark)).mul(cull), disc.mul(L.alpha).mul(mix(mix(0.8, 1.0, S.z), float(1), L.dark)).mul(cull));
+    // a performed scene's group visibility (pos.w = mult − 1): dims through opacity, brightens through colour
+    const vis = P.w.add(1);
+    m.fragmentNode = vec4(color.mul(mix(float(1), bright, L.dark)).mul(cull).mul(max(vis, 1)), disc.mul(L.alpha).mul(mix(mix(0.8, 1.0, S.z), float(1), L.dark)).mul(cull).mul(clamp(vis, 0, 1)));
     this.material = m;
     this.sprite = new THREE.Sprite(m);
     this.sprite.count = this.count;
@@ -895,6 +941,19 @@ export class GpuEngine implements Engine {
   setTargets(a: Targets, b: Targets): void {
     this.uploadTex(this.tex.ta, a.pos); this.uploadTex(this.tex.tb, b.pos);
     this.uploadTex(this.tex.ca, a.col, true); this.uploadTex(this.tex.cb, b.col, true);
+  }
+
+  setGroups(info: Float32Array | null): void {
+    const t = this.tex.tg;
+    const arr = t.image.data as Float32Array;
+    if (info) arr.set(info.subarray(0, Math.min(arr.length, info.length)));
+    else for (let i = 0; i < arr.length; i += 4) { arr[i] = -1; arr[i + 1] = 0; arr[i + 2] = 0; arr[i + 3] = 0; }
+    t.needsUpdate = true;
+  }
+
+  setGroupData(data: Float32Array): void {
+    (this.grpTex.image.data as Float32Array).set(data.subarray(0, GROUP_FLOATS));
+    this.grpTex.needsUpdate = true;
   }
 
   setState(pos: Float32Array, vel: Float32Array): void {
@@ -962,6 +1021,7 @@ export class GpuEngine implements Engine {
     this.pipeline?.dispose();
     this.fieldRT.dispose();
     for (const t of Object.values(this.tex)) t.dispose();
+    this.grpTex.dispose();
     this.material.dispose();
     (this.splatSprite.material as THREE.Material).dispose();
     this.renderer.dispose();

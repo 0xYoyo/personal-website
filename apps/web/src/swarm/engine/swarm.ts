@@ -1,4 +1,4 @@
-import type { Mood, Rect, ShapeSpec, SwarmApi, SwarmEntry, SwarmStage } from '@yoyo/protocol';
+import type { Mood, Rect, ShapeSpec, SwarmApi, SwarmEntry, SwarmPerform, SwarmStage } from '@yoyo/protocol';
 import type { Backend, Caps, Tier, TierConfig } from './tiers';
 import { AdaptiveMonitor, initialTier, nextLowerTier, tierConfig } from './tiers';
 import { detectBackend } from './detect';
@@ -33,7 +33,7 @@ export interface SwarmOptions {
 export type SwarmStats = ReturnType<SwarmApi['stats']>;
 
 /** SwarmApi plus the stage / entry / pause extensions and a few QA extras. */
-export interface Swarm extends SwarmApi, SwarmEntry, SwarmStage {
+export interface Swarm extends SwarmApi, SwarmEntry, SwarmStage, SwarmPerform {
   /** Idle the render loop (e.g. while the game modal is open); state is kept. */
   pause(): void;
   /** Resume after pause() (no-op while the tab is hidden; it resumes when visible). */
@@ -137,7 +137,11 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     cfg = { ...c, backend: actual };
     tier = c.tier;
     const prev = ctrl as Controller | undefined;
-    ctrl = new Controller(c.count, { upload: (a, b) => engine?.setTargets(a, b) }, sched);
+    ctrl = new Controller(c.count, {
+      upload: (a, b) => engine?.setTargets(a, b),
+      groups: (gi) => engine?.setGroups?.(gi),
+      groupData: (d) => engine?.setGroupData?.(d),
+    }, sched);
     ctrl.setReduced(reduced);
     ctrl.setLite(actual === 'canvas2d');
     ctrl.setStage(stage, keepOut);
@@ -154,7 +158,9 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
       if (prev.p.pointerOn > 0) ctrl.pointer(prev.p.pointerX + w / 2, h / 2 - prev.p.pointerY, 0, 0);
       const m = prev.mood;
       const spec: ShapeSpec | null = prev.spec;
-      if (spec) ctrl.become(spec);
+      const shown = prev.scene;
+      if (shown) void ctrl.perform(shown);
+      else if (spec) ctrl.become(spec);
       if (m !== 'idle') ctrl.mood_(m);
     }
     monitor.reset();
@@ -214,6 +220,8 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     get mood_() { return ctrl.mood; },
     become(shape, o) { void ctrl.become(shape, o); },
     knit(shape) { return ctrl.become(shape); },
+    perform(scene) { return ctrl.perform(scene); },
+    stageBox() { return ctrl.stageBox; },
     release() { ctrl.release(); },
     mood(m) { ctrl.mood_(m); },
     buildFrame(rect, progress, o) { ctrl.buildFrame(rect, progress, o); },
