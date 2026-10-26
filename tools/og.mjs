@@ -31,7 +31,9 @@ async function server() {
   return { url, stop: () => child.kill() };
 }
 
-const LINE = 'Yoav Zrihan · 0xYoyo · ask his agent';
+/** the page's description (WAVE3 S4), with the name line under it, fainter */
+const LINE = 'Ask me anything. Or type a word and I’ll become it.';
+const NAME = 'Yoav Zrihan · 0xYoyo';
 
 async function render(browser, base, { width, height, out, count }) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
@@ -39,18 +41,25 @@ async function render(browser, base, { width, height, out, count }) {
   await page.waitForFunction(() => !!window.swarm, null, { timeout: 60000 });
   // the mono line, in the site's type
   await page.evaluate(
-    async ({ line, mobile }) => {
+    async ({ line, name, mobile }) => {
       const ff = new FontFace('Commit Mono', 'url(/src/assets/fonts/CommitMono-VF.woff2)');
       document.fonts.add(await ff.load());
-      const p = document.createElement('p');
-      p.textContent = line;
-      Object.assign(p.style, {
-        position: 'fixed', left: mobile ? '64px' : '56px', bottom: mobile ? '64px' : '48px', margin: '0',
-        font: `400 ${mobile ? 30 : 26}px "Commit Mono", ui-monospace, monospace`, color: '#8E877D', letterSpacing: '0',
-      });
-      document.body.append(p);
+      const left = mobile ? '64px' : '56px';
+      const size = mobile ? 30 : 26;
+      const add = (text, bottom, px, color) => {
+        const p = document.createElement('p');
+        p.textContent = text;
+        Object.assign(p.style, {
+          position: 'fixed', left, bottom: `${bottom}px`, margin: '0',
+          font: `400 ${px}px "Commit Mono", ui-monospace, monospace`, color, letterSpacing: '0',
+        });
+        document.body.append(p);
+      };
+      const base = mobile ? 64 : 48;
+      add(name, base, size - 6, '#6B655C');
+      add(line, base + size + 8, size, '#C9C2B6');
     },
-    { line: LINE, mobile: width === height },
+    { line: LINE, name: NAME, mobile: width === height },
   );
   // deterministic: manual clock, knit the letters, settle, then stop where the sway faces front
   await page.evaluate(async () => {
