@@ -524,6 +524,24 @@
 .y-card:focus-visible {
   outline: none;
 }
+.y-card {
+  position: relative;
+}
+.y-card-wrap[data-shelf='true'] {
+  padding-top: 32px;
+}
+/* the second shelf's header ("Written by hand, 2022–23"): a tiny mono label just above the card (WAVE3 S3) */
+.y-card-shelf {
+  position: absolute;
+  left: 4px;
+  bottom: calc(100% + 14px);
+  margin: 0;
+  font-size: var(--t-mono-xs);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
 @keyframes y-card-in {
   from {
     opacity: 0;
@@ -1121,6 +1139,15 @@
     gap: 0;
     background: var(--scene);
     overscroll-behavior: contain;
+  }
+  .y-card-wrap[data-shelf='true'] {
+    padding-top: 0;
+  }
+  /* the sheet starts under the top bar: the shelf label is its first line instead */
+  .y-card-shelf {
+    position: static;
+    order: -1;
+    margin: 0 0 10px;
   }
   .y-card-show {
     flex: none;

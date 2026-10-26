@@ -59,16 +59,19 @@ export function Card() {
 
   if (!id) return null;
   const p = projectById(id);
+  // a project on the second shelf (WAVE3 S3: "Written by hand, 2022–23") carries its shelf's label,
+  // shown as a tiny mono header above the card; the ←/→ sequence runs straight through both shelves
+  const shelf = (p as typeof p & { shelf?: string }).shelf;
   const Showcase = getShowcase(p.showcase);
 
   return (
-    <div className="y-card-wrap">
+    <div className="y-card-wrap" data-shelf={!!shelf}>
       <section
         ref={ref}
         className="y-card"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="y-card-name"
+        aria-labelledby={shelf ? 'y-card-shelf y-card-name' : 'y-card-name'}
         aria-describedby="y-card-voice"
         tabIndex={-1}
         key={p.id}
@@ -82,6 +85,11 @@ export function Card() {
           if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && performance.now() - s.t < 700) ctl.nextProject(dx < 0 ? 1 : -1);
         }}
       >
+        {shelf && (
+          <p className="y-card-shelf y-mono" id="y-card-shelf">
+            {shelf}
+          </p>
+        )}
         <div className="y-card-show">
           <Showcase reducedMotion={reducedMotion} />
         </div>
