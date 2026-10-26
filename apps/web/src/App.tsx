@@ -22,10 +22,8 @@ import { createSound } from './ui/sound';
 import { TopBar } from './ui/TopBar';
 import { createVoice } from './ui/voice';
 
-/** The tour starts this long after the greeting has landed, unless anything is touched first (WAVE3 S1). */
-const TOUR_MS = 5000;
-/** "or just watch." lands this long before the tour starts. */
-const IDLE_LINE_LEAD = 1600;
+/** The greeting rests this long (from the moment it has landed) before "or just watch." (POLISH2 A5). */
+const IDLE_MS = 7000;
 /** The name line fades in under the letters once they have knitted (POLISH2 A5). */
 const NAME_LINE_MS = 2200;
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
@@ -276,20 +274,19 @@ export function App() {
     else ctl.swarm?.resume?.();
   }, [overlay]);
 
-  // ---- idle → "or just watch." → tour, 5 s after the greeting (SPEC §2.2, WAVE3 S1)
+  // ---- idle → "or just watch." → tour (SPEC §2.2) ---------------------------
   useEffect(() => {
     if (phase !== 'ready') return;
     const iv = setInterval(() => {
       const s = useStore.getState();
       if (s.idleSpent || s.overlay !== 'none' || s.streaming) return;
-      if (Date.now() - s.lastInput < TOUR_MS - IDLE_LINE_LEAD) return;
+      if (Date.now() - s.lastInput < IDLE_MS) return;
       s.spendIdle();
       const at = Date.now();
-      const tourAt = s.lastInput + TOUR_MS;
       void ctl.speakLine(copy.entry.idle).then(async () => {
-        await sleep(Math.max(0, tourAt - Date.now()));
+        await sleep(1400);
         const s2 = useStore.getState();
-        if (s2.lastInput > at || s2.overlay !== 'none' || s2.streaming) return; // any input cancels
+        if (s2.lastInput > at || s2.overlay !== 'none') return; // any input cancels
         ctl.startTour();
       });
     }, 300);

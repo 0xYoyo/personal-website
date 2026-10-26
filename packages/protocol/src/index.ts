@@ -4,7 +4,7 @@
 // Everything after it is additive: id lists, runtime guards (no Zod), the
 // inline action-tag parser, and the wire schema for /chat and /build.
 
-export type ProjectId = 'prompt-racers'|'unfiltered'|'yoyo-loop'|'runi-connector'|'availability-monitor'|'pnl-bot'|'polybot';
+export type ProjectId = 'prompt-racers'|'unfiltered'|'yoyo-loop'|'runi-connector'|'availability-monitor'|'pnl-bot'|'polybot'|'yoyo-network'|'vortex';
 export type GlyphId = 'kart'|'magnifier'|'loop'|'cap'|'tent'|'chart'|'diverge'|'envelope'|'envelope-open'|'keyboard'|'cursor'|'wave'|'frame'|'question'|'shield'|'route'|'btc'|'piano'|'ramp'|'curls'|'heart'|'star'|'check'|'yoyo';
 export type Mood = 'idle'|'listening'|'thinking'|'speaking'|'excited'|'building'|'celebrate'|'asleep';
 export type ShapeSpec = { kind:'text'; text:string } | { kind:'emoji'; emoji:string } | { kind:'glyph'; id:GlyphId } | { kind:'yoyo3d' } | { kind:'frame'; rect:{x:number;y:number;w:number;h:number} } | { kind:'none' };
@@ -82,8 +82,9 @@ export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage> &
 // Id lists (the single source the guards and pickers use)
 // ---------------------------------------------------------------------------
 
+/** In the Work overlay's order (WAVE3 V4): the 2026 shelf, then "Written by hand, 2022–23". */
 export const PROJECT_IDS = [
-  'prompt-racers', 'unfiltered', 'yoyo-loop', 'runi-connector', 'availability-monitor', 'pnl-bot', 'polybot',
+  'unfiltered', 'prompt-racers', 'yoyo-loop', 'runi-connector', 'availability-monitor', 'pnl-bot', 'polybot', 'yoyo-network', 'vortex',
 ] as const satisfies readonly ProjectId[];
 
 export const GLYPH_IDS = [

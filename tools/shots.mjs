@@ -10,7 +10,6 @@
 //                                                  headless Chromium; the GPU tiers run at ~1 fps in
 //                                                  SwiftShader, so their shots are about layout only)
 //   SHOTS_URL=http://127.0.0.1:4173 npm run shots  use a running site (its own agent URL)
-//   SHOTS_Y4M=/path/clip.y4m npm run shots         the fake camera's video (default: Chromium's test pattern)
 //
 // Output: tools/out/<viewport>-<name>.png, tools/out/cast/<name>/*.jpg, tools/out/sheets/*.png
 import { spawn } from 'node:child_process';
@@ -89,7 +88,7 @@ const scenarios = {
       await shot(`entry-${t}s`);
     }
   },
-  // WAVE3 S1: three chips, a static placeholder; untouched, the tour starts 5 s after the greeting lands
+  // WAVE3 S1: three chips, a static placeholder; untouched, the greeting hands over to the tour/show on its own
   async arrival(page, shot) {
     await page.goto(q('&skipEntry=1'));
     await page.waitForFunction(() => window.__yoyo?.store.getState().phase === 'ready', null, { timeout: 30000 });
@@ -104,12 +103,12 @@ const scenarios = {
     );
     await wait(400);
     await shot('arrival-greeting');
-    await page.waitForFunction(() => window.__yoyo.store.getState().overlay === 'tour', null, { timeout: 15000 });
-    const started = await page.evaluate(() => Date.now());
-    console.log(`arrival: tour started ${((started - landed) / 1000).toFixed(1)} s after the greeting landed`);
+    await page.waitForFunction(() => window.__yoyo.store.getState().overlay !== 'none', null, { timeout: 20000 });
+    const [started, what] = await page.evaluate(() => [Date.now(), window.__yoyo.store.getState().overlay]);
+    console.log(`arrival: ${what} started ${((started - landed) / 1000).toFixed(1)} s after the greeting landed`);
     await wait(1500);
     await shot('arrival-tour');
-    await page.waitForFunction(() => window.__yoyo.store.getState().overlay === 'none', null, { timeout: 60000 });
+    await page.waitForFunction(() => window.__yoyo.store.getState().overlay === 'none', null, { timeout: 90000 });
     await wait(1200);
     await shot('arrival-tour-end');
     console.log('arrival lines:', JSON.stringify(await page.evaluate(() => [...window.__yoyo.store.getState().lines.map((l) => `${l.role}${l.quiet ? ' (quiet)' : ''}${l.streaming ? ' (streaming)' : ''}: ${l.text}`), 'prev: ' + document.querySelector('.y-prev')?.textContent])));
@@ -172,18 +171,6 @@ const scenarios = {
     await page.waitForFunction(() => window.__yoyo.store.getState().runner?.say === 'Unfiltered', null, { timeout: 60000 });
     await wait(900);
     await shot('tour-beat-3');
-  },
-  // WAVE3 M: the mirror, on Chromium's fake camera (a test pattern)
-  async mirror(page, shot) {
-    await ready(page);
-    await say(page, 'mirror');
-    await wait(1200);
-    await shot('mirror-pending');
-    await wait(3000);
-    await shot('mirror');
-    await page.keyboard.press('Escape');
-    await wait(1800);
-    await shot('mirror-done');
   },
   async light(page, shot) {
     await ready(page);
@@ -260,12 +247,11 @@ let base = '';
 const server = await startServers();
 base = server.url;
 await mkdir(out, { recursive: true });
-const fakeCam = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', ...(process.env.SHOTS_Y4M ? [`--use-file-for-fake-video-capture=${process.env.SHOTS_Y4M}`] : [])];
-const browser = await chromium.launch({ executablePath: exe, args: ['--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required', '--no-proxy-server', ...fakeCam] });
+const browser = await chromium.launch({ executablePath: exe, args: ['--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required', '--no-proxy-server'] });
 const errors = [];
 const newPage = async (vpName, label) => {
   const vp = viewports[vpName];
-  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.deviceScaleFactor, isMobile: vp.isMobile, hasTouch: vp.hasTouch, permissions: ['camera'] });
+  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.deviceScaleFactor, isMobile: vp.isMobile, hasTouch: vp.hasTouch });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${vpName}/${label}: ${e.message}`));
   page.on('console', (m) => m.type() === 'error' && errors.push(`${vpName}/${label}: console ${m.text()}`));

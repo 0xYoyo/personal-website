@@ -21,7 +21,8 @@ describe('parseActionTag', () => {
     expect(parseActionTag('chips:a|b| c |')).toEqual({ type: 'chips', chips: ['a', 'b', 'c'] });
   });
   it('rejects unknown or malformed tags', () => {
-    expect(parseActionTag('show:vortex')).toBeNull();
+    expect(parseActionTag('show:orditax')).toBeNull();
+    expect(parseActionTag('show:vortex')).toEqual({ type: 'show', project: 'vortex' });
     expect(parseActionTag('mood:angry')).toBeNull();
     expect(parseActionTag('exec:rm -rf')).toBeNull();
     expect(parseActionTag('become:')).toBeNull();
