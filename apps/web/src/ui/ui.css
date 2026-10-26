@@ -10,10 +10,6 @@
   .y-app {
     --bar-bottom: calc(16px + env(safe-area-inset-bottom));
   }
-  /* "sound on" sits under the bar on mobile: lift the bar to make room */
-  .y-app[data-soundchip='true'] {
-    --bar-bottom: calc(46px + env(safe-area-inset-bottom));
-  }
 }
 
 .y-canvas {
@@ -327,25 +323,6 @@
     transform: none;
   }
 }
-/* "sound on": outside the chip row — left of the bar on desktop, under it on mobile */
-.y-chip-sound {
-  position: fixed;
-  right: calc(50% + min(var(--bar-max), 100vw - 2 * var(--gutter)) / 2 + 14px);
-  bottom: calc(var(--bar-bottom) + (var(--bar-h) - 34px) / 2);
-  z-index: var(--z-bar);
-  color: var(--muted);
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  animation-delay: 600ms;
-}
-.y-sound-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  border: 1px solid currentColor;
-}
-
 /* --------------------------------------------------------- command bar */
 
 .y-bar-wrap {
@@ -1117,14 +1094,6 @@
   }
   .y-chips-row:focus-visible {
     outline-offset: -2px;
-  }
-  .y-chip-sound {
-    right: auto;
-    left: 16px;
-    bottom: calc(10px + env(safe-area-inset-bottom));
-    padding: 6px 10px;
-    font-size: var(--t-mono-xs);
-    border-color: var(--hairline);
   }
 
   .y-bar-wrap {

@@ -55,20 +55,3 @@ export function Chips() {
     </nav>
   );
 }
-
-/** "sound on": left of the bar on desktop, under it on mobile — never inside the chip row. */
-export function SoundChip() {
-  const sound = useStore((s) => s.sound);
-  const phase = useStore((s) => s.phase);
-  const overlay = useStore((s) => s.overlay);
-  if (!soundChipVisible(sound, phase, overlay)) return null;
-  return (
-    <button className="y-chip y-chip-sound" onClick={() => void ctl.setSound(true)}>
-      <span className="y-sound-dot" aria-hidden="true" />
-      {copy.chips.soundOn}
-    </button>
-  );
-}
-
-export const soundChipVisible = (sound: boolean, phase: string, overlay: string): boolean =>
-  !sound && phase === 'ready' && (overlay === 'none' || overlay === 'tour' || overlay === 'stories');

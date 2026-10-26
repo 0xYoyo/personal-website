@@ -219,6 +219,8 @@ function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: numb
   let lead = '';
   let storyId: StoryId | undefined;
   let beatNo = 0;
+  /** the chips the run's last chip-setting step offered (the tour's end chips) */
+  let endChips: string[] | null = null;
   const stepMode = st.reducedMotion;
   const view = () => S().setRunner({ kind, storyId, say, lead, beat: beatNo, beats: r.beats(), stepMode });
   const r = createRunner(
@@ -231,7 +233,10 @@ function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: numb
         if (shape) swarm()?.become(shape);
         if (step.release) swarm()?.release();
         if (step.mood) swarm()?.mood(step.mood);
-        if (step.chips) S().setChips(step.chips);
+        if (step.chips) {
+          S().setChips(step.chips);
+          endChips = step.chips;
+        }
         storyId = storyOf?.(i);
         if (storyId) rt.brain?.memory.markStory(storyId);
         view();
@@ -256,7 +261,8 @@ function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: numb
         swarm()?.mood('idle');
         // the last caption rests where it is (no re-say) and History keeps it
         if (lastSay && reason === 'done') s2.agentLine(lastSay, { quiet: true });
-        s2.setChips(kind === 'stories' ? STORY_CHIPS : ENTRY_CHIPS);
+        // a tour that ran to its end keeps its own end chips; skipped, the entry three return (WAVE3 S1)
+        s2.setChips(kind === 'stories' ? STORY_CHIPS : reason === 'done' && endChips ? endChips : ENTRY_CHIPS);
       },
     },
     { stepMode },
@@ -464,7 +470,7 @@ export const ctl = {
     if (was === 'card' || was === 'game' || was === 'build') {
       // the card sheet (mobile) and the game cover the bar; the build frame and the desktop card don't
       const covered = was === 'game' || (was === 'card' && isMobileViewport());
-      const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who is Yoyo?', 'Build me something'] : null;
+      const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who are you?', 'Mirror'] : null;
       if (chips) S().setChips([]);
       settleBody(covered, () => chips && S().setChips(chips));
     } else {
@@ -605,7 +611,7 @@ export const ctl = {
         S().closeOverlay();
         await speakLine(reason === 'cap' ? copy.build.capped : copy.build.failed);
       }
-      S().setChips(['Build me something', 'Who is Yoyo?', 'What has he built?']);
+      S().setChips(['Build me something', 'Who are you?', 'What have you built?']);
     } finally {
       if (buildAbort === ac) buildAbort = null;
     }

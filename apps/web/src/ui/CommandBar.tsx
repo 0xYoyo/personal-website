@@ -1,4 +1,4 @@
-// The one input (SPEC §2.1, §3.3): mono field with a cycling placeholder,
+// The one input (SPEC §2.1, §3.3): mono field with a static placeholder,
 // hold-to-talk mic (and `space` hold when not typing), send, `/` to focus,
 // Esc clears, ↑ recalls, a cobalt hairline while the agent streams, Stop
 // during builds.
@@ -16,11 +16,9 @@ export function CommandBar() {
   const barMode = useStore((s) => s.barMode);
   const build = useStore((s) => s.build);
   const lines = useStore((s) => s.lines);
-  const overlay = useStore((s) => s.overlay);
   const settling = useStore((s) => s.settling);
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
-  const [ph, setPh] = useState(0);
   const [listening, setListening] = useState(false);
   const recall = useRef(-1);
   const input = useRef<HTMLInputElement>(null);
@@ -31,15 +29,6 @@ export function CommandBar() {
   const micSupported = useMemo(() => !!recognitionCtor(), []);
   const history = useMemo(() => lines.filter((l) => l.role === 'visitor').map((l) => l.text), [lines]);
   const building = build.status === 'ring' || build.status === 'streaming';
-
-  // The placeholder cycles only while the bar is empty and nothing else is
-  // talking: never during the tour, stories or a build (POLISH1 A4).
-  const still = overlay === 'tour' || overlay === 'stories' || overlay === 'build';
-  useEffect(() => {
-    if (value || barMode === 'change' || still) return;
-    const t = setInterval(() => setPh((i) => (i + 1) % copy.bar.placeholders.length), 2600);
-    return () => clearInterval(t);
-  }, [value, barMode, still]);
 
   // Mic
   useEffect(() => {
@@ -144,7 +133,8 @@ export function CommandBar() {
     else mic.current.stop(true);
   };
 
-  const placeholder = barMode === 'change' ? copy.bar.changePlaceholder : still ? copy.bar.placeholders[0]! : copy.bar.placeholders[ph]!;
+  // one static line (WAVE3 S1): the first placeholder; nothing cycles under the visitor's eye
+  const placeholder = barMode === 'change' ? copy.bar.changePlaceholder : copy.bar.placeholders[0]!;
   const showPh = !value;
 
   return (
