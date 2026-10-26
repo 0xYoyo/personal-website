@@ -61,7 +61,7 @@ describe('router', () => {
     const body = calls[0]!.body as { systemInstruction: { parts: { text: string }[] }; contents: { role: string; parts: { text: string }[] }[] };
     const sys = body.systemInstruction.parts[0]!.text;
     expect(sys.startsWith('# You are Yoyo.')).toBe(true);
-    expect(sys).toContain('Facts about Yoav "Yoyo" Zrihan');
+    expect(sys).toContain('Facts about me, Yoav "Yoyo" Zrihan');
     expect(sys).toContain('Runtime rules');
     expect(sys).toContain('name: Danascript');
     expect(sys).toContain('returning visitor: yes');
