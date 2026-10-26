@@ -89,6 +89,8 @@ export class GpuEngine implements Engine {
   private U: Record<keyof SimParams, N> = {} as never;
   private uField = { min: uniform(new THREE.Vector2()), size: uniform(new THREE.Vector2(1, 1)), cell: uniform(10), densRef: uniform(1) };
   private uLook = { base: uniform(new THREE.Color()), fast: uniform(new THREE.Color()), alpha: uniform(0.6), dark: uniform(1) };
+  /** the camera's distance to the z = 0 plane (CSS px): the keep-out cull projects each dot with it */
+  private uDepth = uniform(1);
   private buf: Record<'pos' | 'vel' | 'col' | 'seed', N> = {} as never;
   /**
    * Read-only inputs of the kernel live in float data textures, not storage buffers: three's WebGL2 backend
@@ -873,9 +875,13 @@ export class GpuEngine implements Engine {
     // dots inside a keep-out (not the dim frame's own) are never drawn: nothing visibly crosses the words
     const UU = U as Record<string, N>;
     let cull: N = float(1);
+    // test where the dot lands on screen, not its x/y: a dot off the z = 0 plane (or under the parallax camera,
+    // which looks at a quarter of its offset) projects away from them and could cross the words (WAVE3 S5)
+    const pk = this.uDepth.div(max(this.uDepth.sub(P.z), 50));
+    const sxy = vec2(P.x.sub(U.camX).mul(pk).add(U.camX.mul(0.75)), P.y.sub(U.camY).mul(pk).add(U.camY.mul(0.75)));
     for (let k = 0; k < MAX_KEEPOUT; k++) {
       const isFrame = U.koFrame.greaterThan(0).and(k + 1 < MAX_KEEPOUT ? UU[`ko${k + 1}w`].lessThanEqual(0) : float(1).greaterThan(0));
-      const inside = abs(P.x.sub(UU[`ko${k}x`])).lessThan(UU[`ko${k}w`].sub(CULL_INSET)).and(abs(P.y.sub(UU[`ko${k}y`])).lessThan(UU[`ko${k}h`].sub(CULL_INSET))).and(UU[`ko${k}w`].greaterThan(0)).and(isFrame.not());
+      const inside = abs(sxy.x.sub(UU[`ko${k}x`])).lessThan(UU[`ko${k}w`].sub(CULL_INSET)).and(abs(sxy.y.sub(UU[`ko${k}y`])).lessThan(UU[`ko${k}h`].sub(CULL_INSET))).and(UU[`ko${k}w`].greaterThan(0)).and(isFrame.not());
       cull = cull.mul(select(inside, float(0), float(1)));
     }
     // a performed scene's group visibility (pos.w = mult − 1): dims through opacity, brightens through colour
@@ -977,6 +983,7 @@ export class GpuEngine implements Engine {
     if (this.bloomNode?.strength) this.bloomNode.strength.value = BLOOM_STRENGTH * p.bloomK;
     const r = this.renderer;
     const D = this.cssH / 2 / Math.tan((this.camera.fov * Math.PI) / 360);
+    this.uDepth.value = D;
     this.camera.position.set(p.camX, p.camY, D);
     this.camera.lookAt(p.camX * 0.25, p.camY * 0.25, 0);
     // 1. splat neighbourhood field

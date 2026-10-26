@@ -217,10 +217,24 @@ export function App() {
     const unsub = useStore.subscribe((s, p) => {
       if (s.overlay !== p.overlay || s.phase !== p.phase || s.chipsKey !== p.chipsKey || s.build.status !== p.build.status || s.settling !== p.settling) schedule();
     });
+    // The boxes above don't change size when what is inside them does: a turn's words and its font size, a
+    // remounted chip row, the bar sliding in (a transform) — so keep-outs went stale and the first turn of a
+    // reply could sit under the flock (WAVE3 S5). Any change inside the words, chips or bar, and the end of
+    // any transition or animation, measures again (once a frame at most; unchanged rects cost the engine nothing).
+    const mo = new MutationObserver(schedule);
+    for (const sel of ['.y-stage-layer', '.y-chips', '.y-bar-wrap']) {
+      const el = document.querySelector(sel);
+      if (el) mo.observe(el, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['style', 'data-hidden', 'data-room', 'data-tall', 'data-ready'] });
+    }
+    addEventListener('transitionend', schedule, true);
+    addEventListener('animationend', schedule, true);
     return () => {
       ctl.onStage(null);
       removeEventListener('resize', schedule);
+      removeEventListener('transitionend', schedule, true);
+      removeEventListener('animationend', schedule, true);
       ro.disconnect();
+      mo.disconnect();
       unsub();
       cancelAnimationFrame(raf);
     };

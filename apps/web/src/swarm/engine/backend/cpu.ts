@@ -454,7 +454,9 @@ export class CpuEngine implements Engine {
     for (let i = 0; i < n; i++) {
       const o = i * 4;
       if (nc) {
-        const x = P[o]!, y = P[o + 1]!;
+        // where the dot lands on screen (keep-outs are screen rects about the viewport centre): a dot off the
+        // z = 0 plane, or under a parallax camera, projects away from its x/y, so testing P let it cross the words
+        const x = SX[i]! / dpr - cx, y = cy - SY[i]! / dpr;
         let hid = false;
         for (let k = 0; k < nc && !hid; k++) hid = Math.abs(x - cull[k * 4]!) < cull[k * 4 + 2]! && Math.abs(y - cull[k * 4 + 1]!) < cull[k * 4 + 3]!;
         if (hid) { cls[i] = 254; continue; }
