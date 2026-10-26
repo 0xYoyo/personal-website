@@ -7,11 +7,12 @@ import { BUILD_CHIPS, ENTRY_CHIPS, WHO_CHIPS, STORY_CHIPS, projectChips, resolve
 import { copy } from './content/copy';
 import { neighbour, projectById } from './content/projects';
 import { nextStory, stories, storyById } from './content/stories';
-import { tour } from './content/tour';
+import { showSteps } from './content/show';
 import { applyScene, isMobileViewport } from './design';
 import { emptyBuild, useStore, type Overlay } from './state/store';
 import type { SwarmHandle } from './swarm';
 import { createRunner, type Runner, type Step } from './ui/runner/engine';
+import type { Scene } from '@yoyo/protocol';
 import type { Sound } from './ui/sound';
 import { createChannel, createPacer, stripMarks, TURN_WORD_MS, type Pacer, type TurnFit } from './ui/turns';
 import type { Voice } from './ui/voice';
@@ -209,13 +210,35 @@ function resolveShape(s: Step['become']): ShapeSpec | null {
   return typeof s === 'function' ? s(vp()) : s;
 }
 
+/** A show step's scene, laid out for the swarm's free stage (the viewport when the engine has no stage). */
+function resolveScene(s: Step['perform']): Scene | null {
+  if (!s) return null;
+  if (typeof s !== 'function') return s;
+  const box = swarm()?.stageBox?.() ?? { x: 0, y: 0, ...vp() };
+  return s({ w: box.w, h: box.h });
+}
+
+/** The show was stopped by a message or a chip: the swarm morphs from the scene straight into the reply. */
+let keepBodyOnSkip = false;
+/** Stop a running show / story for an answer (no release: the reply's shape takes the body from where it is). */
+function skipForAnswer() {
+  if (!runner?.running()) return;
+  keepBodyOnSkip = true;
+  try {
+    runner.skip();
+  } finally {
+    keepBodyOnSkip = false;
+  }
+}
+
 function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: number) => StoryId) {
   closeAll();
   runner?.skip();
   claimBody();
   const st = S();
   st.openOverlay(kind);
-  st.setChips([]);
+  // the show keeps the chips (and the bar) up the whole time: any of them stops it and answers (wave 3 SHOW)
+  if (kind !== 'tour') st.setChips([]);
   let say = '';
   let lead = '';
   let storyId: StoryId | undefined;
@@ -232,6 +255,16 @@ function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: numb
         beatNo = beat;
         const shape = resolveShape(step.become);
         if (shape) swarm()?.become(shape);
+        const scene = resolveScene(step.perform);
+        const body = swarm();
+        if (scene && body) {
+          if (body.perform) void body.perform(scene);
+          else {
+            // an engine without groups: the scene's first shape stands in for it
+            const g = scene.groups[0]?.shape;
+            if (g && g.kind !== 'bar' && g.kind !== 'rect' && g.kind !== 'parts') body.become(g);
+          }
+        }
         if (step.release) swarm()?.release();
         if (step.mood) swarm()?.mood(step.mood);
         if (step.chips) {
@@ -258,12 +291,16 @@ function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: numb
         const lastSay = say;
         s2.setRunner(null);
         if (s2.overlay === kind) s2.closeOverlay();
-        swarm()?.release();
-        swarm()?.mood('idle');
+        // stopped for an answer: the reply's shape morphs straight from the scene (no release burst)
+        if (!(reason === 'skip' && keepBodyOnSkip)) {
+          swarm()?.release();
+          swarm()?.mood('idle');
+        }
         // the last caption rests where it is (no re-say) and History keeps it
         if (lastSay && reason === 'done') s2.agentLine(lastSay, { quiet: true });
-        // a tour that ran to its end keeps its own end chips; skipped, the entry three return (WAVE3 S1)
-        s2.setChips(kind === 'stories' ? STORY_CHIPS : reason === 'done' && endChips ? endChips : ENTRY_CHIPS);
+        // a show that ran to its end keeps its own end chips; skipped, the entry three return (WAVE3 S1);
+        // stopped by a chip or a message, the answer sets its own
+        if (!(reason === 'skip' && keepBodyOnSkip)) s2.setChips(kind === 'stories' ? STORY_CHIPS : reason === 'done' && endChips ? endChips : ENTRY_CHIPS);
       },
     },
     { stepMode },
@@ -291,7 +328,7 @@ export const ctl = {
     const st = S();
     st.touch();
     st.spendIdle();
-    if (runner?.running()) runner.skip();
+    skipForAnswer();
     turn?.abort();
     for (const p of pacers) p.cancel();
     S().finishAgent({ keepStreaming: true }); // a turn cut short rests as far as it got
@@ -391,6 +428,7 @@ export const ctl = {
     const st = S();
     st.touch();
     st.spendIdle();
+    skipForAnswer();
     const cmd = resolveChip(label, { project: st.project, name: st.visitor.name ?? rt.brain?.memory.name(), hasBuild: !!st.build.html, hasStoredBuild: !!rt.brain?.memory.builds().some((b) => b.html) });
     switch (cmd.kind) {
       case 'say':
@@ -509,9 +547,9 @@ export const ctl = {
     st.setChips(ENTRY_CHIPS);
   },
 
-  // ---- tour & stories ------------------------------------------------------
+  // ---- the show (wave 3; `[[tour]]`, "tour", "show me around", "watch again") & stories ----
   startTour() {
-    startRunner('tour', tour);
+    startRunner('tour', showSteps(S().reducedMotion));
   },
   startStory(id: StoryId | 'next') {
     const seen = rt.brain?.memory.seenStories() ?? [];

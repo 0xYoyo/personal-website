@@ -1,16 +1,18 @@
-// A tiny timeline engine for the tour and the stories (SPEC §3.3, POLISH1 A2).
+// A tiny timeline engine for the show and the stories (SPEC §3.3, POLISH1 A2, wave 3 SHOW).
 //
-// A step lasts `hold` ms from `at`. At its start the step's shape, mood,
-// release and chips apply (`onStep`); its caption (`say`, plus an optional
+// A step lasts `hold` ms from `at`. At its start the step's shape (or the
+// scene it performs), mood, release and chips apply (`onStep`); its caption (`say`, plus an optional
 // muted `lead` above it) follows `sayAt` ms later (`onSay`), so the shape is
 // already knitted when the words land. A step with `say` opens a beat; steps
 // without one (shape-only) belong to the beat before. next/prev jump between
 // beats. In step mode (reduced motion) nothing advances on its own: every
 // next() applies exactly one step, shape and caption at once.
-import type { Mood, ShapeSpec } from '@yoyo/protocol';
+import type { Mood, Scene, ShapeSpec } from '@yoyo/protocol';
 
 export type Viewport = { w: number; h: number };
 export type ShapeRef = ShapeSpec | ((vp: Viewport) => ShapeSpec);
+/** A scene for the swarm to perform (wave 3 show), laid out for the free stage it is given (CSS px). */
+export type PerformRef = Scene | ((stage: Viewport) => Scene);
 
 export interface Step {
   at: number;
@@ -23,6 +25,8 @@ export interface Step {
   /** A muted line above the caption (e.g. "Things I've shipped:"); cleared by a step with `say` and no `lead` */
   lead?: string;
   become?: ShapeRef;
+  /** Perform a scene (particle groups with paths; wave 3 show) instead of one shape */
+  perform?: PerformRef;
   /** Release the swarm to idle */
   release?: boolean;
   mood?: Mood;

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { CAPTION_DELAY, CAPTION_TAIL, READ_MIN, beat, beatStarts, createRunner, duration, readMs, seq, typeMs, type Clock, type Step } from '../ui/runner/engine';
-import { PROJECT_HOLD, tour } from '../content/tour';
+import { CAPTION_DELAY, CAPTION_TAIL, READ_MIN, beat, beatStarts, createRunner, duration, readMs, seq, type Clock, type Step } from '../ui/runner/engine';
+import { SCENE_MS, SHOW_LINES, showSteps } from '../content/show';
 import { stories } from '../content/stories';
+import { ENTRY_CHIPS } from '../content/chips';
 
 function fakeClock() {
   let now = 0;
@@ -150,57 +151,76 @@ describe('runner', () => {
   });
 });
 
-describe('the tour and the stories', () => {
+const show = showSteps();
+
+describe('the show and the stories', () => {
   it('story beats form the shape 900 ms before the caption; every caption holds ≥ 2.4 s + 600 ms', () => {
-    for (const steps of [tour, ...stories.map((s) => s.steps)]) {
+    for (const steps of stories.map((s) => s.steps)) {
       for (const s of steps) {
         if (s.say === undefined) continue;
-        if (s.become && steps !== tour) expect(s.sayAt).toBe(CAPTION_DELAY);
+        if (s.become) expect(s.sayAt).toBe(CAPTION_DELAY);
         expect(s.hold - (s.sayAt ?? 0)).toBeGreaterThanOrEqual(Math.min(2600, READ_MIN + CAPTION_TAIL));
       }
     }
   });
 
-  it('tour captions and shapes change together (0 ms): the caption types in while the shape knits (POLISH2 A3)', () => {
-    const captioned = tour.filter((s) => s.say !== undefined);
-    expect(captioned.length).toBeGreaterThan(8);
+  it('seven scenes, one line each, verbatim, typed in with the scene start (wave 3 SHOW)', () => {
+    const captioned = show.filter((s) => s.say !== undefined);
+    expect(captioned.map((s) => s.say)).toEqual([...SHOW_LINES]);
+    expect(SHOW_LINES).toEqual([
+      "I'm Yoyo.",
+      "I don't write most of my code anymore. I direct the things that do.",
+      "Unfiltered. Type what you want the way you'd say it. It finds the product.",
+      'Prompt Racers. A kart racer that teaches kids how to talk to AI.',
+      'yoyo-loop. I write the spec. Agents build. Another agent reviews. I merge.',
+      'Crypto since 2021. Self-taught since 2022. Reichman since 2025.',
+      'Ask me anything.',
+    ]);
     for (const s of captioned) expect(s.sayAt ?? 0).toBe(0);
     expect(beat({ say: 'x', become: glyph('wave'), sync: true }).sayAt).toBe(0);
   });
 
-  it('the tour opens on its first caption at once, so "or just watch." is never followed by a wordless gap', () => {
+  it('each line holds for its whole scene: the scenes run 3.5 / 5 / 5.5 / 6 / 6 / 5 / 4 s, ~35 s in all', () => {
+    const starts = show.map((s, i) => (s.say !== undefined ? i : -1)).filter((i) => i >= 0);
+    const lens = starts.map((i, k) => (k + 1 < starts.length ? show[starts[k + 1]!]!.at : duration(show)) - show[i]!.at);
+    expect(lens).toEqual([...SCENE_MS]);
+    expect(duration(show)).toBe(35_000);
+  });
+
+  it('opens on its first caption at once, with the letters', () => {
     const { clock, advance } = fakeClock();
     const seen: string[] = [];
-    const r = createRunner(tour, { onStep: () => undefined, onSay: (s) => seen.push(s.say!), onEnd: () => undefined }, { clock });
+    const r = createRunner(show, { onStep: () => undefined, onSay: (s) => seen.push(s.say!), onEnd: () => undefined }, { clock });
     r.start();
-    expect(seen).toEqual(["I'm Yoyo."]); // at t = 0, with the 3D yoyo
+    expect(seen).toEqual(["I'm Yoyo."]);
+    expect(show[0]!.become).toEqual({ kind: 'yoyo3d' });
     advance(10);
     r.skip();
   });
 
-  it('shapes morph straight into each other: no release between tour beats', () => {
-    expect(tour.some((s) => s.release)).toBe(false);
+  it('the swarm performs scenes 1–5 (groups with paths) and morphs straight on; it lets go only at the very end', () => {
+    expect(show.filter((s) => s.perform).length).toBe(5);
+    expect(show.findIndex((s) => s.release)).toBe(show.length - 1);
+    const box = { w: 486, h: 620 };
+    for (const s of show) {
+      if (!s.perform) continue;
+      const sc = typeof s.perform === 'function' ? s.perform(box) : s.perform;
+      expect(sc.groups.length).toBeGreaterThan(0);
+      expect(sc.groups.length).toBeLessThanOrEqual(6);
+      if (sc.lite) expect(sc.lite.groups.length).toBeLessThanOrEqual(3);
+    }
   });
 
-  it('the project names hold 2.4 s each from the moment the caption has typed in, under one lead (WAVE3 V3)', () => {
-    const names = tour.filter((s) => s.lead === "Things I've shipped:");
-    expect(names.map((s) => s.say)).toEqual(['Unfiltered', 'Prompt Racers', 'yoyo-loop', 'Reichman Courses connector']);
-    expect(PROJECT_HOLD).toBe(2400);
-    for (const s of names) expect(s.hold - (s.sayAt ?? 0) - typeMs(s.say!)).toBe(2400);
-  });
-
-  it('first person, no army line; the tour ends on the question with the three end chips (WAVE3 V3)', () => {
-    expect(tour[0]!.become).toEqual({ kind: 'yoyo3d' });
-    expect(tour.some((s) => /combat|army|unit/i.test(s.say ?? ''))).toBe(false);
-    const last = tour[tour.length - 1]!;
+  it('ends on the question and the three entry chips; reduced motion: one still tableau a scene', () => {
+    const last = show.filter((s) => s.say !== undefined).at(-1)!;
     expect(last.become).toEqual({ kind: 'glyph', id: 'question' });
-    expect(last.say).toBe('Ask me anything.');
-    expect(last.chips).toEqual(['Who are you?', 'What have you built?', 'Play the game']);
+    expect(last.chips).toEqual(ENTRY_CHIPS);
+    const still = showSteps(true);
+    expect(still.length).toBe(7);
+    expect(still.every((s) => s.say !== undefined && (s.become || s.perform))).toBe(true);
   });
 
-  it('the tour runs ~35 s; stories have two lines each and end with reach-me chips', () => {
-    expect(duration(tour)).toBeGreaterThan(33_000);
-    expect(duration(tour)).toBeLessThan(37_000);
+  it('stories have two lines each and end with reach-me chips', () => {
     for (const s of stories) {
       expect(s.steps.filter((x) => x.say).length).toBe(2);
       expect(duration(s.steps)).toBeLessThanOrEqual(16_000);

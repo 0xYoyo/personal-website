@@ -1,9 +1,10 @@
-// Orchestrates SPEC §2.1 (entry), §2.2 (idle → tour), global keys, pointer,
+// Orchestrates SPEC §2.1 (entry), the show (wave 3: it replaces §2.2's tour), global keys, pointer,
 // stage layout and the overlays. Everything stateful goes through ctl/store.
 import { useEffect, useRef, useState } from 'react';
 import type { Rect } from '@yoyo/protocol';
 import { createBrain, readSharedFromHash } from './agent';
 import { ENTRY_CHIPS, returningChips } from './content/chips';
+import { SHOW_AFTER_GREETING_MS } from './content/show';
 import { copy } from './content/copy';
 import { ctl } from './controller';
 import { isMobileViewport, prefersReducedMotion } from './design';
@@ -20,10 +21,9 @@ import { GameModal } from './ui/GameModal';
 import { History, LiveRegion } from './ui/History';
 import { createSound } from './ui/sound';
 import { TopBar } from './ui/TopBar';
+import { WatchAgain } from './ui/WatchAgain';
 import { createVoice } from './ui/voice';
 
-/** The greeting rests this long (from the moment it has landed) before "or just watch." (POLISH2 A5). */
-const IDLE_MS = 7000;
 /** The name line fades in under the letters once they have knitted (POLISH2 A5). */
 const NAME_LINE_MS = 2200;
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
@@ -274,22 +274,27 @@ export function App() {
     else ctl.swarm?.resume?.();
   }, [overlay]);
 
-  // ---- idle → "or just watch." → tour (SPEC §2.2) ---------------------------
+  // ---- the show starts by itself 2.5 s after the greeting has landed (wave 3 SHOW); any input before then
+  // cancels it, and returning visitors are offered "watch again" instead
   useEffect(() => {
     if (phase !== 'ready') return;
+    let greetAt = 0;
     const iv = setInterval(() => {
       const s = useStore.getState();
-      if (s.idleSpent || s.overlay !== 'none' || s.streaming) return;
-      if (Date.now() - s.lastInput < IDLE_MS) return;
+      if (s.idleSpent) return;
+      if (s.visitor.returning) return s.spendIdle();
+      if (!greetAt) {
+        // the greeting has landed once its line is on screen and done streaming (the boot touches the clock then)
+        if (s.streaming || !s.lines.some((l) => l.role === 'agent')) return;
+        greetAt = Date.now();
+        return;
+      }
+      // (the boot touches the clock as the greeting lands: that is not the visitor)
+      if (s.lastInput > greetAt + 250 || s.overlay !== 'none') return s.spendIdle(); // the visitor got there first
+      if (Date.now() - greetAt < SHOW_AFTER_GREETING_MS) return;
       s.spendIdle();
-      const at = Date.now();
-      void ctl.speakLine(copy.entry.idle).then(async () => {
-        await sleep(1400);
-        const s2 = useStore.getState();
-        if (s2.lastInput > at || s2.overlay !== 'none') return; // any input cancels
-        ctl.startTour();
-      });
-    }, 300);
+      ctl.startTour();
+    }, 100);
     const touch = () => useStore.getState().touch();
     addEventListener('keydown', touch, true);
     addEventListener('pointerdown', touch, true);
@@ -387,6 +392,7 @@ export function App() {
         <div className="y-stage-layer">
           <Conversation />
           <RunnerControls />
+          <WatchAgain />
         </div>
       </main>
       <Chips />
