@@ -20,8 +20,8 @@ export const copy = {
     idle: 'or just watch.',
   },
   bar: {
-    /** SPEC §2.1 placeholder cycle */
-    placeholders: ['ask me anything', 'type your name', '🚀', 'make me a pomodoro timer', 'who is Yoyo?'],
+    /** WAVE3 V6: one static placeholder */
+    placeholders: ['ask me anything, or type a word'],
     changePlaceholder: 'what should change?',
     inputLabel: 'Ask Yoyo',
     send: 'Send',
@@ -33,10 +33,10 @@ export const copy = {
     home: 'Yoyo',
     homeLabel: 'Yoyo, back to the start',
     work: 'Work',
-    stories: 'Stories',
+    /** WAVE3 V6: focuses the bar */
+    ask: 'Ask',
     contact: 'Contact',
     sound: 'Sound',
-    voice: 'Voice',
   },
   chips: {
     soundOn: 'sound on',
