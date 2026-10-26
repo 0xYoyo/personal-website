@@ -112,6 +112,7 @@ const scenarios = {
     await page.waitForFunction(() => window.__yoyo.store.getState().overlay === 'none', null, { timeout: 60000 });
     await wait(1200);
     await shot('arrival-tour-end');
+    console.log('arrival lines:', JSON.stringify(await page.evaluate(() => [...window.__yoyo.store.getState().lines.map((l) => `${l.role}${l.quiet ? ' (quiet)' : ''}${l.streaming ? ' (streaming)' : ''}: ${l.text}`), 'prev: ' + document.querySelector('.y-prev')?.textContent])));
   },
   async who(page, shot) {
     await ready(page);
