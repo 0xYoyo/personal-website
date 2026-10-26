@@ -86,8 +86,6 @@ export function resolveTag(body: string, opts: ResolveOptions): Action | null {
       return arg ? { type: 'build', instruction: arg.slice(0, 400) } : null;
     case 'contact':
       return { type: 'contact' };
-    case 'mirror':
-      return { type: 'mirror' };
     case 'lights':
       return arg === 'dark' || arg === 'light' || arg === 'toggle' ? { type: 'lights', mode: arg } : null;
     case 'chips': {

@@ -48,6 +48,6 @@ describe('the open-build chip', () => {
   });
 
   it('no stored build: the usual entry chips', () => {
-    expect(returningChips()).toEqual(['Who are you?', 'What have you built?', 'Mirror']);
+    expect(returningChips()).toEqual(['Who are you?', 'What have you built?', 'Spell my name']);
   });
 });

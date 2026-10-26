@@ -470,7 +470,7 @@ export const ctl = {
     if (was === 'card' || was === 'game' || was === 'build') {
       // the card sheet (mobile) and the game cover the bar; the build frame and the desktop card don't
       const covered = was === 'game' || (was === 'card' && isMobileViewport());
-      const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who are you?', 'Mirror'] : null;
+      const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who are you?', 'What have you built?'] : null;
       if (chips) S().setChips([]);
       settleBody(covered, () => chips && S().setChips(chips));
     } else {

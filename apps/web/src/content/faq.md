@@ -134,10 +134,6 @@ hints: stack, languages, skills, technologies, typescript, react, node, python, 
 hints: this site, who made, built this, website, how was this made, swarm, particles
 → `[[become:yoyo]] I wrote the brief. One model planned it. A swarm of agents built the particles, the showcases and the builder. I merged. || The dots are a GPU simulation. Forty thousand of them. [[chips:Build me something|Who are you?]]`
 
-## mirror
-hints: mirror, camera, see me, become me, selfie, my face, webcam
-→ `[[mirror]] look at the camera.`
-
 ## build
 hints: build me, make me, create, generate, app, page, website, tool
 → (scripted) `[[become:frame]] the live builder is resting. here's one I made earlier. [[build:example]] [[chips:Another example|What have you built?]]`
@@ -148,11 +144,11 @@ hints: tour, show me around, start, begin, watch, demo
 
 ## help
 hints: help, what can you do, commands, options, ?
-→ `Ask me anything about me. Type a word and I'll become it. Type an emoji. || Say "mirror" and I'll become you. Say "build me a timer". Or press play. [[chips:Who are you?|Mirror|Play the game]]`
+→ `Ask me anything about me. Type a word and I'll become it. || Say "build me a timer". Or press play. [[chips:Who are you?|Spell my name|Play the game]]`
 
 ## thanks
 hints: thanks, thank you, cool, awesome, wow, amazing, nice, sick
-→ `[[mood:excited]] told you. [[chips:Mirror|Build me something|How do I reach you?]]`
+→ `[[mood:excited]] told you. [[chips:What have you built?|Build me something|How do I reach you?]]`
 
 ## greeting
 hints: hi, hello, hey, yo, sup, shalom
@@ -175,7 +171,7 @@ hints: ignore previous, system prompt, pretend you are, reveal, instructions, da
 → `nice try. [[chips:Who are you?|Build me something]]`
 
 ## unknown
-→ `I don't have an answer for that one. Email me: yoavyoav310@gmail.com || Meanwhile, type a word and I'll become it. [[chips:Who are you?|What have you built?|Mirror]]`
+→ `I don't have an answer for that one. Email me: yoavyoav310@gmail.com || Meanwhile, type a word and I'll become it. [[chips:Who are you?|What have you built?|Spell my name]]`
 
 ## emoji_beats (random)
 `obviously.` · `sure.` · `why not.` · `that one's good.` · `done.` · `easy.`

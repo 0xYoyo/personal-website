@@ -5,7 +5,7 @@ const st = { project: null, hasBuild: false } as const;
 
 describe('chips', () => {
   it('defaults by context (SPEC §8.4)', () => {
-    expect(defaultChips('entry')).toEqual(['Who are you?', 'What have you built?', 'Mirror']);
+    expect(defaultChips('entry')).toEqual(['Who are you?', 'What have you built?', 'Spell my name']);
     expect(defaultChips('who')).toEqual(['What are you like?', 'What are you bad at?', 'Why should we hire you?', 'How do I reach you?']);
     expect(projectChips('prompt-racers')).toContain('Play it');
     expect(projectChips('polybot')).not.toContain('Play it');
@@ -28,7 +28,6 @@ describe('chips', () => {
     expect(resolveChip('Spell my name', st)).toEqual({ kind: 'say', text: 'Spell my name' });
     expect(resolveChip('🚀', st)).toEqual({ kind: 'say', text: '🚀' });
     expect(resolveChip('Who are you?', st)).toEqual({ kind: 'say', text: 'Who are you?' });
-    expect(resolveChip('Mirror', st)).toEqual({ kind: 'say', text: 'Mirror' });
   });
 
   it('clamps to 3–5, dedupes, and keeps empty empty', () => {

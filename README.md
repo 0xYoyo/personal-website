@@ -1,6 +1,6 @@
 # YOYO v3
 
-The personal site of Yoav "Yoyo" Zrihan. It has one input, an agent that answers as Yoyo in the first person, and a particle swarm that turns into whatever it is talking about (or, on "mirror", into you). The full brief is the v3 spec (`portfolio-spec/v3/SPEC.md`, kept outside this repo).
+The personal site of Yoav "Yoyo" Zrihan. It has one input, an agent that answers as Yoyo in the first person, and a particle swarm that turns into whatever it is talking about. The full brief is the v3 spec (`portfolio-spec/v3/SPEC.md`, kept outside this repo).
 
 ```
 packages/protocol/   shared types (Action, ShapeSpec, SwarmApi, wire events), guards, the [[tag]] parser

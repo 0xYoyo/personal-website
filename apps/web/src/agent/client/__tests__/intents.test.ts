@@ -17,7 +17,7 @@ describe('faq.ts', () => {
     expect(FAQ_INTENTS.map((i) => i.id)).toEqual([
       'who', 'built', 'hire', 'weakness', 'like', 'story', 'army', 'crypto', 'agents', 'why_agents', 'fast', 'game', 'unfiltered',
       'connector', 'monitor', 'pnl', 'network', 'polybot', 'university', 'availability', 'contact', 'salary', 'phone', 'looks',
-      'hobbies', 'travel', 'after_travel', 'ambition', 'opinion', 'opinion_ai', 'opinion_crypto', 'stack', 'this_site', 'mirror',
+      'hobbies', 'travel', 'after_travel', 'ambition', 'opinion', 'opinion_ai', 'opinion_crypto', 'stack', 'this_site',
       'build', 'tour', 'help', 'thanks', 'greeting', 'gm', 'lights', 'politics', 'jailbreak',
     ]);
     expect(FAQ_INTENTS.find((i) => i.id === 'phone')?.reply).toBe('Email first. yoavyoav310@gmail.com [[contact]]');
@@ -51,7 +51,6 @@ describe('intent matching', () => {
     const cases: [string, string][] = [
       ['Who are you?', 'who'],
       ['What have you built?', 'built'],
-      ['Mirror', 'mirror'],
       ['What are you like?', 'like'],
       ['What do you do for fun?', 'hobbies'],
       ['What happened after?', 'after_travel'],

@@ -7,7 +7,7 @@ import { isEmojiOnly, type ProjectId, type ShapeSpec } from '@yoyo/protocol';
 export type ChipContext = 'entry' | 'who' | 'project' | 'build' | 'story' | 'idle';
 
 /** WAVE3: three at the door, in the second person (the site speaks as Yoyo). */
-export const ENTRY_CHIPS = ['Who are you?', 'What have you built?', 'Mirror'];
+export const ENTRY_CHIPS = ['Who are you?', 'What have you built?', 'Spell my name'];
 export const WHO_CHIPS = ['What are you like?', 'What are you bad at?', 'Why should we hire you?', 'How do I reach you?'];
 /** "Change it" lives in the frame's controls row only (POLISH2 A4). */
 export const BUILD_CHIPS = ['Share it', 'Build another', 'How was this made?'];

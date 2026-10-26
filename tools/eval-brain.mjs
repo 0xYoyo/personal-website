@@ -59,7 +59,6 @@ const hasAll = (wants, gots) => wants.every((w) => gots.some((g) => keyMatch(w, 
 export const CHIP_EXPECT = {
   'Who are you?': { intent: 'who', actions: ['become:glyph:curls', 'chips'] },
   'What have you built?': { intent: 'built', actions: ['become:glyph:magnifier', 'show:unfiltered'] },
-  Mirror: { intent: 'mirror', actions: ['mirror'] },
   'Spell my name': { intent: 'spell-my-name', actions: ['become:glyph:question'] },
   'Build me something': { intent: 'build', actions: ['build:*'] },
   'Play the game': { ui: 'play' },

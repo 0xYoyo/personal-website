@@ -444,19 +444,6 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
     "reply": "[[become:yoyo]] I wrote the brief. One model planned it. A swarm of agents built the particles, the showcases and the builder. I merged. || The dots are a GPU simulation. Forty thousand of them. [[chips:Build me something|Who are you?]]"
   },
   {
-    "id": "mirror",
-    "hints": [
-      "mirror",
-      "camera",
-      "see me",
-      "become me",
-      "selfie",
-      "my face",
-      "webcam"
-    ],
-    "reply": "[[mirror]] look at the camera."
-  },
-  {
     "id": "build",
     "hints": [
       "build me",
@@ -492,7 +479,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "options",
       "?"
     ],
-    "reply": "Ask me anything about me. Type a word and I'll become it. Type an emoji. || Say \"mirror\" and I'll become you. Say \"build me a timer\". Or press play. [[chips:Who are you?|Mirror|Play the game]]"
+    "reply": "Ask me anything about me. Type a word and I'll become it. || Say \"build me a timer\". Or press play. [[chips:Who are you?|Spell my name|Play the game]]"
   },
   {
     "id": "thanks",
@@ -506,7 +493,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "nice",
       "sick"
     ],
-    "reply": "[[mood:excited]] told you. [[chips:Mirror|Build me something|How do I reach you?]]"
+    "reply": "[[mood:excited]] told you. [[chips:What have you built?|Build me something|How do I reach you?]]"
   },
   {
     "id": "greeting",
@@ -568,7 +555,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
   }
 ];
 
-export const FAQ_UNKNOWN = "I don't have an answer for that one. Email me: yoavyoav310@gmail.com || Meanwhile, type a word and I'll become it. [[chips:Who are you?|What have you built?|Mirror]]";
+export const FAQ_UNKNOWN = "I don't have an answer for that one. Email me: yoavyoav310@gmail.com || Meanwhile, type a word and I'll become it. [[chips:Who are you?|What have you built?|Spell my name]]";
 
 export const EMOJI_BEATS: readonly string[] = ["obviously.","sure.","why not.","that one's good.","done.","easy."];
 
