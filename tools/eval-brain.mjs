@@ -16,6 +16,8 @@
 //    (pacer → tag parser → turn splitter): each turn ≤ 22 words, no `|` left on screen, nothing
 //    lost, and the resting line a turn of its own. The Worker's pacer (apps/worker/src/pace.ts,
 //    C4) must pace every one of them — and long unpaced replies — exactly like the client's.
+// 4. Once-only facts (FIX4 C5): no scripted or mock reply says "44 pull requests" (the story and
+//    the yoyo-loop card do).
 
 import { fileURLToPath } from 'node:url';
 import { normalize } from 'node:path';
@@ -230,6 +232,17 @@ export function evalWorkerPace(replies) {
   });
 }
 
+/**
+ * Once-only facts (FIX4 C5): "44 pull requests" belongs to the factory story and the yoyo-loop card,
+ * never to a reply (it would repeat what the card or the story just said). Returns rows.
+ */
+export const ONCE_FACTS = [{ id: '44 pull requests', re: /\b44[\s-]*(pull requests|PRs?)\b/i }];
+export function evalOnceFacts(replies) {
+  return ONCE_FACTS.flatMap(({ id, re }) =>
+    replies.map(([input, raw]) => ({ kind: 'facts/once', input, want: `no "${id}"`, got: re.test(raw) ? 'has it' : 'clean', ok: !re.test(raw) })),
+  );
+}
+
 /** Every reply the scripted brain can give, plain and behind the resting line. */
 export function scriptedReplies() {
   const base = [
@@ -254,6 +267,7 @@ export async function runEval({ quiet = false } = {}) {
     ),
     ...evalTurns(UNPACED, 'unpaced'),
     ...evalWorkerPace([...scriptedReplies(), ...UNPACED]),
+    ...evalOnceFacts([...scriptedReplies(), ...allChipLabels().map((c) => [`mock:${c}`, mockReply(c, {}, [])])]),
   ];
   const fails = rows.filter((r) => !r.ok);
   const by = (k) => rows.filter((r) => r.kind === k);
@@ -274,6 +288,7 @@ export async function runEval({ quiet = false } = {}) {
       line('turns/mock'),
       line('turns/unpaced'),
       line('pace/worker'),
+      line('facts/once'),
       fails.length ? `${fails.length} FAILED` : 'all passed',
     ].join('\n'),
   );

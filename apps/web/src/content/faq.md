@@ -44,7 +44,7 @@ hints: why agents, stop coding, stopped writing code, switch, when did you
 
 ## fast
 hints: fast, how fast, speed, quick, velocity, burst
-→ `Once, in four days: 44 pull requests merged on one codebase. || Most of them went from open to merged in about fifteen minutes. [[chips:Build me something|What have you built?]]`
+→ `About fifteen minutes from pull request to merge, usually. || 245 merged on Unfiltered, most of them built by my agents. I still merge every one. [[chips:Build me something|What have you built?]]`
 
 ## game
 hints: game, play, kart, racing, racers, prompt racers

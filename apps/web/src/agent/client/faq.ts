@@ -161,7 +161,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "velocity",
       "burst"
     ],
-    "reply": "Once, in four days: 44 pull requests merged on one codebase. || Most of them went from open to merged in about fifteen minutes. [[chips:Build me something|What have you built?]]"
+    "reply": "About fifteen minutes from pull request to merge, usually. || 245 merged on Unfiltered, most of them built by my agents. I still merge every one. [[chips:Build me something|What have you built?]]"
   },
   {
     "id": "game",
