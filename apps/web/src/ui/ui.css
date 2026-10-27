@@ -313,6 +313,20 @@
 .y-chip:active {
   transform: scale(0.97);
 }
+/* "watch again" (FIX4 W8): a chip's size and place in the row, a text button's look (no pill, underlined) */
+.y-chip.y-chip-text {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: var(--hairline-strong);
+  text-underline-offset: 3px;
+}
+.y-chip.y-chip-text:hover {
+  border-color: transparent;
+  color: var(--ink);
+  text-decoration-color: var(--accent);
+}
 @keyframes y-chip-pop {
   from {
     opacity: 0;

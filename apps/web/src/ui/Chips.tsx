@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { copy } from '../content/copy';
 import { ctl } from '../controller';
 import { useStore } from '../state/store';
+import { WatchAgain } from './WatchAgain';
 
 /**
  * Contextual chips above the bar. On mobile the row scrolls sideways: it fades
@@ -69,6 +70,8 @@ export function Chips() {
             {c}
           </button>
         ))}
+        {/* right of the chips on desktop, the fourth chip on a phone (FIX4 W8) */}
+        <WatchAgain hide={hide} delay={chips.length * 30} />
       </div>
     </nav>
   );

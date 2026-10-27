@@ -422,7 +422,6 @@ export function App() {
         <div className="y-stage-layer">
           <Conversation />
           <RunnerControls />
-          <WatchAgain />
         </div>
       </main>
       <Chips />
