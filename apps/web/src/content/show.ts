@@ -249,8 +249,9 @@ function kartScene(box: StageBox, ms: number): Scene {
     shape: glyph('kart'), share, path: kartLap(box, ms, { lag, scale, lane, rx, ry }), trail, trailMs: 520, brightness: lag ? 0.85 : 1.05,
   });
   // canvas2d: one big kart riding a dotted track (its wheels on the ring)
-  const lw = wide ? Math.min(box.w * 0.4, box.h * 0.55) : Math.min(box.w * 0.52, box.h * 0.4);
-  const lrx = 1 - ux(box, lw / 2) - 0.06, lry = wide ? 0.5 : 0.52;
+  // (a tall desktop column too: a flat oval, wider than it is tall, reads as a track seen from above-ish)
+  const lw = wide ? Math.min(box.w * 0.4, box.h * 0.55) : Math.min(box.w * 0.42, box.h * 0.34);
+  const lrx = 1 - ux(box, lw / 2) - 0.06, lry = wide ? 0.5 : 0.26;
   const wheels = uy(box, (lw / AR.kart) * 0.38);
   const lite: Scene = {
     duration: ms, tableau: 1500,
