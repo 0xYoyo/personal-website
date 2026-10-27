@@ -30,7 +30,7 @@ describe('typeScale', () => {
     expect(typeScale(1440).max).toBe(60);
     expect(typeScale(1280).max).toBe(55);
     expect(typeScale(1024).max).toBe(47);
-    expect(typeScale(390)).toEqual({ max: 35, min: 28, maxLines: 4 });
+    expect(typeScale(390)).toEqual({ max: 35, min: 28, maxLines: 3 });
     expect(typeScale(1024).min).toBe(44);
   });
 });
@@ -63,10 +63,12 @@ describe('fitFont', () => {
     expect(fitFont(m, 35, typeScale(390))).toBe(28);
   });
 
-  it('allows 4 lines on mobile', () => {
+  it('caps a turn at 3 lines on mobile too (FIX4 U4)', () => {
     const el = textBox(358);
-    el.textContent = 'x'.repeat(80); // at 35 px: 20 chars a line → 4 lines
+    el.textContent = 'x'.repeat(60); // at 35 px: 20 chars a line → 3 lines
     expect(fitFont(el, 35, typeScale(390))).toBe(35);
+    el.textContent = 'x'.repeat(80); // 4 lines at 35 px: it steps down
+    expect(fitFont(el, 35, typeScale(390))).toBeLessThan(35);
   });
 });
 

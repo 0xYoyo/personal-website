@@ -8,6 +8,7 @@ import {
   splitTurn,
   stripMarks,
   turnWait,
+  TAIL_MIN,
   TURN_MS_PER_WORD,
   TURN_READ_MIN,
   type MeasureTurn,
@@ -173,7 +174,8 @@ describe('the pacer (POLISH2 A1)', () => {
 describe('splitTurn / fitTurn', () => {
   it('a sentence boundary that would leave a stub gives way to a later clause boundary', () => {
     const t = 'Yoav Zrihan. Self-taught, building since 2022, crypto since 2021, second-year CS at Reichman.';
-    expect(splitTurn(t, byWords(9))).toEqual(['Yoav Zrihan. Self-taught, building since 2022, crypto since 2021,', 'second-year CS at Reichman.']);
+    // (the latest clause cut would orphan "second-year CS at Reichman.": 4 words, FIX4 U4)
+    expect(splitTurn(t, byWords(9))).toEqual(['Yoav Zrihan. Self-taught, building since 2022,', 'crypto since 2021, second-year CS at Reichman.']);
     // a sentence boundary with a real first part still wins
     expect(splitTurn('He ships every week. Solidity in 2022, Ordinals in 2023, agents now.', byWords(9))).toEqual(['He ships every week.', 'Solidity in 2022, Ordinals in 2023, agents now.']);
   });
@@ -185,3 +187,52 @@ describe('splitTurn / fitTurn', () => {
     expect(fitTurn('short one.', m)).toEqual([{ text: 'short one.', px: 50 }]);
   });
 });
+
+describe('short tails (FIX4 U4)', () => {
+  /** fits ≤ max words; "loose" (one line more) ≤ max + 4 */
+  const loose =
+    (max: number): MeasureTurn =>
+    (t) => {
+      const n = t.split(/\s+/).filter(Boolean).length;
+      return { px: n <= max ? 50 : 44, fits: n <= max, loose: n <= max + 4 };
+    };
+
+  it('a split never leaves a tail under 5 words when another cut fits', () => {
+    const t = 'I ship. 917 public commits this year, a real game. And a connector.';
+    // the latest sentence cut ("… a real game." | "And a connector.") would orphan 3 words: the clause cut instead
+    expect(splitTurn(t, byWords(11))).toEqual(['I ship. 917 public commits this year,', 'a real game. And a connector.']);
+    // with no other cut that fits, the short tail is still better than no split
+    expect(splitTurn('One two three four five six. Seven eight.', byWords(6))).toEqual(['One two three four five six.', 'Seven eight.']);
+    expect(TAIL_MIN).toBe(5);
+  });
+
+  it('a tail under 5 words joins the turn before it when the two still fit with a line of slack', () => {
+    const t = 'Second year of Computer Science and Entrepreneurship at Reichman. Self-taught before that.';
+    expect(fitTurn(t, loose(9)).map((p) => p.text)).toEqual([t]);
+    // …and stays its own turn when even that does not fit
+    expect(fitTurn(t, byWords(9)).map((p) => p.text)).toEqual(['Second year of Computer Science and Entrepreneurship at Reichman.', 'Self-taught before that.']);
+  });
+});
+
+describe('read time counts from when the turn is on screen (FIX4 U4)', () => {
+  it('a slow paint does not eat into the next turn’s wait', async () => {
+    const t0 = Date.now();
+    const log: string[] = [];
+    let paintedAt = -1;
+    // the renderer is busy: what was handed over shows up 900 ms later
+    const painted = () => new Promise<void>((r) => setTimeout(() => ((paintedAt = Date.now() - t0), r()), 900));
+    const pacer = createPacer(
+      { begin: (t) => log.push(`${Date.now() - t0} begin:${t.text}`), word: () => undefined, end: () => undefined },
+      { clock, pace: 0, measure: byWords(99), channel: createChannel(), painted },
+    );
+    feed(pacer, 'One two three. || Four five.');
+    const done = pacer.close();
+    await vi.advanceTimersByTimeAsync(20_000);
+    await done;
+    const b2 = Number(log.find((l) => l.includes('begin:Four'))!.split(' ')[0]);
+    expect(paintedAt).toBeGreaterThan(0);
+    // the first turn's 2.8 s run from when it was painted (900 ms), not from when it was handed over (0)
+    expect(b2).toBeGreaterThanOrEqual(900 + TURN_READ_MIN);
+  });
+});
+

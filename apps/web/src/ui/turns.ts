@@ -43,6 +43,8 @@ export interface TurnFit {
   px: number;
   /** whether the turn fits the line budget at that size (false only at the floor) */
   fits: boolean;
+  /** whether it fits with one line more than the budget (a short tail may join it, FIX4 U4) */
+  loose?: boolean;
 }
 export type MeasureTurn = (text: string) => TurnFit;
 
@@ -55,18 +57,22 @@ function cutsAfter(words: string[], re: RegExp): number[] {
 const SENTENCE_END = /[.!?…]["'”’)\]]*$/;
 const CLAUSE_END = /[,;:—–]$/;
 
+/** A turn's last part shorter than this joins the part before it instead of standing alone (FIX4 U4). */
+export const TAIL_MIN = 5;
+
 /**
  * Split a turn in two: at the last sentence boundary whose first part fits
  * (unless that leaves a stub under a third of the turn and a later clause
  * boundary fits); with none that fits, the last clause boundary that fits,
  * else the first boundary (and the parts split again); else in the middle.
+ * A cut that leaves a tail under TAIL_MIN words is taken only when no other fits.
  */
 export function splitTurn(text: string, measure: MeasureTurn): [string, string] | null {
   const words = wordsOf(text);
   if (words.length < 2) return null;
   const head = (i: number) => words.slice(0, i).join(' ');
-  /** the latest cut whose head fits */
-  const best = (cuts: number[]) => [...cuts].reverse().find((i) => measure(head(i)).fits);
+  /** the latest cut whose head fits (and, unless `any`, whose tail is not a stub) */
+  const best = (cuts: number[], any = false) => [...cuts].reverse().find((i) => (any || words.length - i >= TAIL_MIN) && measure(head(i)).fits);
   const sentences = cutsAfter(words, SENTENCE_END);
   const clauses = cutsAfter(words, CLAUSE_END);
   let cut = best(sentences);
@@ -76,7 +82,7 @@ export function splitTurn(text: string, measure: MeasureTurn): [string, string] 
     const clause = best(clauses);
     if (clause !== undefined && clause > cut) cut = clause;
   }
-  cut ??= best(clauses) ?? sentences[0] ?? clauses[0];
+  cut ??= best(clauses) ?? best(sentences, true) ?? best(clauses, true) ?? sentences[0] ?? clauses[0];
   if (cut !== undefined) return [head(cut), words.slice(cut).join(' ')];
   const mid = Math.ceil(words.length / 2);
   return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
@@ -88,7 +94,16 @@ export function fitTurn(text: string, measure: MeasureTurn, depth = 0): { text: 
   if (f.fits || depth >= 6) return [{ text, px: f.px }];
   const parts = splitTurn(text, measure);
   if (!parts) return [{ text, px: f.px }];
-  return parts.flatMap((p) => fitTurn(p, measure, depth + 1));
+  const out = parts.flatMap((p) => fitTurn(p, measure, depth + 1));
+  // a short tail ("Self-taught before that.") joins the part before it when the two still fit,
+  // with one line of slack (FIX4 U4)
+  const last = out[out.length - 1]!;
+  if (depth === 0 && out.length > 1 && wordsOf(last.text).length < TAIL_MIN) {
+    const joined = `${out[out.length - 2]!.text} ${last.text}`;
+    const j = measure(joined);
+    if (j.fits || j.loose) out.splice(-2, 2, { text: joined, px: j.px });
+  }
+  return out;
 }
 
 // ---- the pacer ------------------------------------------------------------------
@@ -131,6 +146,11 @@ export interface PacerOptions {
   /** ms between words within a turn; 0 shows a turn at once (reduced motion) */
   pace?: number;
   channel?: TurnChannel;
+  /**
+   * Resolves once what was just rendered is on screen (FIX4 U4). A turn's read time counts from
+   * there, not from when it was handed to the renderer: a busy frame must not eat into it.
+   */
+  painted?: () => Promise<void>;
 }
 
 export interface Pacer {
@@ -219,8 +239,10 @@ export function createPacer(h: PacerHooks, o: PacerOptions = {}): Pacer {
         }
         rush = false;
         inWords = true;
-        const startedAt = clock.now();
+        let startedAt = clock.now();
         h.begin(turn);
+        // its first word is read from when it is actually on screen
+        void o.painted?.().then(() => (startedAt = Math.max(startedAt, clock.now())));
         count++;
         const ws = wordsOf(turn.text);
         for (let i = 0; i < ws.length; i++) {
@@ -232,6 +254,8 @@ export function createPacer(h: PacerHooks, o: PacerOptions = {}): Pacer {
         rush = false;
         if (cancelled) break;
         h.end(turn);
+        if (o.painted) await o.painted();
+        if (cancelled) break;
         ch.last = { startedAt, doneAt: clock.now(), words: ws.length };
       }
     } finally {

@@ -66,8 +66,8 @@ describe('Conversation', () => {
     expect(px).toBeLessThan(60);
     // the clone the pacer measures on: the same answer for the same text, and "doesn't fit" for a wall
     expect(measure).toBeTypeOf('function');
-    expect(measure!(turn)).toEqual({ px, fits: true });
-    expect(measure!(`${WHO} ${WHO} ${WHO}`)).toEqual({ px: 44, fits: false });
+    expect(measure!(turn)).toEqual({ px, fits: true, loose: true });
+    expect(measure!(`${WHO} ${WHO} ${WHO}`)).toEqual({ px: 44, fits: false, loose: false });
     spy.mockRestore();
   });
 

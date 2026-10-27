@@ -1,7 +1,7 @@
 // Auto-fit for the agent's words (POLISH1 A1, POLISH2 A1). A turn is one block
 // of large type sized once, before it is shown, for its whole text: the
 // largest size (from the viewport's max, in 2 px steps) at which it fits in
-// ≤ 3 lines on desktop (≤ 4 on mobile), never below the floor (44 / 28 px).
+// ≤ 3 lines (desktop and mobile, FIX4 U4), never below the floor (44 / 28 px).
 // The fit reads the real DOM (`scrollHeight`) of a hidden clone, not a word
 // count, so nothing shrinks while the visitor reads. A turn that still runs
 // long at the floor is split by the pacer (ui/turns.ts).
@@ -27,7 +27,8 @@ export const MIN_MOBILE = 28;
 
 /** The agent type scale for a viewport width: 72/60/55/47 px desktop, 35 px mobile. */
 export function typeScale(vw: number): TypeScale {
-  if (isMobileWidth(vw)) return { max: 35, min: MIN_MOBILE, maxLines: 4 };
+  // a phone caps a turn at 3 lines too (FIX4 U4: was 4); a longer one splits at a sentence
+  if (isMobileWidth(vw)) return { max: 35, min: MIN_MOBILE, maxLines: 3 };
   const max = vw >= 1800 ? 72 : vw >= 1400 ? 60 : vw >= 1200 ? 55 : 47;
   return { max, min: MIN_DESKTOP, maxLines: 3 };
 }
@@ -93,11 +94,14 @@ export function fillWords(el: HTMLElement, text: string): void {
  * Measure a whole turn on `clone`, a hidden copy of the agent line (same
  * width, same font): its size, and whether it fits the line budget there.
  */
-export function measureOn(clone: HTMLElement, text: string, vw: number): { px: number; fits: boolean } {
+export function measureOn(clone: HTMLElement, text: string, vw: number): { px: number; fits: boolean; loose: boolean } {
   fillWords(clone, text);
   const scale = typeScale(vw);
   const px = fitFont(clone, scale.max, scale);
-  return { px, fits: fitsAt(clone, px, scale.maxLines) };
+  const fits = fitsAt(clone, px, scale.maxLines);
+  const loose = fits || fitsAt(clone, px, scale.maxLines + 1);
+  clone.style.fontSize = `${px}px`;
+  return { px, fits, loose };
 }
 
 // ---- words ------------------------------------------------------------------

@@ -90,6 +90,20 @@ let measureFn: ((text: string) => TurnFit | null) | null = null;
 const channel = createChannel();
 const pacers = new Set<Pacer>();
 
+/** Two frames after a store change the words are on screen (a hidden tab: a second at most). */
+function painted(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame !== 'function') return resolve();
+    const t = setTimeout(resolve, 1000);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        clearTimeout(t);
+        resolve();
+      }),
+    );
+  });
+}
+
 /**
  * A pacer that shows its turns in the conversation: one agent line per turn,
  * sized once, words streamed in, the reply's `streaming` flag held until the
@@ -116,6 +130,7 @@ function turnPacer(opts: { onBegin?: () => void } = {}): Pacer {
       measure: (text) => measureFn?.(text) ?? { px: 0, fits: true },
       pace: S().reducedMotion ? 0 : TURN_WORD_MS,
       channel,
+      painted,
     },
   );
   pacers.add(p);
