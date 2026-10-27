@@ -119,6 +119,12 @@ export interface TurnChannel {
 }
 export const createChannel = (): TurnChannel => ({ last: null, skip: null });
 
+/** How much longer the turn on screen needs before it has been read (0 with none). */
+export function readLeft(ch: TurnChannel, now: number): number {
+  const l = ch.last;
+  return l ? turnWait(l.words, now - l.startedAt, now - l.doneAt) : 0;
+}
+
 export interface PacerOptions {
   measure?: MeasureTurn;
   clock?: Clock;

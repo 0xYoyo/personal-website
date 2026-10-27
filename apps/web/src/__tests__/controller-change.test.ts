@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBrain } from '../agent';
-import { changeIntent } from '../content/chips';
+import { changeIntent, projectChips } from '../content/chips';
 import { ctl } from '../controller';
 import { useStore } from '../state/store';
 
@@ -55,5 +55,37 @@ describe('ctl.say with a build open (FIX4 U1)', () => {
     expect(useStore.getState().barMode).toBe('chat');
     expect(useStore.getState().lines.some((l) => l.role === 'visitor' && l.text === 'change it')).toBe(true);
     expect(build).not.toHaveBeenCalledWith('change it', expect.objectContaining({ previousHtml: expect.anything() }));
+  });
+});
+
+describe('a reply that opens a card keeps its own chips until it has been read (FIX4 U3)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    localStorage.clear();
+    useStore.getState().reset();
+    useStore.getState().setPhase('ready');
+    ctl.init({ brain: createBrain({ speed: 0.001 }), swarm: null, sound: null, voice: null });
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('reply chips while the last turn is read, then the card’s', async () => {
+    const done = ctl.say('What have you built?');
+    for (let i = 0; i < 100 && useStore.getState().overlay !== 'card'; i++) await vi.advanceTimersByTimeAsync(100);
+    await done;
+    const st = useStore.getState();
+    expect(st.overlay).toBe('card');
+    expect(st.chips).toContain('Play the game'); // the reply's own row, not swapped as the card opens
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(useStore.getState().chips).toContain('Play the game');
+    await vi.advanceTimersByTimeAsync(8000);
+    expect(useStore.getState().chips.slice(0, 2)).toEqual(projectChips(useStore.getState().project!));
+  });
+
+  it('"How fast is it?" answers without a card', async () => {
+    const done = ctl.say('How fast is it?');
+    for (let i = 0; i < 200 && ctl.pacing(); i++) await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(3000);
+    await done;
+    expect(useStore.getState().overlay).toBe('none');
   });
 });

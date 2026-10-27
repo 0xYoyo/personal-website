@@ -14,7 +14,7 @@ import type { SwarmHandle } from './swarm';
 import { createRunner, type Runner, type Step } from './ui/runner/engine';
 import type { Scene } from '@yoyo/protocol';
 import type { Sound } from './ui/sound';
-import { createChannel, createPacer, stripMarks, TURN_WORD_MS, type Pacer, type TurnFit } from './ui/turns';
+import { createChannel, createPacer, readLeft, stripMarks, TURN_WORD_MS, type Pacer, type TurnFit } from './ui/turns';
 import type { Voice } from './ui/voice';
 
 interface Runtime {
@@ -406,7 +406,11 @@ export const ctl = {
         // let the line land before an overlay takes the stage
         await sleep(text ? Math.min(1400, 500 + lastTurn.split(' ').length * 40) : 0);
         if (turn !== ac) return;
-        queue.forEach(runAction);
+        for (const a of queue) {
+          if (a.type !== 'show') runAction(a);
+          // the reply's own chips stay until its last turn has been read, then the card's (FIX4 U3)
+          else ctl.openProject(a.project, chipsSet ? { chipsAfter: readLeft(channel, performance.now()) } : {});
+        }
       }
     } catch (e) {
       if (e instanceof BrainError && e.reason === 'aborted') return;
@@ -485,11 +489,18 @@ export const ctl = {
   },
 
   // ---- projects ------------------------------------------------------------
-  openProject(id: ProjectId) {
+  /** `chipsAfter`: a reply opened the card and its chips stay this many ms more before the card's take over. */
+  openProject(id: ProjectId, opts: { chipsAfter?: number } = {}) {
     claimBody();
     closeAll('card');
     S().showProject(id);
-    S().setChips(projectChips(id));
+    if (opts.chipsAfter === undefined) return S().setChips(projectChips(id));
+    const key = S().chipsKey;
+    setTimeout(() => {
+      const s = S();
+      // unless something else has set the chips (or the card moved on / closed) in the meantime
+      if (s.chipsKey === key && s.overlay === 'card' && s.project === id) s.setChips(projectChips(id));
+    }, opts.chipsAfter);
   },
   nextProject(dir: 1 | -1) {
     const cur = S().project;
