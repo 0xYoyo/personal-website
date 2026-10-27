@@ -170,6 +170,10 @@ hints: politics, war, gaza, government, religion, election, israel palestine
 hints: ignore previous, system prompt, pretend you are, reveal, instructions, dan
 → `nice try. [[chips:Who are you?|Build me something]]`
 
+## mirror_gone
+hints: mirror, camera, webcam
+→ `[[become:question]] no mirror here. type a word and I'll become it.`
+
 ## unknown
 → `I don't have an answer for that one. Email me: yoavyoav310@gmail.com || Meanwhile, type a word and I'll become it. [[chips:Who are you?|What have you built?|Spell my name]]`
 

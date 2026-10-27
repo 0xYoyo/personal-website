@@ -555,6 +555,15 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "dan"
     ],
     "reply": "nice try. [[chips:Who are you?|Build me something]]"
+  },
+  {
+    "id": "mirror_gone",
+    "hints": [
+      "mirror",
+      "camera",
+      "webcam"
+    ],
+    "reply": "[[become:question]] no mirror here. type a word and I'll become it."
   }
 ];
 
