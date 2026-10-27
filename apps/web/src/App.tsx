@@ -68,7 +68,7 @@ function keepOutRects(restoring = false): Rect[] {
   // while the flock gathers, the words and chips are still hidden but already kept clear
   const restored = restoring || !!useStore.getState().settling;
   const shown = restored ? '' : '[data-hidden="false"]';
-  const sels: [string, number?][] = [
+  const sels: [string | null, number?][] = [
     ['.y-top'],
     // the words get 8 px of air: a line that runs to the gutter otherwise had dots brushing its last letter
     [`.y-convo${shown} .y-agent`, -8],
@@ -80,7 +80,9 @@ function keepOutRects(restoring = false): Rect[] {
   if (!restored && useStore.getState().overlay === 'build') {
     sels.splice(1, 3, ['.y-build-caption'], ['.y-build-frame[data-visible="true"]', 14], ['.y-build-controls[data-on="true"]']);
   }
-  const rects = sels.map(([sel, inset]) => boxOf(sel, inset));
+  // contact: its line, links and foot (the words are hidden under it) — dots crossed them on a phone (FIX4 U2)
+  if (!restored && useStore.getState().overlay === 'contact') sels.splice(1, 3, ['.y-contact', -8], [null], [null]);
+  const rects = sels.map(([sel, inset]) => (sel ? boxOf(sel, inset) : null));
   // a phone (FIX4 W9): the words and the gap under them down to the chips (or the bar) are one keep-out, so no
   // strip of dots rests between the last line and the chips
   if (isMobileViewport() && !(!restored && useStore.getState().overlay === 'build')) {
@@ -100,6 +102,25 @@ function keepOutRects(restoring = false): Rect[] {
     rects[0] = { x: x0, y: y0, w: Math.max(top.x + top.w, run.x + run.w) - x0, h: Math.max(top.y + top.h, run.y + run.h) - y0 };
   }
   return rects.filter((r): r is Rect => !!r).slice(0, 6);
+}
+
+/**
+ * Reduced motion (FIX4 U11): the still dot field rests at 40% brightness; a shape the body forms is at full.
+ * The engine has no brightness for its free field, so the canvas dims while the body is let go.
+ */
+function dimStillField(sw: NonNullable<typeof ctl.swarm>, el: HTMLElement) {
+  const set = (still: boolean) => (el.dataset.still = String(still));
+  const wrap = <K extends 'become' | 'buildFrame' | 'release'>(k: K, still: boolean) => {
+    const fn = sw[k] as (...a: unknown[]) => unknown;
+    (sw as unknown as Record<string, unknown>)[k] = (...a: unknown[]) => (set(still), fn.apply(sw, a));
+  };
+  wrap('become', false);
+  wrap('buildFrame', false);
+  wrap('release', true);
+  const perform = sw.perform;
+  if (perform) sw.perform = (...a: Parameters<typeof perform>) => (set(false), perform.apply(sw, a));
+  const gather = (sw as { gather?: (ms: number) => Promise<void> }).gather;
+  if (gather) (sw as { gather?: (ms: number) => Promise<void> }).gather = (ms: number) => (set(true), gather.call(sw, ms));
 }
 
 type StageFn = (rect: Rect, keepOut?: Rect[]) => void;
@@ -151,6 +172,7 @@ export function App() {
         return;
       }
       ctl.init({ swarm, brain, sound, voice });
+      if (reduced) dimStillField(swarm, container);
       // QA hook (dev server, or ?qa=1 on a build): tools/shots.mjs and tools/og.mjs drive the page through it
       if (import.meta.env.DEV || params.has('qa')) Object.assign(window, { __yoyo: { ctl, swarm, brain, store: useStore } });
       ctl.setScene(scene);

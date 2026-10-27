@@ -21,6 +21,11 @@
   touch-action: none;
 }
 
+/* reduced motion: the still field at 40% (a formed shape at full: App.tsx dimStillField, FIX4 U11) */
+.y-canvas[data-still='true'] {
+  opacity: 0.4;
+}
+
 /* the engine's canvas (replaced on a tier change; the container above stays) */
 .y-canvas-el {
   display: block;
