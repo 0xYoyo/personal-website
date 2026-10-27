@@ -113,9 +113,12 @@ describe('the show stopped by a message or a chip (FIX4 W1, W2)', () => {
     expect(v.prevAgent).toBeUndefined();
   });
 
-  it('run to its end: "Ask me anything." rests alone (FIX4 W8)', async () => {
+  it('run to its end: "Ask me anything." rests alone, and the end chips (already up) do not pop in again (FIX4 W8)', async () => {
     ctl.startTour();
+    for (let i = 0; i < 380; i++) await vi.advanceTimersByTimeAsync(100);
+    const key = S().chipsKey;
     for (let i = 0; i < 500 && ctl.runnerActive(); i++) await vi.advanceTimersByTimeAsync(100);
+    expect(S().chipsKey).toBe(key);
     const v = visibleExchange(S().lines);
     expect(v.agent?.text).toBe('Ask me anything.');
     expect(v.prevAgent).toBeUndefined();

@@ -326,7 +326,11 @@ function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: numb
         }
         // a show that ran to its end keeps its own end chips; skipped, the entry three return (WAVE3 S1);
         // stopped by a chip or a message, the answer sets its own
-        if (!(reason === 'skip' && keepBodyOnSkip)) s2.setChips(kind === 'stories' ? STORY_CHIPS : reason === 'done' && endChips ? endChips : ENTRY_CHIPS);
+        if (!forAnswer) {
+          const next = kind === 'stories' ? STORY_CHIPS : reason === 'done' && endChips ? endChips : ENTRY_CHIPS;
+          // the same row already up (the show's end chips): leave it, so it does not pop in again (FIX4 W8)
+          if (next.join('|') !== S().chips.join('|')) s2.setChips(next);
+        }
       },
     },
     { stepMode },
