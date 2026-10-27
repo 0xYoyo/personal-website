@@ -18,7 +18,7 @@ export const TOUR_END_CHIPS = ['Who are you?', 'What have you built?', 'Play the
 /** Returning visitor with a stored build (POLISH1 A6): reopen it first, then the usual moves. */
 export const openBuildChip = (title: string): string => `Open my ${title}`;
 export const returningChips = (buildTitle?: string): string[] =>
-  buildTitle ? [openBuildChip(buildTitle), ...ENTRY_CHIPS] : ENTRY_CHIPS;
+  buildTitle ? [openBuildChip(buildTitle), 'Who are you?', 'What have you built?'] : ENTRY_CHIPS;
 
 export function projectChips(id: ProjectId): string[] {
   return id === 'prompt-racers'
