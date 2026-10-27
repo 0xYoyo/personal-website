@@ -25,8 +25,15 @@ export const isMobileWidth = (vw: number): boolean => vw <= 720;
 export const MIN_DESKTOP = 44;
 export const MIN_MOBILE = 28;
 
-/** The agent type scale for a viewport width: 72/60/55/47 px desktop, 35 px mobile. */
-export function typeScale(vw: number): TypeScale {
+/** A phone this short (the keyboard is up): small captions and a thin stage band (FIX4 U8). */
+export const SHORT_VH = 560;
+export const isShortViewport = (vw: number, vh: number): boolean => isMobileWidth(vw) && vh < SHORT_VH;
+/** The caption size on a short phone viewport, px. */
+export const SHORT_MAX = 24;
+
+/** The agent type scale for a viewport: 72/60/55/47 px desktop, 35 px mobile, 24 px on a short phone. */
+export function typeScale(vw: number, vh = Infinity): TypeScale {
+  if (isShortViewport(vw, vh)) return { max: SHORT_MAX, min: 20, maxLines: 3 };
   // a phone caps a turn at 3 lines too (FIX4 U4: was 4); a longer one splits at a sentence
   if (isMobileWidth(vw)) return { max: 35, min: MIN_MOBILE, maxLines: 3 };
   const max = vw >= 1800 ? 72 : vw >= 1400 ? 60 : vw >= 1200 ? 55 : 47;
@@ -94,9 +101,9 @@ export function fillWords(el: HTMLElement, text: string): void {
  * Measure a whole turn on `clone`, a hidden copy of the agent line (same
  * width, same font): its size, and whether it fits the line budget there.
  */
-export function measureOn(clone: HTMLElement, text: string, vw: number): { px: number; fits: boolean; loose: boolean } {
+export function measureOn(clone: HTMLElement, text: string, vw: number, vh = typeof innerHeight === 'number' ? innerHeight : Infinity): { px: number; fits: boolean; loose: boolean } {
   fillWords(clone, text);
-  const scale = typeScale(vw);
+  const scale = typeScale(vw, vh);
   const px = fitFont(clone, scale.max, scale);
   const fits = fitsAt(clone, px, scale.maxLines);
   const loose = fits || fitsAt(clone, px, scale.maxLines + 1);

@@ -18,6 +18,7 @@ import { CommandBar } from './ui/CommandBar';
 import { Contact } from './ui/Contact';
 import { Conversation, RunnerControls } from './ui/Conversation';
 import { GameModal } from './ui/GameModal';
+import { SHORT_VH } from './ui/fit';
 import { History, LiveRegion } from './ui/History';
 import { createSound } from './ui/sound';
 import { TopBar } from './ui/TopBar';
@@ -41,6 +42,8 @@ if (typeof document !== 'undefined') {
 function stageRect(): Rect {
   const w = innerWidth;
   const h = innerHeight;
+  // the keyboard is up (a short phone viewport): the stage collapses to a thin band (FIX4 U8)
+  if (isMobileViewport() && h < SHORT_VH) return { x: 16, y: 60, w: w - 32, h: 120 };
   if (isMobileViewport()) return { x: 16, y: 60, w: w - 32, h: Math.max(180, Math.round(h * 0.34)) };
   const x = Math.round(w * 0.64);
   return { x, y: 72, w: w - x - 32, h: h - 72 - 190 };

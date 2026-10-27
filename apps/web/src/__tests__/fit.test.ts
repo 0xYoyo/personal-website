@@ -33,6 +33,11 @@ describe('typeScale', () => {
     expect(typeScale(390)).toEqual({ max: 35, min: 28, maxLines: 3 });
     expect(typeScale(1024).min).toBe(44);
   });
+  it('a short phone viewport (the keyboard is up) drops the captions to 24 px (FIX4 U8)', () => {
+    expect(typeScale(390, 500)).toEqual({ max: 24, min: 20, maxLines: 3 });
+    expect(typeScale(390, 844).max).toBe(35);
+    expect(typeScale(1440, 500).max).toBe(60); // desktop: width rules
+  });
 });
 
 describe('fitFont', () => {

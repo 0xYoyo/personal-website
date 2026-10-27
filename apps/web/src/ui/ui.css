@@ -1049,7 +1049,8 @@
     right: 16px;
     width: auto;
     top: calc(60px + 34vh + 12px);
-    bottom: calc(var(--bar-bottom) + var(--bar-h) + 12px + 40px + 16px);
+    /* above the chips as tall as they are (two lines when three wrap: FIX4 U5, U8) */
+    bottom: calc(var(--bar-bottom) + var(--bar-h) + 12px + var(--chips-h, 40px) + 16px);
     display: flex;
     flex-direction: column;
     justify-content: safe center;
@@ -1218,6 +1219,8 @@
   }
   .y-build-controls {
     gap: 4px 16px;
+    /* clear of the frame's dotted border (FIX4 U8) */
+    margin-top: 4px;
   }
   .y-build-controls .y-textbtn:last-child {
     margin-left: 0;
@@ -1243,5 +1246,24 @@
   }
   .y-contact-foot {
     margin-top: 24px;
+  }
+}
+
+/* a short phone viewport: the keyboard is up (FIX4 U8). The stage is a 120 px band under the top bar
+   (App.tsx stageRect), the words sit right below it at 24 px (ui/fit.ts) and stop above the chips */
+@media (max-width: 720px) and (max-height: 559px) {
+  .y-convo {
+    top: calc(60px + 120px + 8px);
+    bottom: calc(var(--bar-bottom) + var(--bar-h) + 10px + var(--chips-h, 40px) + 10px);
+  }
+  .y-prev {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .y-echo {
+    margin-top: 8px;
+  }
+  .y-build-caption {
+    font-size: 18px;
   }
 }

@@ -16,7 +16,8 @@ export const TURN_MS_PER_WORD = 320;
 /** Pace of the words within a turn (the buffer has the whole turn; this is only the reveal). */
 export const TURN_WORD_MS = 55;
 
-export const wordsOf = (text: string): string[] => text.split(/\s+/).filter((w) => w && w !== TURN_MARK);
+/** A line's words: split at spaces, never at a no-break space (it binds a last word to the one before: FIX4 W9). */
+export const wordsOf = (text: string): string[] => text.split(/[^\S\u00a0]+/).filter((w) => w && w !== TURN_MARK);
 /** Reply text without turn markers (voice, history, read time). */
 export const stripMarks = (text: string): string => text.split(TURN_MARK).map((s) => s.trim()).filter(Boolean).join(' ');
 

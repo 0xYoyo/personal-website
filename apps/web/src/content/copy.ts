@@ -9,7 +9,8 @@ export const copy = {
     /** SPEC §2.1, under the YOYO letters */
     nameLine: 'Yoav Zrihan · 0xYoyo',
     /** WAVE3 V1: the site speaks as Yoyo */
-    greeting: "hey. I'm Yoyo. Ask me anything — or type a word and I'll become it.",
+    // a no-break space before the last word: a phone never leaves "it." alone on a line (FIX4 W9)
+    greeting: "hey. I'm Yoyo. Ask me anything — or type a word and I'll become\u00a0it.",
     /** SPEC §2.1: "welcome back, Dana." */
     welcomeBack: (name: string) => `welcome back, ${name}.`,
     /** ui: returning visitor without a stored name */

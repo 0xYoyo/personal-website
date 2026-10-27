@@ -10,7 +10,7 @@ import { copy } from '../content/copy';
 import { ctl } from '../controller';
 import { useStore, visibleExchange } from '../state/store';
 import { CAPTION_TYPE_MS } from './runner/engine';
-import { isMobileWidth, measureOn, toWords } from './fit';
+import { isMobileWidth, isShortViewport, measureOn, toWords } from './fit';
 
 /** ms between words when a whole line lands at once (a notice, a resting line) */
 const STAGGER_MS = 45;
@@ -35,6 +35,18 @@ function useViewport(): number {
     return () => removeEventListener('resize', on);
   }, []);
   return vw;
+}
+
+/** The keyboard is up (a short phone viewport, FIX4 U8): captions re-fit at the small size. */
+function useShort(): boolean {
+  const get = () => typeof innerWidth === 'number' && isShortViewport(innerWidth, innerHeight);
+  const [short, setShort] = useState(get);
+  useEffect(() => {
+    const on = () => setShort(get());
+    addEventListener('resize', on);
+    return () => removeEventListener('resize', on);
+  }, []);
+  return short;
 }
 
 function useFontsReady(): number {
@@ -66,12 +78,13 @@ export function Conversation() {
   useStore((s) => s.chipsKey); // re-check the room beneath when the chips change
   const { prevAgent, agent, visitor } = visibleExchange(lines);
   const vw = useViewport();
+  const short = useShort();
   const fontsN = useFontsReady(); // re-fit once the display font has loaded
   const sectionRef = useRef<HTMLElement>(null);
   const cloneRef = useRef<HTMLParagraphElement>(null);
   const lineRef = useRef<HTMLParagraphElement>(null);
   const prevRef = useRef<HTMLParagraphElement>(null);
-  const sized = useRef({ key: '', vw: 0, fonts: 0 });
+  const sized = useRef({ key: '', vw: 0, short: false, fonts: 0 });
 
   // The pacer sizes each turn on a hidden clone of this line before showing it.
   useEffect(() => {
@@ -121,13 +134,13 @@ export function Conversation() {
     const clone = cloneRef.current;
     if (!el || !clone || !view) return;
     const s = sized.current;
-    if (s.key === view.key && s.vw === vw && s.fonts === fontsN) return;
+    if (s.key === view.key && s.vw === vw && s.short === short && s.fonts === fontsN) return;
     const fresh = s.key !== view.key;
     const px = fresh && view.size ? view.size : measureOn(clone, view.full, vw).px;
     el.style.fontSize = `${px}px`;
-    sized.current = { key: view.key, vw, fonts: fontsN };
+    sized.current = { key: view.key, vw, short, fonts: fontsN };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view?.key, view?.full, view?.size, vw, fontsN]);
+  }, [view?.key, view?.full, view?.size, vw, short, fontsN]);
 
   // Then decide whether the previous turn has room beneath.
   useLayoutEffect(() => {
