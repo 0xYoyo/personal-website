@@ -2,7 +2,7 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
+  grid-template-columns: 1.5fr 1fr;
   gap: 3cqw;
   padding: 5cqw;
 }
@@ -24,6 +24,7 @@
   font-size: 3cqw;
 }
 .sc-yn-follow {
+  flex: none;
   font-size: 1.9cqw;
   padding: 0.5cqw 1.4cqw;
   border-radius: 99px;
@@ -78,23 +79,32 @@
 .sc-yn-like.is-on {
   color: var(--sc-accent);
 }
-.sc-yn-api {
-  align-self: center;
+.sc-yn-tab {
+  font-size: 1.9cqw;
+  color: var(--sc-muted);
+}
+.sc-yn-people {
+  align-self: start;
   display: flex;
   flex-direction: column;
-  gap: 1.2cqw;
-  font-size: 1.7cqw;
+  gap: 1.4cqw;
+  padding-top: 0.6cqw;
 }
-.sc-yn-call {
+.sc-yn-label {
+  font-size: 1.8cqw;
+  color: var(--sc-muted);
+  padding-bottom: 1.4cqw;
+  border-bottom: 1px solid var(--sc-line);
+}
+.sc-yn-person {
   display: flex;
-  justify-content: space-between;
-  gap: 1cqw;
-  padding: 1cqw 1.2cqw;
-  border-radius: 0.8cqw;
-  border: 1px solid var(--sc-line);
-  background: var(--sc-panel);
-  white-space: nowrap;
+  align-items: center;
+  gap: 1.4cqw;
 }
-.sc-yn-ok {
-  color: var(--sc-accent);
+.sc-yn-name {
+  font-size: 2.2cqw;
+}
+.sc-yn-av.is-noa {
+  background: var(--sc-line);
+  border: 1px solid var(--sc-line-2);
 }

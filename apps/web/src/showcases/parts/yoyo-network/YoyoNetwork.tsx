@@ -6,36 +6,38 @@ import './yoyo-network.css';
 const D = 9;
 const KEY = 6.2;
 
-/** Illustrative feed: a guest logs in, posts land in the home feed, a like and a follow go through the API. */
+/** Illustrative feed: posts land in the home feed, one gets a like, and a follow goes through. */
 const POSTS = [
   { who: 'dana', text: 'first post on here. hi.', likes: 3 },
   { who: 'guest', text: 'demo profile, just looking around', likes: 0 },
   { who: 'yoyo', text: 'shipped comments today', likes: 11 },
 ] as const;
-const CALLS = ['POST /api/login', 'GET /api/feed', 'POST /api/posts/3/likes', 'POST /api/users/dana/follow'] as const;
+const PEOPLE = [
+  { who: 'dana', posts: 12 },
+  { who: 'noa', posts: 5 },
+] as const;
 
 export function YoyoNetwork(props: ShowcaseProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { t } = useLoop(ref, D, KEY, props);
 
   const stage = Math.min(out(prog(t, 0, 0.4)), 1 - accel(prog(t, D - 0.6, D - 0.1)));
-  const post = (i: number) => out(prog(t, 1.0 + i * 0.55, 1.6 + i * 0.55));
-  const liked = t >= 3.6;
-  const likePop = spring(prog(t, 3.6, 4.3), 6.5, 9);
-  const followed = t >= 4.8;
-  const call = (i: number) => out(prog(t, 0.5 + i * 1.35, 0.9 + i * 1.35));
+  const post = (i: number) => out(prog(t, 0.8 + i * 0.55, 1.4 + i * 0.55));
+  const liked = t >= 3.4;
+  const likePop = spring(prog(t, 3.4, 4.1), 6.5, 9);
+  const side = out(prog(t, 1.2, 1.8));
+  const followed = (i: number) => t >= 4.4 + i * 0.9;
 
   return (
     <div ref={ref} className="sc-root sc-yoyo-network">
       <p className="sc-sr">
-        yoyo-network: a social network with its own REST API. A guest logs in, posts appear in the home feed, a like and a follow go
-        through the API.
+        yoyo-network: a social network. Posts appear in the home feed, one gets a like, and you follow two people.
       </p>
       <div className="sc-yn-stage" style={{ opacity: stage }} aria-hidden="true">
         <div className="sc-yn-feed">
           <div className="sc-yn-head">
             <span className="sc-yn-logo">yoyo network</span>
-            <span className={'sc-yn-follow' + (followed ? ' is-on' : '')}>{followed ? 'following dana' : 'follow dana'}</span>
+            <span className="sc-yn-tab">home</span>
           </div>
           {POSTS.map((p, i) => {
             const k = post(i);
@@ -54,11 +56,16 @@ export function YoyoNetwork(props: ShowcaseProps) {
             );
           })}
         </div>
-        <div className="sc-yn-api sc-mono">
-          {CALLS.map((c, i) => (
-            <div key={c} className="sc-yn-call" style={{ opacity: call(i) }}>
-              <span>{c}</span>
-              <span className="sc-yn-ok">{i === 0 ? '200 · jwt' : '200'}</span>
+        <div className="sc-yn-people" style={{ opacity: side }}>
+          <span className="sc-yn-label">people</span>
+          {PEOPLE.map((p, i) => (
+            <div key={p.who} className="sc-yn-person">
+              <span className={'sc-yn-av is-' + p.who} />
+              <span className="sc-yn-body">
+                <span className="sc-yn-name">@{p.who}</span>
+                <span className="sc-yn-who">{p.posts} posts</span>
+              </span>
+              <span className={'sc-yn-follow' + (followed(i) ? ' is-on' : '')}>{followed(i) ? 'following' : 'follow'}</span>
             </div>
           ))}
         </div>
