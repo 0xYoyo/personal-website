@@ -31,6 +31,11 @@ export interface Viewport {
 
 /** Share of a lite shape's targets on its outline (60 / 40 fill / edge). */
 export const EDGE_SHARE = 0.4;
+/** At a phone's 2k dots (POSTFIX4 E2) the outline takes 70 %: the fill only hints at the body, the edges carry the shape. */
+export const EDGE_SHARE_TINY = 0.7;
+/** Particle counts at or under this are the phone's 2D tier. */
+export const TINY_COUNT = 2500;
+export const edgeShareFor = (n: number): number => (n <= TINY_COUNT ? EDGE_SHARE_TINY : EDGE_SHARE);
 
 /** World-space centre (origin = viewport centre, y up) of the stage, or of the viewport when there is none. */
 export function stageCentre(vp: Viewport): { x: number; y: number } {
@@ -120,7 +125,9 @@ export function sampleMaskEdged(alpha: Uint8ClampedArray | Uint8Array, stride: n
   return { x: xs, y: ys, filled: a.filled };
 }
 
-const sampleFor = (vp: Viewport): typeof sampleMask => (vp.lite ? sampleMaskEdged : sampleMask);
+const sampleFor = (vp: Viewport): typeof sampleMask => (vp.lite
+  ? (a, st, w, h, n, seed, th) => sampleMaskEdged(a, st, w, h, n, seed, th, edgeShareFor(n))
+  : sampleMask);
 
 export interface Fit { maxW: number; maxH: number; cx: number; cy: number; depth: number }
 

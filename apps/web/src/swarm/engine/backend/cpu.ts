@@ -6,7 +6,7 @@ import {
   MAX_KEEPOUT, STEER_M, TRANSIT_DIP, curiousOf, groupOf, keepOutForce, steerGoal, trailSlot,
 } from './params';
 import { FLOW_WAVES, WAVE_K, WAVE_W } from './flow';
-import type { Targets } from '../shapes';
+import { TINY_COUNT, type Targets } from '../shapes';
 import { makeSeeds } from '../hash';
 import { GROUP_FLOATS, GROUP_TEXELS, T_LOOK, T_POSE, T_PREV, T_PREV_LOOK } from '../perform';
 
@@ -21,6 +21,8 @@ export function dotScale(count: number): { size: number; alpha: number } {
 
 /** Held shapes on the 2D tier draw this much bigger (POLISH2 B5: with the edge-weighted sampling they read). */
 export const LITE_HELD_SIZE = 1.22;
+/** …and at a phone's 2k (POSTFIX4 E2: the outline-weighted shapes need the bigger dot to close their edges). */
+export const TINY_HELD_SIZE = 1.35;
 
 /** Channels per node of the derived neighbourhood grid: mean-velocity sums (3), density, ±1-cell and ±3-cell density gradients. */
 const GC = 8;
@@ -479,8 +481,9 @@ export class CpuEngine implements Engine {
     for (let i = 0; i < n; i++) { const b = cls[i]!; if (b < 254) order[fill[b]!++] = i; }
     const ds = dotScale(n);
     const lite = n <= 6000 ? 1 : 0;
+    const liteHeld = n <= TINY_COUNT ? TINY_HELD_SIZE : LITE_HELD_SIZE;
     const dimK = 1 - p.heldDim;
-    const heldSize = (1 + 0.3 * p.frameGlow) * (1 + (LITE_HELD_SIZE - 1) * lite * (1 - p.frameGlow)) * (1 - 0.35 * dimK);
+    const heldSize = (1 + 0.3 * p.frameGlow) * (1 + (liteHeld - 1) * lite * (1 - p.frameGlow)) * (1 - 0.35 * dimK);
     const heldA = p.shapeExpo * (1 + 0.5 * p.frameGlow) * ds.alpha * p.heldDim;
     const clsAlpha = [heldA, p.freeDim * ds.alpha, p.freeDim * FAR_DIM * ds.alpha, heldA * 0.42, Math.min(1.25, heldA * 1.5)];
     const clsSize = [heldSize * ds.size, ds.size, FAR_SIZE * ds.size, heldSize * ds.size * 0.85, heldSize * ds.size * 1.15];

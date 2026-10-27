@@ -169,7 +169,7 @@ export class Controller {
   private listenLevel = 0;
   private pointerSeen = -1e9;
   // B2: cursor presence (CSS px screen position, last real movement, touch, wake tail in world px)
-  private ptrX = 0; private ptrY = 0; private ptrMoved = -1e9; private ptrTouch = false;
+  private ptrX = 0; private ptrY = 0; private ptrMoved = -1e9; private ptrFast = -1e9; private ptrTouch = false;
   private tailX = 1e5; private tailY = 1e5;
   /** B3: gather() — sim time it ends, its length (s), and the post-gather easing */
   private gatherEnd = -1; private gatherT = 1;
@@ -420,7 +420,7 @@ export class Controller {
     this.ringActive = false; this.p.ringOn = 0;
     this.frame = null;
     this.p.selectFrac = 1.01;
-    const sc = sceneFor(scene, this.lite);
+    const sc = sceneFor(scene, this.lite, this.n);
     const L = this.layout();
     let knitted: (ok: boolean) => void = () => undefined;
     const done = new Promise<boolean>((r) => { knitted = r; });
@@ -615,7 +615,13 @@ export class Controller {
   private chase(G: GroupRT, path: Pose, dt: number): Pose {
     const p = this.p;
     const c = G.chase ??= { x: path.x, y: path.y, on: 0, lean: 0 };
-    const present = p.pointerOn > 0.5 && p.time - this.ptrMoved < 3 && !this.reduced;
+    // FIX4 E2: the chase stays in the free stage (it never leaves to sit under the words), and a still pointer
+    // off the stage is not one to chase — a tap on a chip or on "watch again" (on a phone the cursor followed that
+    // tap down behind the caption and never formed where it should). A moving pointer is chased from anywhere.
+    const F = stageFrame(this.layout());
+    const PAD = 24;
+    const onStage = Math.abs(p.pointerX - F.cx) < F.hw + PAD && Math.abs(p.pointerY - F.cy) < F.hh + PAD;
+    const present = p.pointerOn > 0.5 && p.time - this.ptrMoved < 3 && !this.reduced && (onStage || p.time - this.ptrFast < 1.5);
     c.on += ((present ? 1 : 0) - c.on) * (1 - Math.exp(-dt * 3));
     let gx = path.x, gy = path.y;
     if (present) {
@@ -623,6 +629,8 @@ export class Controller {
       const stop = HOLE_R * 1.25;
       gx = p.pointerX - (dx / dl) * stop; gy = p.pointerY - (dy / dl) * stop;
       gx = Math.max(-p.boundHw, Math.min(p.boundHw, gx)); gy = Math.max(-p.boundHh, Math.min(p.boundHh, gy));
+      const mx = F.hw * 0.7, my = F.hh * 0.6;
+      gx = Math.max(F.cx - mx, Math.min(F.cx + mx, gx)); gy = Math.max(F.cy - my, Math.min(F.cy + my, gy));
     }
     const e = 1 - Math.exp(-dt / 0.3);
     const ox = c.x;
@@ -754,6 +762,7 @@ export class Controller {
     const t = this.p.time;
     const jump = t - this.pointerSeen > 0.3;
     if (jump || Math.abs(x - this.ptrX) + Math.abs(y - this.ptrY) > 2 || vx * vx + vy * vy > 1600) this.ptrMoved = t;
+    if (!jump && vx * vx + vy * vy > 1600) this.ptrFast = t;
     this.ptrX = x; this.ptrY = y; this.ptrTouch = touch;
     this.p.pointerVx = vx; this.p.pointerVy = -vy;
     this.pointerSeen = t;

@@ -68,11 +68,22 @@ export function evalKeys(k: number | Keys | undefined, t: number, dflt: number):
   return k[k.length - 1]!.v;
 }
 
-/** The scene a tier performs: the canvas2d tier takes `lite` when given, and never more than LITE_GROUPS groups. */
-export function sceneFor(scene: Scene, lite: boolean): Scene {
+/** At or under this many particles (a phone's 2D tier) a scene sheds its followers (POSTFIX4 E2). */
+export const TINY_SCENE = 2500;
+
+/**
+ * The scene a tier performs: the canvas2d tier takes `lite` when given, and never more than LITE_GROUPS groups.
+ * At a phone's 2k (`n` ≤ TINY_SCENE) the followers go too — a group repeating an earlier group's shape with a
+ * smaller share (the small karts behind the big one) — so the lead shape gets their particles and reads.
+ */
+export function sceneFor(scene: Scene, lite: boolean, n = Infinity): Scene {
   const s = lite && scene.lite ? scene.lite : scene;
   const max = lite ? LITE_GROUPS : MAX_GROUPS;
-  const groups = s.groups.slice(0, max).map((g) => (lite ? { ...g, trail: 0 } : g));
+  let groups = s.groups.slice(0, max).map((g) => (lite ? { ...g, trail: 0 } : g));
+  if (n <= TINY_SCENE && groups.length > 1) {
+    const key = (g: SceneGroup): string => JSON.stringify(g.shape);
+    groups = groups.filter((g, k) => !groups.slice(0, k).some((h) => key(h) === key(g) && h.share > g.share));
+  }
   return { ...s, groups };
 }
 
