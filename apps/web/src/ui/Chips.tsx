@@ -23,13 +23,16 @@ export function Chips() {
   useLayoutEffect(() => {
     const el = row.current;
     if (!el) return;
-    // a short row (three chips or fewer) wraps centred on a phone — unless that would take more than two
-    // lines, when it scrolls like any other row (WAVE3 S5); decided once per row, so it can't flip-flop.
-    // Only over the conversation: a build frame (and its controls) is laid out for a one-line row.
+    // a short row (three chips or fewer) wraps centred on a phone (WAVE3 S5); decided once per row, so it
+    // can't flip-flop. Only over the conversation: a build frame (and its controls) is laid out for a one-line row.
     const few = chips.length <= 3 && (overlay === 'none' || overlay === 'tour');
     el.dataset.few = String(few);
+    el.dataset.compact = 'false';
     const first = el.firstElementChild as HTMLElement | null;
-    if (few && first && el.offsetHeight > first.offsetHeight * 2 + 24) el.dataset.few = 'false';
+    const tall = () => !!first && el.offsetHeight > first.offsetHeight * 2 + 24;
+    // three long chips ("Tell me about Polybot", …) take three lines at 390 px: a tighter chip puts two on
+    // a line; if even that runs to three lines they still wrap: a row of three is never scrolled off (FIX4 U5)
+    if (few && tall()) el.dataset.compact = 'true';
     const update = () => {
       // the row's height, for what stacks above it on a phone (the card sheet, contact, the words: FIX4 U2)
       const app = el.closest<HTMLElement>('.y-app');
@@ -39,10 +42,14 @@ export function Chips() {
       el.dataset.more = String(can && el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
     };
     update();
+    // the mono face loading changes the chips' widths (not the row's box): measure again then
+    let live = true;
+    void document.fonts?.ready.then(() => live && update());
     el.addEventListener('scroll', update, { passive: true });
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => {
+      live = false;
       el.removeEventListener('scroll', update);
       ro.disconnect();
     };

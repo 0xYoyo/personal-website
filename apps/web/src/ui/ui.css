@@ -1128,6 +1128,14 @@
     -webkit-mask-image: none;
     mask-image: none;
   }
+  /* three long ones: a tighter chip, two to a line (FIX4 U5) */
+  .y-chips-row[data-compact='true'] {
+    gap: 8px 6px;
+  }
+  .y-chips-row[data-compact='true'] .y-chip {
+    font-size: 12px;
+    padding: 10px 9px;
+  }
 
   .y-bar-wrap {
     width: calc(100vw - 32px);
