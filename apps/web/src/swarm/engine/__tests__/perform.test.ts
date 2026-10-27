@@ -191,3 +191,107 @@ describe('the controller performs a scene (canvas2d simulator)', () => {
     expect(far).toBe(0);
   });
 });
+
+describe('FIX4 E2 / E5: phones and turning karts', () => {
+  const kart = { kind: 'glyph' as const, id: 'kart' as const };
+  it('at 2k a scene sheds its followers (same shape, smaller share); distinct groups stay', () => {
+    const sc: Scene = { duration: 1000, groups: [{ shape: kart, share: 0.5 }, { shape: kart, share: 0.25 }, { shape: { kind: 'bar', w: 0.8, h: 0.5, oval: true, dashes: 24 }, share: 0.1 }] };
+    expect(sceneFor(sc, true, 2000).groups.map((g) => g.share)).toEqual([0.5, 0.1]);
+    expect(sceneFor(sc, true, 3000).groups.length).toBe(3);
+    expect(sceneFor(sc, false, 12000).groups.length).toBe(3);
+    // equal shares are a set (three windows), not followers
+    const win: Scene = { duration: 1000, groups: [0, 1, 2].map(() => ({ shape: rect(0.2, 0.2), share: 1 })) };
+    expect(sceneFor(win, true, 2000).groups.length).toBe(3);
+  });
+
+  it('an oval bar samples an ellipse outline, dashed when asked', async () => {
+    const { ringPoints } = await import('../sceneShapes');
+    const a = 150, b = 60, n = 600;
+    const p = ringPoints(n, a, b, 6, 0, 3);
+    for (let i = 0; i < n; i++) {
+      const e = Math.hypot(p[i * 4]! / a, p[i * 4 + 1]! / b);
+      expect(Math.abs(e - 1)).toBeLessThan(4 / b + 1e-6);
+    }
+    // dashed: 20 dashes → the angle histogram has empty gaps; solid: none
+    const gaps = (q: Float32Array): number => {
+      const bins = new Array(200).fill(0);
+      for (let i = 0; i < n; i++) bins[Math.floor(((Math.atan2(q[i * 4 + 1]! / b, q[i * 4]! / a) / (2 * Math.PI)) + 1) % 1 * 200)]++;
+      return bins.filter((c) => c === 0).length;
+    };
+    expect(gaps(p)).toBeLessThan(10);
+    expect(gaps(ringPoints(n, a, b, 6, 20, 3))).toBeGreaterThan(60);
+  });
+
+  it('a group whose path turns it round never squashes through sx = 0: it swaps to the mirrored sampling under a ~120 ms dip', async () => {
+    const n = 1200;
+    const sched = new Scheduler();
+    const engine = new CpuEngine({ canvas: {} as HTMLCanvasElement, count: n, bloom: false, dprCap: 1, scene: 'dark' });
+    let data = new Float32Array(GROUP_FLOATS);
+    const ctrl = new Controller(n, { upload: (a, b) => engine.setTargets(a, b), groups: (g) => engine.setGroups(g), groupData: (d) => { data = d; engine.setGroupData(d); } }, sched);
+    ctrl.setViewport(1440, 900); ctrl.setLite(true);
+    const st = ctrl.spawn('scatter'); engine.setState(st.pos, st.vel);
+    // an "L": a tall bar on the left and a foot to the right — asymmetric, so a mirror is visible
+    const L = { kind: 'parts' as const, parts: [{ shape: rect(0.04, 0.3), share: 0.6, x: -0.08 }, { shape: rect(0.16, 0.04), share: 0.4, y: 0.13 }] };
+    const path = [{ t: 0, x: 0, y: 0, sx: 1 }, { t: 1000, x: 0, y: 0, sx: 1 }, { t: 1100, x: 0, y: 0, sx: -1, ease: 'linear' as const }, { t: 3000, x: 0, y: 0, sx: -1 }];
+    void ctrl.perform({ duration: 3000, groups: [{ shape: L, share: 1, path }] });
+    await new Promise((r) => setTimeout(r, 0));
+    const world = (): Float32Array => {
+      const B = ctrl.targets[1].pos, g = ctrl.groupPoses[0]!, out = new Float32Array(n * 4);
+      for (let i = 0; i < n; i++) applyPose(B[i * 4]!, B[i * 4 + 1]!, 0, g, out, i * 4);
+      return out;
+    };
+    const sxs: number[] = [], bright: [number, number][] = [];
+    let before: Float32Array | null = null, after: Float32Array | null = null;
+    for (let f = 0; f < 120; f++) {
+      sched.advance(1 / 60); engine.frame(ctrl.update(1 / 60), false);
+      const t = f / 60 + 1 / 60;
+      sxs.push(ctrl.groupPoses[0]!.sx);
+      bright.push([t, data[T_LOOK * 4 + 1]!]);
+      if (Math.abs(t - 0.95) < 1e-3) before = world();
+      if (Math.abs(t - 1.25) < 1e-3) after = world();
+    }
+    expect(new Set(sxs.map((v) => Math.round(v)))).toEqual(new Set([1, -1]));
+    for (const v of sxs) expect(Math.abs(v)).toBe(1);
+    const at = (t: number): number => bright.reduce((a, b) => (Math.abs(b[0] - t) < Math.abs(a[0] - t) ? b : a))[1];
+    expect(at(0.9)).toBe(1);
+    expect(Math.min(...bright.filter(([t]) => t > 1.0 && t < 1.12).map((b) => b[1]))).toBeLessThan(0.45);
+    expect(at(1.3)).toBe(1);
+    // the dip is short: ≤ ~120 ms of frames under full brightness
+    expect(bright.filter((b) => b[1] < 0.999).length).toBeLessThanOrEqual(9);
+    // mirrored (world x about the group's centre, 0): the bar was left of centre, now right; and each particle moved
+    // far less than a full mirror would have carried it
+    const meanX = (w: Float32Array): number => { let s = 0; for (let i = 0; i < n; i++) s += w[i * 4]!; return s / n; };
+    expect(meanX(before!)).toBeLessThan(-10);
+    expect(meanX(after!)).toBeCloseTo(-meanX(before!), 0);
+    let move = 0, mirror = 0;
+    for (let i = 0; i < n; i++) { move += Math.abs(after![i * 4]! - before![i * 4]!); mirror += Math.abs(2 * before![i * 4]!); }
+    expect(move / n).toBeLessThan(0.8 * (mirror / n)); // an L is far from symmetric; a kart (wheels, body) moves much less
+  });
+});
+
+describe('FIX4 E2: the cursor scene on a phone', () => {
+  it('a tap off the stage (a chip, "watch again") is not chased; a moving pointer is, but only within the stage', async () => {
+    const n = 800, sched = new Scheduler();
+    const engine = new CpuEngine({ canvas: {} as HTMLCanvasElement, count: n, bloom: false, dprCap: 1, scene: 'dark' });
+    const ctrl = new Controller(n, { upload: (a, b) => engine.setTargets(a, b), groups: (g) => engine.setGroups(g), groupData: (d) => engine.setGroupData(d) }, sched);
+    ctrl.setViewport(390, 844); ctrl.setLite(true);
+    ctrl.setStage({ x: 16, y: 60, w: 358, h: 287 });
+    const st = ctrl.spawn('scatter'); engine.setState(st.pos, st.vel);
+    void ctrl.perform({ duration: 9000, groups: [{ shape: rect(0.2, 0.3), share: 1, follow: 'pointer', path: [{ t: 0, x: 0, y: 0 }] }] });
+    await new Promise((r) => setTimeout(r, 0));
+    const step = (sec: number, each?: () => void) => { for (let i = 0; i < Math.round(sec * 60); i++) { each?.(); sched.advance(1 / 60); engine.frame(ctrl.update(1 / 60), false); } };
+    step(0.5);
+    const home = { ...ctrl.groupPoses[0]! };
+    // stage centre (world): x 0, y = 844/2 − (60 + 143.5) = 218.5
+    expect(home.y).toBeCloseTo(218.5, 0);
+    ctrl.pointer(195, 780, 0, 0); // a tap on the chip row
+    step(1.5);
+    expect(Math.hypot(ctrl.groupPoses[0]!.x - home.x, ctrl.groupPoses[0]!.y - home.y)).toBeLessThan(2);
+    // a finger dragging across the bottom of the screen: chased, but the cursor stays inside the stage
+    let x = 60;
+    step(2, () => { x += 4; ctrl.pointer(x, 790, 240, 0); });
+    const g = ctrl.groupPoses[0]!;
+    expect(Math.abs(g.x - home.x)).toBeGreaterThan(20);
+    expect(g.y).toBeGreaterThan(218.5 - 143.5 * 0.6 - 1); // never below the stage's lower part
+  });
+});

@@ -93,7 +93,12 @@ export type Keys = { t: number; v: number }[];
 /** What a group can be: any ShapeSpec, a bar outline / filled rect (fractions of the free stage), or parts. */
 export type SceneShape =
   | ShapeSpec
-  | { kind: 'bar'; w: number; h: number; thickness?: number }
+  /**
+   * A rounded-rect outline w × h (stage units), `thickness` px. `oval: true` makes it an ellipse outline instead (a
+   * track, an orbit), and with it `dashes` > 0 cuts the ellipse into that many dashes (a dotted line that reads at a
+   * few hundred dots).
+   */
+  | { kind: 'bar'; w: number; h: number; thickness?: number; oval?: boolean; dashes?: number }
   | { kind: 'rect'; w: number; h: number }
   | {
       kind: 'parts';

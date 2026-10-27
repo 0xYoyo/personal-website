@@ -116,7 +116,19 @@ interface GroupRT {
   prev: Pose | null;
   hist: PoseHistory;
   chase: { x: number; y: number; on: number; lean: number } | null;
+  /** FIX4 E5: a group whose path turns it round (sx changes sign) faces ±1 and swaps samplings at the turn */
+  flips: boolean; facing: number; flipAt: number;
 }
+
+/** E5: a turn-round crossfades over this long (s): the group dims to FLIP_DIM by the turn and is back half of it after. */
+export const FLIP_S = 0.12;
+const FLIP_DIM = 0.3;
+/** A path flips a group when its sx has both signs (|sx| past this). */
+const pathFlips = (g: SceneGroup): boolean => {
+  let neg = false, pos = false;
+  for (const k of g.path ?? []) { const v = k.sx ?? 1; if (v < -0.05) neg = true; if (v > 0.05) pos = true; }
+  return neg && pos;
+};
 
 interface ShowRT {
   source: Scene; scene: Scene; start: number;
@@ -513,7 +525,8 @@ export class Controller {
         gi[o] = k; gi[o + 1] = u; gi[o + 2] = 0;
       }
       if (!lt.col.some((v, j) => j % 4 === 3 && v > 0)) { /* uncoloured */ } else B.colored = true;
-      groups.push({ g: sc.groups[k]!, members: shapeMembers, slots, trail: [...trailSet], prev: null, hist: new PoseHistory(), chase: null });
+      const sx0 = pose0[k]!.sx;
+      groups.push({ g: sc.groups[k]!, members: shapeMembers, slots, trail: [...trailSet], prev: null, hist: new PoseHistory(), chase: null, flips: pathFlips(sc.groups[k]!), facing: sx0 < 0 ? -1 : 1, flipAt: -1e9 });
     }
     // meta: the scene's footprint at its first pose
     const all = new Float32Array(n * 4);
@@ -592,20 +605,62 @@ export class Controller {
     const F = stageFrame(this.layout());
     const d = this.groupData;
     d.fill(0);
+    let swapped = false;
     S.groups.forEach((G, k) => {
       let pose = poseToWorld(evalPath(G.g.path, tms), F.cx, F.cy, F.hw, F.hh);
       if (G.g.follow === 'pointer') pose = this.chase(G, pose, dt);
       const look = groupLook(G.g, tms);
+      let prevSx = (G.prev ?? pose).sx;
+      if (G.flips) {
+        // E5: no mirror through zero (a kart squashed to a bright bar at the turn): the group keeps its width and
+        // faces ±1; where the path's sx changes sign it swaps to the mirrored sampling (nearest-matched, so the
+        // particles barely move) under a short dip in brightness — a ~120 ms crossfade, not a flip
+        const raw = pose.sx;
+        if (Math.abs(raw) > 0.05 && Math.sign(raw) !== G.facing) {
+          G.facing = -G.facing; G.flipAt = p.time;
+          this.swapFacing(S, G); swapped = true;
+          prevSx = G.facing; // no feed-forward kick from the swap
+        }
+        pose = { ...pose, sx: G.facing };
+        // dim into the turn (look ahead on the path) and back out of it
+        let toTurn = Infinity;
+        for (const a of [20, 40, 60]) { const v = evalPath(G.g.path, tms + a).sx; if (Math.abs(v) > 0.05 && Math.sign(v) !== G.facing) { toTurn = a / 1000; break; } }
+        const since = p.time - G.flipAt;
+        const half = FLIP_S / 2;
+        const near = Math.min(toTurn, since >= 0 && since < half ? since : Infinity);
+        if (near < half) look.bright *= FLIP_DIM + (1 - FLIP_DIM) * (near / half);
+      }
       G.hist.push(p.time, pose);
       const span = (G.g.trailMs ?? 420) / 1000;
       const hist: Pose[] = [];
       for (let j = 0; j < HIST; j++) hist.push(G.hist.at(p.time - (j / (HIST - 1)) * span));
       const prev = G.prev ?? pose;
-      writeGroup(d, k, pose, prev, look.bright, look.fill, prev.sx, hist);
+      writeGroup(d, k, pose, prev, look.bright, look.fill, prevSx, hist);
       G.prev = pose;
     });
+    if (swapped) { this.hooks.groups?.(S.gi); this.hooks.upload(this.A, this.B); }
     p.grpOn = 1;
     this.hooks.groupData?.(d);
+  }
+
+  /** E5: give a turning group the mirrored sampling of its shape, each particle the nearest point of it. */
+  private swapFacing(S: ShowRT, G: GroupRT): void {
+    const k = S.groups.indexOf(G);
+    const lt = S.locals[k];
+    if (!lt) return;
+    const m = lt.pos.length / 4;
+    if (!m || !G.members.length) return;
+    const mir = new Float32Array(m * 4);
+    for (let j = 0; j < m; j++) { mir[j * 4] = -lt.pos[j * 4]!; mir[j * 4 + 1] = lt.pos[j * 4 + 1]!; }
+    const B = this.B;
+    const slots = matchSlots(G.members, B.pos, mir);
+    G.members.forEach((i, j) => {
+      const so = slots[j]! * 4, o = i * 4;
+      B.pos[o] = lt.pos[so]!; B.pos[o + 1] = lt.pos[so + 1]!; B.pos[o + 2] = lt.pos[so + 2]!;
+      B.col.set(lt.col.subarray(so, so + 4), o);
+      S.gi[o + 2] = lt.pos[so + 3]!;
+    });
+    G.slots = slots;
   }
 
   /**

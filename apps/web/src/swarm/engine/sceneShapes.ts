@@ -33,6 +33,39 @@ function fillRect(n: number, w: number, h: number, seed: number): Float32Array {
   return out;
 }
 
+/**
+ * n points on an ellipse outline (semi-axes a, b px; local, centred), uniform by arc length, triangular across
+ * `thickness`; with `dashes` > 0 only on that many evenly spaced dashes (55 % duty). Shuffled assignment.
+ */
+export function ringPoints(n: number, a: number, b: number, thickness = 6, dashes = 0, seed = 7): Float32Array {
+  const out = new Float32Array(n * 4);
+  const K = 256;
+  const cum = new Float64Array(K + 1);
+  for (let k = 1; k <= K; k++) {
+    const t0 = ((k - 1) / K) * Math.PI * 2, t1 = (k / K) * Math.PI * 2;
+    cum[k] = cum[k - 1]! + Math.hypot(a * (Math.cos(t1) - Math.cos(t0)), b * (Math.sin(t1) - Math.sin(t0)));
+  }
+  const L = cum[K]!;
+  const r = rng(seed);
+  const duty = 0.55;
+  for (let i = 0; i < n; i++) {
+    let u = (i + r()) / n; // stratified along the length
+    if (dashes > 0) { const d = Math.floor(u * dashes); u = (d + (u * dashes - d) * duty) / dashes; }
+    const s = u * L;
+    let lo = 0, hi = K;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (cum[mid]! < s) lo = mid; else hi = mid; }
+    const f = (s - cum[lo]!) / Math.max(cum[hi]! - cum[lo]!, 1e-9);
+    const t = ((lo + f) / K) * Math.PI * 2;
+    const c = Math.cos(t), sn = Math.sin(t);
+    const nx = b * c, ny = a * sn, nl = Math.hypot(nx, ny) || 1;
+    const off = (r() + r() - 1) * thickness * 0.5;
+    const j = Math.floor(r() * (i + 1)); // inside-out shuffle
+    if (j !== i) out.copyWithin(i * 4, j * 4, j * 4 + 4);
+    out[j * 4] = a * c + (nx / nl) * off; out[j * 4 + 1] = b * sn + (ny / nl) * off; out[j * 4 + 2] = 0; out[j * 4 + 3] = 0;
+  }
+  return out;
+}
+
 /** Sample `n` local targets for a scene shape in layout `vp`. */
 export async function sceneShapeTargets(shape: SceneShape, n: number, vp: Viewport, seed = 1): Promise<LocalTargets> {
   const pos = new Float32Array(n * 4), col = new Float32Array(n * 4);
@@ -40,6 +73,12 @@ export async function sceneShapeTargets(shape: SceneShape, n: number, vp: Viewpo
   const F = stageFrame(vp);
   switch (shape.kind) {
     case 'bar': {
+      if (shape.oval) {
+        const a = Math.max(4, shape.w * F.hw), b = Math.max(4, shape.h * F.hh);
+        const p = ringPoints(n, a, b, shape.thickness ?? 6, shape.dashes ?? 0, 17 + seed);
+        for (let i = 0; i < n; i++) { pos.set(p.subarray(i * 4, i * 4 + 3), i * 4); pos[i * 4 + 3] = hash01(i, 94 + seed); }
+        return { pos, col };
+      }
       const w = Math.max(8, shape.w * F.hw * 2), h = Math.max(8, shape.h * F.hh * 2);
       const rect = { x: vp.w / 2 - w / 2, y: vp.h / 2 - h / 2, w, h };
       const t = frameTargets(n, rect, vp, shape.thickness ?? 9, Math.min(h / 2, 22), 11 + seed);
