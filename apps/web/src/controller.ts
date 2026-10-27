@@ -332,6 +332,8 @@ export const ctl = {
     const edit = changeIntent(clean, st.overlay === 'build' && st.build.status === 'locked' && !!st.build.html);
     if (edit === 'begin') return ctl.beginChange();
     if (edit === 'apply') return ctl.changeBuild(clean);
+    // typed with a card or contact open (the bar stays up over them, FIX4 U2): the answer needs the words
+    if (st.overlay === 'card' || st.overlay === 'contact') closeAll();
     skipForAnswer();
     turn?.abort();
     for (const p of pacers) p.cancel();
@@ -512,8 +514,8 @@ export const ctl = {
     st.closeOverlay();
     swarm()?.mood('idle');
     if (was === 'card' || was === 'game' || was === 'build') {
-      // the card sheet (mobile) and the game cover the bar; the build frame and the desktop card don't
-      const covered = was === 'game' || (was === 'card' && isMobileViewport());
+      // the game covers the bar; a card (the phone's sheet too, FIX4 U2) and the build frame don't
+      const covered = was === 'game';
       const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who are you?', 'What have you built?'] : null;
       if (chips) S().setChips([]);
       settleBody(covered, () => chips && S().setChips(chips));

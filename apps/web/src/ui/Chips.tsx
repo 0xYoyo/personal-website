@@ -15,7 +15,8 @@ export function Chips() {
   const overlay = useStore((s) => s.overlay);
   const settling = useStore((s) => s.settling);
   // while the flock gathers after an overlay closes, the chips wait (POLISH2 A2)
-  const hide = phase !== 'ready' || overlay === 'game' || overlay === 'history' || overlay === 'contact' || !!settling;
+  // (a card, a build and contact leave the row up: its moves work while they are open, FIX4 U2)
+  const hide = phase !== 'ready' || overlay === 'game' || overlay === 'history' || !!settling;
   const row = useRef<HTMLDivElement>(null);
   const [scrollable, setScrollable] = useState(false);
 
@@ -30,6 +31,9 @@ export function Chips() {
     const first = el.firstElementChild as HTMLElement | null;
     if (few && first && el.offsetHeight > first.offsetHeight * 2 + 24) el.dataset.few = 'false';
     const update = () => {
+      // the row's height, for what stacks above it on a phone (the card sheet, contact, the words: FIX4 U2)
+      const app = el.closest<HTMLElement>('.y-app');
+      app?.style.setProperty('--chips-h', `${chips.length ? el.offsetHeight : 0}px`);
       const can = el.scrollWidth > el.clientWidth + 1;
       setScrollable(can);
       el.dataset.more = String(can && el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
