@@ -6,6 +6,6 @@ export { playEntry } from './entry';
 export type { EntryOptions } from './entry';
 export { registerGlyph, availableGlyphs } from './glyphs';
 export { isEmoji } from './shapes';
-export { tierConfig, initialTier, AdaptiveMonitor, COUNTS } from './tiers';
+export { tierConfig, initialTier, startTier, AdaptiveMonitor, COUNTS } from './tiers';
 export type { Backend, Tier, TierConfig } from './tiers';
 export type { SwarmApi, ShapeSpec, Mood, GlyphId, ProjectId, StoryId, Action } from '@yoyo/protocol';

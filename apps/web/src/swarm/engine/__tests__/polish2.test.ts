@@ -282,3 +282,33 @@ describe('entry beats (Owner A note 4)', () => {
     expect(r.meanW()).toBeGreaterThan(0.9);
   });
 });
+
+describe('slow devices keep time (POSTFIX4 E1)', () => {
+  it('at 4 fps the clock still runs in real time: a shape knits within ~1 s and the entry ends by ~4 s', async () => {
+    const { clockStep, physStep } = await import('../tiers');
+    const r = rig(2000, 390, 844);
+    const frame = (ms: number): void => { const c = clockStep(ms); r.sched.advance(c); r.engine.frame(r.ctrl.update(c, physStep(c)), false); };
+    let knitAt = -1;
+    const t0 = r.sched.now;
+    const rect = { x: 60, y: 200, w: 270, h: 160 };
+    void r.ctrl.become({ kind: 'frame', rect }).then((ok) => { if (ok) knitAt = r.sched.now - t0; });
+    for (let i = 0; i < 12; i++) { frame(250); await flush(); }
+    expect(knitAt).toBeGreaterThan(0);
+    expect(knitAt).toBeLessThanOrEqual(1.25 + 1e-6); // spread 0.6 + ramp 0.35, rounded up to a 250 ms frame
+    expect(r.meanW()).toBeGreaterThan(0.9);
+    // the whole entry: pour 1.2 s + knit ~1 s + hold 0.9 s + release 0.95 s, all on this clock → ~4 s of wall time
+    const { playEntry } = await import('../entry');
+    const fake = {
+      mood: () => undefined, release: () => undefined, respawn: () => undefined,
+      wait: (ms: number) => new Promise<void>((res) => { r.sched.after(ms / 1000, res); }),
+      knit: () => r.ctrl.become({ kind: 'frame', rect: { x: 50, y: 210, w: 280, h: 150 } }),
+    };
+    let done = false, frames = 0;
+    void playEntry(fake as never).then(() => { done = true; });
+    while (!done && frames < 200) { frame(250); frames++; await flush(); }
+    expect(frames * 0.25).toBeLessThanOrEqual(4.5);
+    // and a hitch is not time skipped: one 3 s frame advances the clock half a second
+    expect(clockStep(3000)).toBe(0.5);
+    expect(physStep(clockStep(250))).toBeCloseTo(1 / 15, 9);
+  });
+});

@@ -1,6 +1,6 @@
 import type { Mood, Rect, ShapeSpec, SwarmApi, SwarmEntry, SwarmPerform, SwarmStage } from '@yoyo/protocol';
 import type { Backend, Caps, Tier, TierConfig } from './tiers';
-import { AdaptiveMonitor, initialTier, nextLowerTier, tierConfig } from './tiers';
+import { AdaptiveMonitor, clockStep, nextLowerTier, physStep, startTier, tierConfig } from './tiers';
 import { detectBackend } from './detect';
 import { Controller } from './backend/controller';
 import type { Engine, Scene } from './backend/types';
@@ -16,7 +16,7 @@ export interface SwarmOptions {
   tier?: Tier;
   /** Respect prefers-reduced-motion (default: read from the media query). */
   reducedMotion?: boolean;
-  /** Drop a tier after 20 consecutive frames > 20 ms (default true). */
+  /** Drop a tier after 1.2 s of frames > 20 ms, or to tier 0 after 1 s under 10 fps (default true). */
   adaptive?: boolean;
   /** Initial layout: 'edges' = the entry pour-in, 'scatter' = already flocking. Default 'scatter'. */
   spawn?: 'edges' | 'scatter' | 'center';
@@ -85,12 +85,12 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
   const reducedQuery = typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
   let reduced = opts.reducedMotion ?? !!reducedQuery?.matches;
 
-  let tier: Tier = opts.tier ?? (caps.weak ? 0 : initialTier(capsTier));
+  let tier: Tier = opts.tier ?? startTier(capsTier, caps.signals, caps.weak);
   let cfg = tierConfig(tier, capsTier, opts.backend);
   let engine: Engine | null = null;
   let ctrl: Controller;
   let switching: Promise<void> = Promise.resolve();
-  const monitor = new AdaptiveMonitor(20, 20);
+  const monitor = new AdaptiveMonitor();
   const sched = new Scheduler();
   const adaptive = opts.adaptive !== false;
 
@@ -174,13 +174,14 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
   let raf = 0, last = performance.now(), running = true, manual = false, paused = false;
   const frameMs: number[] = [], cpuMs: number[] = [];
   let fpsEma = 60;
+  let rebuilding = false;
   let waiters: (() => void)[] = [];
 
   const tick = (dtSec: number, draw = true): void => {
     if (!engine) return;
     const t0 = performance.now();
     sched.advance(dtSec);
-    const p = ctrl.update(dtSec);
+    const p = ctrl.update(dtSec, physStep(dtSec));
     engine.frame(p, draw);
     const t1 = performance.now();
     cpuMs.push(t1 - t0); if (cpuMs.length > 300) cpuMs.shift();
@@ -190,16 +191,19 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
   const loop = (now: number): void => {
     raf = requestAnimationFrame(loop);
     if (manual) return;
-    const ms = now - last; last = now;
+    const ms = Math.max(0, now - last); last = now; // a rAF stamp can sit before the performance.now() the loop started at
     frameMs.push(ms); if (frameMs.length > 300) frameMs.shift();
-    fpsEma += (1000 / Math.max(ms, 1) - fpsEma) * 0.05;
-    tick(Math.min(ms / 1000, 1 / 30));
-    if (adaptive && monitor.frame(ms)) {
-      const lower = nextLowerTier(tier);
+    fpsEma += (1000 / Math.max(ms, 1) - fpsEma) * (1 - Math.exp(-ms / 600)); // ~0.6 s window, in time not frames
+    // the clock follows real time (up to half a second a frame), the physics integrates at most 1/15 s a step
+    tick(clockStep(ms));
+    const drop = adaptive && !rebuilding ? monitor.frame(ms) : false;
+    if (drop) {
+      const lower = drop === 'floor' && tier > 0 ? 0 : nextLowerTier(tier);
       if (lower !== null) {
         console.info('[swarm] adaptive: dropping to tier', lower);
         const next = tierConfig(lower, capsTier, cfg.backend);
-        switching = switching.then(() => build(next, 'scatter'));
+        rebuilding = true;
+        switching = switching.then(() => build(next, 'scatter')).finally(() => { rebuilding = false; monitor.reset(); });
       }
     }
   };

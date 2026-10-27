@@ -771,9 +771,15 @@ export class Controller {
 
   // ------------------------------------------------------------ per frame
 
-  update(dt: number): SimParams {
+  /**
+   * One frame. `dt` = the clock step (s): the simulation time, the easings and the timers follow it, so a beat
+   * takes its length in real time at any frame rate. `physDt` (default `dt`) = the integration step the backends
+   * use; the caller caps it (POSTFIX4 E1: a slow device runs the physics in shorter steps than its frames, but
+   * the entry and the show still keep time).
+   */
+  update(dt: number, physDt = dt): SimParams {
     const p = this.p;
-    p.dt = dt; p.time += dt;
+    p.dt = physDt; p.time += dt;
     // ease knobs
     const e = 1 - Math.exp(-dt * 3);
     const kt = this.moodKnobTarget as unknown as Record<string, number>, kc = this.knobs as unknown as Record<string, number>;
