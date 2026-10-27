@@ -16,7 +16,8 @@ export const RESTING_LINE = 'the live brain is resting — I still know everythi
  */
 export const ADDED_LINES = {
   /** "Spell my name" chip before the visitor has told us a name. */
-  askName: "[[become:question]] what's your name?",
+  // one line everywhere (FIX4 U6; the chip says the same, copy.askName)
+  askName: "[[become:question]] type your name. I'll become it.",
   /** "Now a rocket" chip (persona.md example reply for 🚀). */
   rocket: '[[become:🚀]] [[mood:excited]] obviously.',
 } as const;

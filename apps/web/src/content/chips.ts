@@ -65,6 +65,7 @@ export type ChipCommand =
   | { kind: 'story-next' }
   | { kind: 'sound-on' }
   | { kind: 'open-build' }
+  | { kind: 'ask-name' }
   | { kind: 'become'; shape: ShapeSpec; text: string };
 
 export interface ChipState {
@@ -103,7 +104,7 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
     case 'sound on':
       return { kind: 'sound-on' };
     case 'spell my name':
-      return st.name ? { kind: 'become', shape: { kind: 'text', text: st.name }, text: label } : { kind: 'say', text: label };
+      return st.name ? { kind: 'become', shape: { kind: 'text', text: st.name }, text: label } : { kind: 'ask-name' };
     default:
       return { kind: 'say', text: label };
   }
@@ -122,6 +123,17 @@ export function changeIntent(text: string, buildOpen: boolean): ChangeIntent {
   const t = text.trim().replace(/[.!?…]+$/, '').trim();
   if (CHANGE_BARE.test(t)) return 'begin';
   return CHANGE_START.test(t) ? 'apply' : null;
+}
+
+/** The rocket chip (persona.md's "spell dana" example). */
+export const ROCKET_CHIP = 'Now a rocket';
+/**
+ * FIX4 U6: "Now a rocket" only right after a spelled name, only once a visit, and never once the
+ * rocket has been made.
+ */
+export function rocketChips(chips: string[], ctx: { spelled: boolean; offered: boolean; rocket: boolean }): string[] {
+  const ok = ctx.spelled && !ctx.offered && !ctx.rocket;
+  return ok ? chips : chips.filter((c) => c.trim().toLowerCase() !== ROCKET_CHIP.toLowerCase());
 }
 
 /** Keep 3–5 chips (SPEC §3.3); dedupe, trim. */

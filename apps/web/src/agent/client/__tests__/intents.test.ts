@@ -148,7 +148,7 @@ describe('special rules from faq.md', () => {
 
   it('"Spell my name" uses the stored name, or asks for it', () => {
     expect(scriptedReply('Spell my name', { name: 'Dana', lastShown: null, random: () => 0 }).raw).toBe('[[become:Dana]] done.');
-    expect(scriptedReply('Spell my name', { name: null, lastShown: null, random: () => 0 }).raw).toContain("what's your name?");
+    expect(scriptedReply('Spell my name', { name: null, lastShown: null, random: () => 0 }).raw).toContain("type your name. I'll become it.");
   });
 
   it('"Next one" walks the project order', () => {

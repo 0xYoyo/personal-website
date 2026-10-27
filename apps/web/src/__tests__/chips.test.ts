@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILD_SEEDS, clampChips, defaultChips, projectChips, resolveChip } from '../content/chips';
+import { BUILD_SEEDS, ROCKET_CHIP, clampChips, defaultChips, projectChips, resolveChip, rocketChips } from '../content/chips';
 
 const st = { project: null, hasBuild: false } as const;
 
@@ -25,7 +25,7 @@ describe('chips', () => {
 
   it('spells a known name, otherwise asks the agent', () => {
     expect(resolveChip('Spell my name', { ...st, name: 'Dana' })).toMatchObject({ kind: 'become', shape: { kind: 'text', text: 'Dana' } });
-    expect(resolveChip('Spell my name', st)).toEqual({ kind: 'say', text: 'Spell my name' });
+    expect(resolveChip('Spell my name', st)).toEqual({ kind: 'ask-name' });
     expect(resolveChip('🚀', st)).toEqual({ kind: 'say', text: '🚀' });
     expect(resolveChip('Who are you?', st)).toEqual({ kind: 'say', text: 'Who are you?' });
   });
@@ -34,5 +34,13 @@ describe('chips', () => {
     expect(clampChips([])).toEqual([]);
     expect(clampChips(['a', 'A ', 'b'])).toHaveLength(3);
     expect(clampChips(['1', '2', '3', '4', '5', '6'])).toHaveLength(5);
+  });
+
+  it('"Now a rocket" only after a spelled name, only once, never after the rocket (FIX4 U6)', () => {
+    const row = [ROCKET_CHIP, 'Build me something', 'Who are you?'];
+    expect(rocketChips(row, { spelled: true, offered: false, rocket: false })).toEqual(row);
+    expect(rocketChips(row, { spelled: false, offered: false, rocket: false })).toEqual(['Build me something', 'Who are you?']);
+    expect(rocketChips(row, { spelled: true, offered: true, rocket: false })).not.toContain(ROCKET_CHIP);
+    expect(rocketChips(row, { spelled: true, offered: false, rocket: true })).not.toContain(ROCKET_CHIP);
   });
 });

@@ -3,7 +3,7 @@
 import type { Action, ProjectId, Rect, ShapeSpec, StoryId } from '@yoyo/protocol';
 import { PROJECT_IDS } from '@yoyo/protocol';
 import { BrainError, type Brain, type ReplyHandlers } from './agent';
-import { BUILD_CHIPS, ENTRY_CHIPS, WHO_CHIPS, STORY_CHIPS, changeIntent, projectChips, resolveChip } from './content/chips';
+import { BUILD_CHIPS, ENTRY_CHIPS, ROCKET_CHIP, WHO_CHIPS, STORY_CHIPS, changeIntent, projectChips, resolveChip, rocketChips } from './content/chips';
 import { copy } from './content/copy';
 import { neighbour, projectById } from './content/projects';
 import { nextStory, stories, storyById } from './content/stories';
@@ -37,6 +37,8 @@ let lastBuildRect: Rect | null = null;
 let lockTimer: ReturnType<typeof setTimeout> | null = null;
 /** A shape the agent formed holds at least this long (POLISH1 A5). */
 const READ_FLOOR = 4000;
+/** "Now a rocket" has been offered this visit (FIX4 U6). */
+let rocketOffered = false;
 /** Bumped by every turn; a pending "let the shape go" from an older turn checks it. */
 let settleSeq = 0;
 
@@ -374,6 +376,9 @@ export const ctl = {
     ac.signal.addEventListener('abort', () => pacer.cancel(), { once: true });
     let chipsSet = false;
     let opened: ProjectId | null = null;
+    // the rocket chip follows a spelled name, once, and never the rocket itself (FIX4 U6)
+    let spelled = false;
+    let rocket = false;
     // `onTurn` is the brain's turn boundary (POLISH2 C1); until it lands, `||` in the words marks the turns
     const handlers: ReplyHandlers & { onTurn?(): void } = {
       onWord(w) {
@@ -383,7 +388,16 @@ export const ctl = {
         pacer.boundary();
       },
       onAction(a) {
-        if (a.type === 'chips') chipsSet = true;
+        if (a.type === 'become') {
+          if (a.shape.kind === 'text') spelled = true;
+          if (a.shape.kind === 'emoji' && a.shape.emoji === '🚀') rocket = true;
+        }
+        if (a.type === 'chips') {
+          chipsSet = true;
+          const chips = rocketChips(a.chips, { spelled, rocket, offered: rocketOffered });
+          if (chips.includes(ROCKET_CHIP)) rocketOffered = true;
+          a = { ...a, chips };
+        }
         if (a.type === 'show') opened = a.project;
         if (DEFERRED.has(a.type)) deferred.push(a);
         else runAction(a);
@@ -411,6 +425,8 @@ export const ctl = {
         if (seq !== settleSeq || turn || S().overlay !== 'none' || runner?.running()) return;
         swarm()?.mood('idle');
       }, readMs);
+      // the rocket is up: its chip goes from the row the reply left (it set none of its own)
+      if (rocket && S().chips.includes(ROCKET_CHIP)) S().setChips(rocketChips(S().chips, { spelled, rocket, offered: true }));
       if (!chipsSet) {
         if (opened) S().setChips(projectChips(opened));
         else if (/who/i.test(clean) && !deferred.length) S().setChips(WHO_CHIPS);
@@ -488,6 +504,13 @@ export const ctl = {
         claimBody();
         swarm()?.become(cmd.shape);
         void speakLine('done.');
+        break;
+      case 'ask-name':
+        // one line everywhere (FIX4 U6)
+        S().pushVisitor(label);
+        claimBody();
+        swarm()?.become({ kind: 'glyph', id: 'question' });
+        void speakLine(copy.askName);
         break;
     }
   },
