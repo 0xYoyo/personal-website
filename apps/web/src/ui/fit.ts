@@ -128,7 +128,8 @@ const HYPHENATED = /\p{L}[-‐‑]\p{L}/u;
  * is glued to the word before it so a line never starts with "—".
  */
 export function toWords(text: string): Word[] {
-  const raw = text.split(/\s+/).filter(Boolean);
+  // a no-break space keeps its two words together (no widow: "become\u00a0it.", FIX4 W9)
+  const raw = text.split(/[^\S\u00a0]+/).filter(Boolean);
   const out: Word[] = [];
   for (const w of raw) {
     if (/^[—–-]$/.test(w) && out.length) {
@@ -136,7 +137,7 @@ export function toWords(text: string): Word[] {
       out[out.length - 1] = { text: `${prev.text}\u00a0${w}`, nowrap: true };
       continue;
     }
-    out.push({ text: w, nowrap: HYPHENATED.test(w) });
+    out.push({ text: w, nowrap: HYPHENATED.test(w) || w.includes('\u00a0') });
   }
   return out;
 }

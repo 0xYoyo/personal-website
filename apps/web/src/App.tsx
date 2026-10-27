@@ -81,6 +81,17 @@ function keepOutRects(restoring = false): Rect[] {
     sels.splice(1, 3, ['.y-build-caption'], ['.y-build-frame[data-visible="true"]', 14], ['.y-build-controls[data-on="true"]']);
   }
   const rects = sels.map(([sel, inset]) => boxOf(sel, inset));
+  // a phone (FIX4 W9): the words and the gap under them down to the chips (or the bar) are one keep-out, so no
+  // strip of dots rests between the last line and the chips
+  if (isMobileViewport() && !(!restored && useStore.getState().overlay === 'build')) {
+    const words = rects.slice(1, 4).filter((r): r is Rect => !!r);
+    const floor = rects[4] ?? rects[5];
+    if (words.length && floor) {
+      const y0 = Math.min(...words.map((r) => r.y));
+      const y1 = Math.max(floor.y, ...words.map((r) => r.y + r.h));
+      rects.splice(1, 3, { x: 0, y: y0, w: innerWidth, h: y1 - y0 }, null, null);
+    }
+  }
   // the show's / a story's controls (a phone has them right under the top bar): one keep-out with the top bar
   const run = boxOf('.y-runner');
   const top = rects[0];
