@@ -605,6 +605,7 @@ export const ctl = {
 
   // ---- the show (wave 3; `[[tour]]`, "tour", "show me around", "watch again") & stories ----
   startTour() {
+    markShowSeen(); // once a visit by itself (FIX4 W10)
     startRunner('tour', showSteps(S().reducedMotion));
   },
   startStory(id: StoryId | 'next') {
@@ -613,7 +614,6 @@ export const ctl = {
     startRunner('stories', story.steps, () => story.id);
   },
   /** Menu "Stories": all five in a row, starting from the next unseen one. */
-    markShowSeen(); // once a visit by itself (FIX4 W10)
   startAllStories() {
     const seen = rt.brain?.memory.seenStories() ?? [];
     const first = stories.indexOf(nextStory(seen));
