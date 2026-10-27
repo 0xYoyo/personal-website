@@ -206,10 +206,10 @@ export const projects: Project[] = [
     name: 'Polybot',
     status: 'stopped',
     statusNote: "the edge wasn't strong enough",
-    period: 'Mar 2026',
+    period: 'Mar 2026 · stopped Oct 2026',
     voiceLine: 'A bet I stopped when the numbers said stop.',
     oneLiner: 'Polymarket sports prices, observed against Pinnacle-derived reference prices.',
-    cardFacts: ["Watched 11 sports leagues against a sharp bookmaker's prices.", "Stopped in October 2026: the edge wasn't strong enough."],
+    cardFacts: ["Watched 11 sports leagues against a sharp bookmaker's prices.", "Budget caps and a kill switch on every outside request."],
     facts: [
       'Immutable time-series snapshots, as a hard rule.',
       'Request broker with allowlists, dry-run, budget caps and a kill switch.',
