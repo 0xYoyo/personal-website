@@ -1,5 +1,6 @@
-// The show (wave 3 SHOW): ~35 s, seven scenes, one line of mine each, the swarm acting each one out. It replaces
-// the passive tour as the main path: it starts on its own 2.5 s after the greeting, and any input stops it.
+// The show (wave 3 SHOW, FIX4 W4–W7): ~39 s, seven scenes, one line of mine each, the swarm acting each one out. It replaces
+// the passive tour as the main path: it starts on its own 2.5 s after the greeting (once a visit); typing does not stop it,
+// sending a message or a chip does (the scene freezes and the reply morphs from it).
 // Scenes are laid out in the free stage (stage units: ±1 = its half width / height, +y down) and fitted to its
 // shape, so a phone's wide top stage and the desktop's tall right column both get a scene that reads.
 import type { Keys, Path, PathKey, Scene, SceneGroup, SceneShape } from '@yoyo/protocol';
@@ -16,8 +17,18 @@ export const SHOW_LINES = [
   'Ask me anything.',
 ] as const;
 
-/** Scene lengths (ms), in order: 3.5 + 5 + 5.5 + 6 + 6 + 5 + 4 = 35 s. */
-export const SCENE_MS = [3500, 5000, 5500, 6000, 6000, 5000, 4000] as const;
+/**
+ * Scene lengths (ms), in order: 3.5 + 6 + 6.5 + 6 + 7 + 6.5 + 4 = 39.5 s. Scenes 2, 3 and 5 hold a second longer
+ * than their read time (the eye is on the scene too, FIX4 W7); scene 6 is three shapes of ~2 s each (FIX4 W6).
+ */
+export const SCENE_MS = [3500, 6000, 6500, 6000, 7000, 6500, 4000] as const;
+/** Scene 6's three short captions, one a shape (btc, the yoyo wordmark, the cap), in sync (FIX4 W6). */
+export const SCENE6_LINES = ['Crypto since 2021.', 'Self-taught since 2022.', 'Reichman since 2025.'] as const;
+const SCENE6_GLYPHS = ['btc', 'yoyo', 'cap'] as const;
+/** How long each of scene 6's shapes stays (sum = SCENE_MS[5]). */
+export const SCENE6_MS = [2150, 2150, 2200] as const;
+/** Every caption the show types, in order. */
+export const SHOW_CAPTIONS: readonly string[] = [...SHOW_LINES.slice(0, 5), ...SCENE6_LINES, SHOW_LINES[6]];
 /** The show starts this long after the greeting has landed (unless anything is touched first). */
 export const SHOW_AFTER_GREETING_MS = 2500;
 export const WATCH_AGAIN = 'watch again';
@@ -41,7 +52,7 @@ const scaleForW = (box: StageBox, ar: number, px: number): number => px / fit(bo
 const ux = (box: StageBox, px: number): number => px / (box.w / 2);
 const uy = (box: StageBox, px: number): number => px / (box.h / 2);
 
-const glyph = (id: 'frame' | 'kart' | 'cursor' | 'magnifier' | 'loop' | 'check' | 'keyboard' | 'question' | 'btc' | 'cap'): SceneShape => ({ kind: 'glyph', id });
+const glyph = (id: 'frame' | 'kart' | 'cursor' | 'magnifier' | 'loop' | 'check' | 'keyboard' | 'question' | 'btc' | 'cap' | 'yoyo'): SceneShape => ({ kind: 'glyph', id });
 const at = (t: number, x: number, y: number, o: Partial<PathKey> = {}): PathKey => ({ t, x, y, ...o });
 const keys = (...kv: [number, number][]): Keys => kv.map(([t, v]) => ({ t, v }));
 
@@ -68,18 +79,20 @@ const WINDOW_EMPTY = 0.6;
 
 // ---------------------------------------------------------------- the scenes
 
-/** 1b: the letters dissolve into a cursor that chases the visitor's pointer (a scripted wander without one). */
+/**
+ * 1: the cursor (FIX4 W4). The letters already dissolved at the entry, so the show opens on the cursor straight
+ * from the idle wave: it chases the visitor's pointer, and with no pointer it idles in a slow figure-eight.
+ */
 function cursorScene(box: StageBox, ms: number): Scene {
   const s = scaleForW(box, AR.cursor, Math.min(box.w, box.h) * 0.3);
-  const path: Path = [
-    at(0, 0, -0.05, { scale: s }),
-    at(500, 0.05, -0.02, { scale: s }),
-    at(1000, 0.32, 0.16, { scale: s, rot: 0.08 }),
-    at(1450, 0.32, 0.16, { scale: s * 0.86, ease: 'out' }), // a click
-    at(1650, 0.32, 0.16, { scale: s, ease: 'back' }),
-    at(ms, -0.12, 0.1, { scale: s, rot: -0.05 }),
-  ];
-  return { duration: ms, tableau: 1300, groups: [{ shape: glyph('cursor'), share: 1, follow: 'pointer', path }] };
+  const PERIOD = 5200; // one figure-eight, ms: slow
+  const ax = 0.26, ay = 0.16;
+  const path: Path = [];
+  for (let t = 0; t <= ms; t += 100) {
+    const w = (t / PERIOD) * Math.PI * 2;
+    path.push(at(t, ax * Math.sin(w), -0.04 + ay * Math.sin(2 * w), { scale: s, rot: 0.06 * Math.cos(w), ease: 'linear' }));
+  }
+  return { duration: ms, tableau: 0, groups: [{ shape: glyph('cursor'), share: 1, follow: 'pointer', path }] };
 }
 
 /** 2b: the keys scatter into four small windows, a swarm of agents; one by one they fill with work. */
@@ -181,41 +194,83 @@ function searchScene(box: StageBox, ms: number): Scene {
   return { duration: ms, groups: [bar, magnifier, result(0), result(1), result(2)], lite, tableau: 4600 };
 }
 
+/** Most a kart pitches into a turn (FIX4 W5): 18°. */
+export const KART_PITCH_MAX = (18 * Math.PI) / 180;
+/** A kart turning round flips facing inside this window (ms): two keys, ±1 either side (the engine crossfades). */
+export const KART_FLIP_MS = 120;
+const KART_START = 450, KART_LAP = 4300;
+
 /**
- * 4: the kart drives. A side-on kart on a perspective oval: right along the near side (big), it turns round at
- * the end (mirrors through 0, nose up), left along the far side (smaller), and round again; it pitches into
- * the turns, and leaves a trail. Two smaller karts follow it.
+ * A kart's lap of a perspective oval (stage units: half axes rx, ry × lane): right along the near side (big), left
+ * along the far side (smaller). Its heading follows the oval, pitched at most 18°; it faces the way it drives, and
+ * where it turns round its facing flips between two keys KART_FLIP_MS apart (sx is always ±1 at a key, never a
+ * squash through 0: the engine crossfades a left- and a right-facing sampling there).
+ */
+export function kartLap(box: StageBox, ms: number, o: { lag: number; scale: number; lane: number; rx: number; ry: number }): Path {
+  const w = (Math.PI * 2) / KART_LAP;
+  const th = (t: number): number => -0.75 + Math.max(0, t - KART_START) * w - o.lag;
+  const pose = (t: number, face: number): PathKey => {
+    const a = th(t);
+    const x = o.rx * o.lane * Math.sin(a), y = o.ry * o.lane * Math.cos(a);
+    // the heading on screen (px), as a pitch of the side-on glyph: nose down when it drives down the screen
+    const dx = o.rx * Math.cos(a) * (box.w / 2), dy = -o.ry * Math.sin(a) * (box.h / 2);
+    const pitch = Math.max(-KART_PITCH_MAX, Math.min(KART_PITCH_MAX, Math.atan2(dy, Math.abs(dx))));
+    return at(t, x, y, { scale: o.scale * (0.82 + 0.18 * Math.cos(a)), sx: face, rot: pitch * face, ease: 'linear' });
+  };
+  const faceAt = (t: number): number => (Math.cos(th(t)) >= 0 ? 1 : -1);
+  // where it turns round: cos(th) crosses 0
+  const flips: number[] = [];
+  for (let k = -4; k <= 8; k++) {
+    const tc = KART_START + (Math.PI / 2 + k * Math.PI + 0.75 + o.lag) / w;
+    if (tc > KART_START + KART_FLIP_MS / 2 && tc < ms - KART_FLIP_MS / 2) flips.push(tc);
+  }
+  const half = KART_FLIP_MS / 2;
+  const out: Path = [];
+  for (let t = 0; t <= ms; t += 60) if (!flips.some((tc) => Math.abs(t - tc) <= half)) out.push(pose(t, faceAt(t)));
+  for (const tc of flips) out.push(pose(tc - half, faceAt(tc - half)), pose(tc + half, faceAt(tc + half)));
+  return out.sort((p, q) => p.t - q.t);
+}
+
+/** A thin dotted oval (the track) for the canvas2d kart: `n` small dots on the ellipse, as parts. */
+function ringShape(box: StageBox, rx: number, ry: number, dy: number, n = 40): SceneShape {
+  const d = 5; // px
+  return {
+    kind: 'parts',
+    parts: Array.from({ length: n }, (_, k) => {
+      const a = (k / n) * Math.PI * 2;
+      return { shape: { kind: 'rect', w: d / box.w, h: d / box.h } as SceneShape, share: 1, x: rx * Math.sin(a), y: ry * Math.cos(a) + dy };
+    }),
+  };
+}
+
+/**
+ * 4: the kart drives (FIX4 W5). Three karts a third of a lap apart (so they never overlap) on a perspective oval;
+ * each turns round by flipping its facing, never by mirroring through 0. canvas2d (a few thousand big dots):
+ * one big kart on a visible track, a thin dotted ring with a tenth of the particles, so "a kart on a track" reads.
  */
 function kartScene(box: StageBox, ms: number): Scene {
   const wide = box.w / box.h > 1;
   const kw = Math.min(box.w * (wide ? 0.32 : 0.4), box.h * 0.45);
   const s0 = scaleForW(box, AR.kart, kw);
   const rx = 1 - ux(box, kw / 2) - 0.08, ry = wide ? 0.56 : 0.6;
-  const START = 450, LAP = 4300;
-  const oval = (lag: number, scale: number, lane: number): Path => {
-    const out: Path = [];
-    const th = (t: number): number => -0.75 + Math.max(0, t - START) / LAP * Math.PI * 2 - lag;
-    for (let t = 0; t <= ms; t += 60) {
-      const a = th(t);
-      const x = rx * lane * Math.sin(a), y = ry * lane * Math.cos(a);
-      const vx = Math.cos(a), vy = -Math.sin(a) * (ry / rx);
-      const face = Math.max(-1, Math.min(1, Math.cos(a) * 3.2));
-      const pitch = Math.max(-0.32, Math.min(0.32, Math.atan2(vy, Math.abs(vx) + 0.15) * 0.45)) * Math.sign(face || 1);
-      out.push(at(t, x, y, { scale: scale * (0.82 + 0.18 * Math.cos(a)), sx: face, rot: pitch, ease: 'linear' }));
-    }
-    return out;
-  };
+  const third = (Math.PI * 2) / 3;
   const kart = (lag: number, scale: number, share: number, trail: number, lane: number): SceneGroup => ({
-    shape: glyph('kart'), share, path: oval(lag, scale, lane), trail, trailMs: 520, brightness: lag ? 0.85 : 1.05,
+    shape: glyph('kart'), share, path: kartLap(box, ms, { lag, scale, lane, rx, ry }), trail, trailMs: 520, brightness: lag ? 0.85 : 1.05,
   });
-  // canvas2d (a few thousand big dots): one big kart, and one small one across the oval
-  // (a phone's short stage: one kart, as big as the stage takes, on a flatter oval)
-  const lite: Scene = wide
-    ? { duration: ms, tableau: 1500, groups: [{ ...kart(0, scaleForW(box, AR.kart, Math.min(box.w * 0.46, box.h * 0.62)), 1, 0, 0.82), brightness: 1 }] }
-    : { duration: ms, tableau: 1500, groups: [kart(0, s0 * 1.25, 0.78, 0, 0.9), kart(Math.PI, s0 * 0.7, 0.22, 0, 0.9)] };
+  // canvas2d: one big kart riding a dotted track (its wheels on the ring)
+  const lw = wide ? Math.min(box.w * 0.4, box.h * 0.55) : Math.min(box.w * 0.52, box.h * 0.4);
+  const lrx = 1 - ux(box, lw / 2) - 0.06, lry = wide ? 0.5 : 0.52;
+  const wheels = uy(box, (lw / AR.kart) * 0.38);
+  const lite: Scene = {
+    duration: ms, tableau: 1500,
+    groups: [
+      { shape: ringShape(box, lrx, lry, wheels), share: 0.1, path: [at(0, 0, 0)], brightness: 0.6 },
+      { shape: glyph('kart'), share: 0.9, path: kartLap(box, ms, { lag: 0, scale: scaleForW(box, AR.kart, lw), lane: 1, rx: lrx, ry: lry }), brightness: 1 },
+    ],
+  };
   return {
     duration: ms, tableau: 1500, lite,
-    groups: [kart(0, s0, 0.5, 0.3, 1), kart(1.35, s0 * 0.6, 0.25, 0.26, 0.92), kart(2.5, s0 * 0.6, 0.25, 0.26, 0.92)],
+    groups: [kart(0, s0, 0.5, 0.3, 1), kart(third, s0 * 0.6, 0.25, 0.26, 0.92), kart(2 * third, s0 * 0.6, 0.25, 0.26, 0.92)],
   };
 }
 
@@ -266,55 +321,44 @@ function loopScene(box: StageBox, ms: number): Scene {
   return { duration: ms, groups: [loop, pr(0), pr(1), pr(2)], lite, tableau: 3200 };
 }
 
-// ---------------------------------------------------------------- reduced motion: one still tableau a scene
-
-function tripleScene(box: StageBox): Scene {
-  const wide = box.w / box.h > 1;
-  const ids = ['btc', 'keyboard', 'cap'] as const;
-  const s = wide ? 0.34 : 0.4;
-  return {
-    duration: 1000,
-    groups: ids.map((id, k) => ({ shape: glyph(id), share: 1, path: [wide ? at(0, (k - 1) * 0.66, 0, { scale: s }) : at(0, 0, (k - 1) * 0.62, { scale: s })] })),
-  };
-}
-
 // ---------------------------------------------------------------- the steps
 
 export type SceneRef = (box: StageBox) => Scene;
 
 /** A caption beat: typed in with the scene's start, held for `ms` (the runner moves on after it). */
-const line = (k: number, ms: number, b: Omit<BeatSpec, 'say'> = {}): Omit<Step, 'at'> => ({ ...beat({ ...b, say: SHOW_LINES[k], sync: true, captionHold: ms }) });
+const cap = (say: string, ms: number, b: Omit<BeatSpec, 'say'> = {}): Omit<Step, 'at'> => ({ ...beat({ ...b, say, sync: true, captionHold: ms }) });
+const line = (k: number, ms: number, b: Omit<BeatSpec, 'say'> = {}): Omit<Step, 'at'> => cap(SHOW_LINES[k]!, ms, b);
 const part = (ms: number, b: Omit<BeatSpec, 'say' | 'hold'>): Omit<Step, 'at'> => beat({ ...b, hold: ms });
+/** Scene 6: btc → the yoyo wordmark → the cap, each with its own short caption. */
+const scene6 = (): Omit<Step, 'at'>[] => SCENE6_LINES.map((say, k) => cap(say, SCENE6_MS[k]!, { become: { kind: 'glyph', id: SCENE6_GLYPHS[k]! } }));
 
-/** The show's steps. `reduced`: one still tableau a scene, stepped by click. */
+/** The show's steps. `reduced`: one still tableau a scene (scene 6: one a shape), stepped by click. */
 export function showSteps(reduced = false): Step[] {
-  const [s1, s2, s3, s4, s5, s6, s7] = SCENE_MS;
+  const [s1, s2, s3, s4, s5, , s7] = SCENE_MS;
   if (reduced) {
     return seq([
-      line(0, s1, { become: { kind: 'yoyo3d' }, mood: 'speaking', chips: ENTRY_CHIPS }),
+      line(0, s1, { perform: (b) => cursorScene(b, s1), mood: 'speaking', chips: ENTRY_CHIPS }),
       line(1, s2, { perform: (b) => agentsScene(b, s2) }),
       line(2, s3, { perform: (b) => searchScene(b, s3) }),
       line(3, s4, { perform: (b) => kartScene(b, s4) }),
       line(4, s5, { perform: (b) => loopScene(b, s5) }),
-      line(5, s6, { perform: tripleScene }),
+      ...scene6(),
       line(6, s7, { become: { kind: 'glyph', id: 'question' }, chips: ENTRY_CHIPS }),
     ]);
   }
   return seq([
-    line(0, 1500, { become: { kind: 'yoyo3d' }, mood: 'speaking', chips: ENTRY_CHIPS }),
-    part(s1 - 1500, { perform: (b) => cursorScene(b, s1 - 1500) }),
+    // the letters dissolved at the entry: the show opens on the cursor, straight from the idle wave (FIX4 W4)
+    line(0, s1, { perform: (b) => cursorScene(b, s1), mood: 'speaking', chips: ENTRY_CHIPS }),
     line(1, 1300, { become: { kind: 'glyph', id: 'keyboard' } }),
     part(s2 - 1300, { perform: (b) => agentsScene(b, s2 - 1300) }),
     line(2, s3, { perform: (b) => searchScene(b, s3) }),
     line(3, s4, { perform: (b) => kartScene(b, s4) }),
     line(4, s5, { perform: (b) => loopScene(b, s5) }),
-    line(5, 1600, { become: { kind: 'glyph', id: 'btc' } }),
-    part(1700, { become: { kind: 'glyph', id: 'keyboard' } }),
-    part(s6 - 3300, { become: { kind: 'glyph', id: 'cap' } }),
+    ...scene6(),
     line(6, 2900, { become: { kind: 'glyph', id: 'question' }, chips: ENTRY_CHIPS }),
     part(s7 - 2900, { release: true }),
   ]);
 }
 
-/** QA: every scene a box gets (scene index → the performed scene, if any). */
-export const SCENES = { cursorScene, agentsScene, searchScene, kartScene, loopScene, tripleScene };
+/** QA: the scenes a box gets. */
+export const SCENES = { cursorScene, agentsScene, searchScene, kartScene, loopScene };
