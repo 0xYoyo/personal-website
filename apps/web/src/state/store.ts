@@ -20,6 +20,11 @@ export interface Line {
   size?: number;
   /** the turn's whole text (known before its words stream in) */
   full?: string;
+  /**
+   * A caption the show left on screen (FIX4 W1, W8): it rests alone (no muted line beneath it), is never the
+   * muted line beneath a reply, and while a message waits for its reply it is not shown (nothing is).
+   */
+  show?: boolean;
 }
 
 export type BuildStatus = 'idle' | 'ring' | 'streaming' | 'locked' | 'error';
@@ -96,7 +101,7 @@ export interface Actions {
   finishAgent(opts?: { keepStreaming?: boolean; id?: number }): void;
   setStreaming(on: boolean): void;
   setSettling(s: Settling): void;
-  agentLine(text: string, opts?: { quiet?: boolean }): number;
+  agentLine(text: string, opts?: { quiet?: boolean; show?: boolean }): number;
   setChips(chips: string[]): void;
   openOverlay(o: Overlay): void;
   closeOverlay(): void;
@@ -185,7 +190,7 @@ export const useStore = create<State & Actions>()((set, get) => ({
   setSettling: (settling) => set({ settling }),
   agentLine(text, opts) {
     const id = nextId++;
-    const line: Line = { id, role: 'agent', text, streaming: false, ...(opts?.quiet ? { quiet: true } : {}) };
+    const line: Line = { id, role: 'agent', text, streaming: false, ...(opts?.quiet ? { quiet: true } : {}), ...(opts?.show ? { show: true } : {}) };
     set((s) => ({ lines: [...s.lines, line].slice(-MAX_LINES) }));
     return id;
   },
@@ -240,12 +245,14 @@ export function visibleExchange(lines: Line[]): { prevAgent?: Line; agent?: Line
   // the muted turn before that line stays until the reply arrives (WAVE3 S2: it never fades on its own).
   const last = lines[lines.length - 1];
   if (last?.role === 'visitor') {
-    if (!agent) return { visitor: last };
+    // the show was stopped by this message (or had ended): nothing in the caption area until the reply's first word
+    if (!agent || agent.show) return { visitor: last };
     const before = lines.slice(0, lines.lastIndexOf(agent)).reverse().find((l) => l.role === 'agent');
-    return before ? { prevAgent: before, agent, visitor: last } : { agent, visitor: last };
+    return before && !before.show ? { prevAgent: before, agent, visitor: last } : { agent, visitor: last };
   }
   const out: { prevAgent?: Line; agent?: Line; visitor?: Line } = {};
-  if (prevAgent) out.prevAgent = prevAgent;
+  // a show caption rests alone, and is never the muted line beneath a reply (FIX4 W1, W8)
+  if (prevAgent && !prevAgent.show && !agent?.show) out.prevAgent = prevAgent;
   if (agent) out.agent = agent;
   if (visitor) out.visitor = visitor;
   return out;

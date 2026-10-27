@@ -21,8 +21,8 @@ import { GameModal } from './ui/GameModal';
 import { SHORT_VH } from './ui/fit';
 import { History, LiveRegion } from './ui/History';
 import { createSound } from './ui/sound';
+import { runnerKey } from './ui/runner/keys';
 import { TopBar } from './ui/TopBar';
-import { WatchAgain } from './ui/WatchAgain';
 import { createVoice } from './ui/voice';
 
 /** The name line fades in under the letters once they have knitted (POLISH2 A5). */
@@ -367,19 +367,14 @@ export function App() {
         }
         return;
       }
-      // Runner: ←/→ navigate, any other key skips the tour
+      // Runner: ←/→ navigate (outside the bar); a keystroke only types, it never stops the show (FIX4 W1)
       if (ctl.runnerActive()) {
-        if (e.key === 'ArrowRight') return ctl.runnerNext();
-        // step mode (reduced motion): Enter steps too, unless it is sending a message
-        if (e.key === 'Enter' && s.runner?.stepMode && !typing && !(e.target instanceof HTMLButtonElement)) {
-          e.preventDefault();
-          return ctl.runnerNext();
-        }
-        if (e.key === 'ArrowLeft') return ctl.runnerPrev();
-        if (s.overlay === 'tour' && !['Shift', 'Control', 'Alt', 'Meta', 'Tab'].includes(e.key)) {
-          ctl.runnerSkip();
-          if (e.key.length === 1 && !typing) document.getElementById('y-input')?.focus();
-        }
+        const k = runnerKey(e, { typing, stepMode: !!s.runner?.stepMode, onButton: e.target instanceof HTMLButtonElement, tour: s.overlay === 'tour' });
+        if (k === 'next') {
+          if (e.key === 'Enter') e.preventDefault();
+          ctl.runnerNext();
+        } else if (k === 'prev') ctl.runnerPrev();
+        else if (k === 'focus-bar') document.getElementById('y-input')?.focus();
         return;
       }
       if (typing) return;

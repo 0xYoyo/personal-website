@@ -7,7 +7,7 @@ import { BUILD_CHIPS, ENTRY_CHIPS, ROCKET_CHIP, WHO_CHIPS, STORY_CHIPS, changeIn
 import { copy } from './content/copy';
 import { neighbour, projectById } from './content/projects';
 import { nextStory, stories, storyById } from './content/stories';
-import { showSteps } from './content/show';
+import { SHOW_LINES, showSteps } from './content/show';
 import { applyScene, isMobileViewport } from './design';
 import { emptyBuild, useStore, type Overlay } from './state/store';
 import type { SwarmHandle } from './swarm';
@@ -307,15 +307,23 @@ function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: numb
         runner = null;
         const s2 = S();
         const lastSay = say;
+        const forAnswer = reason === 'skip' && keepBodyOnSkip;
+        // the show never hands the words back to the greeting (FIX4 W1, W8): its caption rests where it is (the
+        // same key, so it is not typed again) — skipped, it jumps to its end line — and History keeps it.
+        // Stopped by a message or a chip, nothing shows until the reply's first word (visibleExchange).
+        if (kind === 'tour') {
+          const rest = reason === 'skip' && !forAnswer ? SHOW_LINES[SHOW_LINES.length - 1]! : lastSay;
+          if (rest) s2.agentLine(rest, { quiet: true, show: true });
+        } else if (lastSay && reason === 'done') s2.agentLine(lastSay, { quiet: true });
         s2.setRunner(null);
         if (s2.overlay === kind) s2.closeOverlay();
         // stopped for an answer: the reply's shape morphs straight from the scene (no release burst)
-        if (!(reason === 'skip' && keepBodyOnSkip)) {
+        if (!forAnswer) {
+          // the keep-outs go in first, so a reduced-motion field rests off the words and chips (FIX4 W3)
+          stageHook?.(false);
           swarm()?.release();
           swarm()?.mood('idle');
         }
-        // the last caption rests where it is (no re-say) and History keeps it
-        if (lastSay && reason === 'done') s2.agentLine(lastSay, { quiet: true });
         // a show that ran to its end keeps its own end chips; skipped, the entry three return (WAVE3 S1);
         // stopped by a chip or a message, the answer sets its own
         if (!(reason === 'skip' && keepBodyOnSkip)) s2.setChips(kind === 'stories' ? STORY_CHIPS : reason === 'done' && endChips ? endChips : ENTRY_CHIPS);
