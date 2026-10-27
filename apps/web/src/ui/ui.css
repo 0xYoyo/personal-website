@@ -993,6 +993,31 @@
 .y-game-close:hover {
   border-color: var(--accent);
 }
+/* touch devices: one line on how it plays (FIX4 U10); it fades at the first tap in the game */
+.y-game-hint {
+  position: absolute;
+  left: 50%;
+  top: calc(14px + env(safe-area-inset-top));
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(11, 10, 9, 0.86);
+  color: #f4efe6;
+  font-size: var(--t-mono-xs);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity var(--dur-3) var(--ease);
+}
+.y-game-hint[data-on='false'] {
+  opacity: 0;
+}
+@media (max-width: 720px) {
+  .y-game-close {
+    top: auto;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+}
 
 /* ------------------------------------------------------------ history */
 

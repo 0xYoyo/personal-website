@@ -94,6 +94,9 @@ export const copy = {
   game: {
     title: 'Prompt Racers',
     close: 'Close (Esc)',
+    /** ui (FIX4 U10): on a touch device, one line — the first only if the game had touch steering */
+    touchHint: 'tap to start · tilt or touch to steer',
+    keyboardHint: 'best on a keyboard',
   },
   runner: {
     skip: 'Skip',
