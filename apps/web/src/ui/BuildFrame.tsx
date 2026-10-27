@@ -12,6 +12,21 @@ const streamedTitle = (html: string) => /<title>([^<]{1,60})<\/title>/i.exec(htm
 /** Only the tail is drawn while streaming (the view sits scrolled to the bottom anyway). */
 const CODE_TAIL = 7000;
 
+/**
+ * The build runs in an opaque-origin sandbox (no allow-same-origin, on purpose), so the page can't hear
+ * a key pressed inside it. A one-line relay in the srcdoc posts Esc up instead (FIX4 U7); the HTML the
+ * visitor copies, downloads or shares stays exactly as it was built.
+ */
+export const ESC_MESSAGE = 'yoyo:esc';
+const ESC_RELAY = `<script>addEventListener('keydown',function(e){if(e.key==='Escape')parent.postMessage('${ESC_MESSAGE}','*')},true)</script>`;
+export function withEscRelay(html: string): string {
+  // after <head>, else <html>, else the doctype (a script before the doctype would put the page in quirks mode)
+  const at = /<head\b[^>]*>/i.exec(html) ?? /<html\b[^>]*>/i.exec(html) ?? /<!doctype[^>]*>/i.exec(html);
+  if (!at) return ESC_RELAY + html;
+  const i = at.index + at[0].length;
+  return html.slice(0, i) + ESC_RELAY + html.slice(i);
+}
+
 /** Split HTML into tag / text runs so tags can be drawn dimmer than the content. */
 export function codeRuns(html: string): { tag: boolean; text: string }[] {
   const out: { tag: boolean; text: string }[] = [];
@@ -35,7 +50,10 @@ export function BuildFrame() {
   const [flash, setFlash] = useState(false);
   const [maxed, setMaxed] = useState(false);
   const [note, setNote] = useState<{ k: string; t: string } | null>(null);
-  useDialog(ref);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  // focus starts on the frame's controls (Close), never inside the build: Esc must reach the page (FIX4 U7)
+  useDialog(ref, { initial: closeRef as React.RefObject<HTMLElement> });
 
   const locked = build.status === 'locked';
   const streaming = build.status === 'streaming';
@@ -60,6 +78,26 @@ export function BuildFrame() {
     const el = codeRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [runs]);
+
+  // Esc pressed inside the build (relayed from its srcdoc) closes like anywhere else; in the in-page
+  // maximize it only leaves that
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.data !== ESC_MESSAGE || e.source !== iframeRef.current?.contentWindow) return;
+      if (document.fullscreenElement) return; // the browser's own Esc leaves full screen
+      if (maxed) setMaxed(false);
+      else ctl.closeOverlay();
+    };
+    addEventListener('message', onMsg);
+    return () => removeEventListener('message', onMsg);
+  }, [maxed]);
+
+  // locked: if focus was on a control that just came alive (or nowhere), it lands on Close, not in the build
+  useEffect(() => {
+    if (!locked) return;
+    const a = document.activeElement;
+    if (!a || a === document.body || a === iframeRef.current || !ref.current?.contains(a)) closeRef.current?.focus({ preventScroll: true });
+  }, [locked]);
 
   // Lock flash
   useEffect(() => {
@@ -132,6 +170,7 @@ export function BuildFrame() {
     return () => removeEventListener('keydown', onKey, true);
   }, [maxed]);
 
+  const srcDoc = useMemo(() => (locked ? withEscRelay(build.html) : ''), [locked, build.html]);
   const visible = build.status !== 'ring' && build.status !== 'idle';
   const c = copy.build.controls;
 
@@ -155,7 +194,7 @@ export function BuildFrame() {
             )}
           </div>
           <div className="y-build-body">
-            <iframe className="y-build-iframe" title={build.title || copy.build.frameTitle} sandbox="allow-scripts" srcDoc={locked ? build.html : ''} data-on={locked} />
+            <iframe ref={iframeRef} className="y-build-iframe" title={build.title || copy.build.frameTitle} sandbox="allow-scripts" srcDoc={srcDoc} data-on={locked} />
             {!codeGone && (
               <pre ref={codeRef} className="y-build-code y-mono" aria-hidden="true" data-off={locked}>
                 {runs.map((r, i) => (
@@ -182,7 +221,7 @@ export function BuildFrame() {
           <button className="y-textbtn" onClick={() => void fullscreen()} disabled={!locked}>
             {c.fullscreen}
           </button>
-          <button className="y-textbtn" onClick={() => ctl.closeOverlay()}>
+          <button ref={closeRef} className="y-textbtn" onClick={() => ctl.closeOverlay()}>
             {c.close}
           </button>
         </div>
