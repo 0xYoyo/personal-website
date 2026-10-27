@@ -623,6 +623,13 @@
   height: 1px;
   background: var(--muted);
 }
+/* the stack line (WAVE3 V4, FIX4 C2): small mono under the two facts */
+.y-card-stack {
+  margin: 14px 0 0;
+  font-size: var(--t-mono-xs);
+  line-height: 1.45;
+  color: var(--muted);
+}
 .y-card-links {
   margin-top: auto;
   padding-top: 20px;

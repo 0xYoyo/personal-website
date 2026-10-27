@@ -115,6 +115,7 @@ export function Card() {
               <li key={f}>{f}</li>
             ))}
           </ul>
+          <p className="y-card-stack y-mono">{p.stack.join(' · ')}</p>
           <div className="y-card-links">
             {p.play && (
               <button className="y-play" onClick={() => ctl.play()}>
