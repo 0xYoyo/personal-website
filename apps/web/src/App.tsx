@@ -375,7 +375,11 @@ export function App() {
           if (e.key === 'Enter') e.preventDefault();
           ctl.runnerNext();
         } else if (k === 'prev') ctl.runnerPrev();
-        else if (k === 'focus-bar') document.getElementById('y-input')?.focus();
+        else if (k === 'focus-bar') {
+          // `/` is the shortcut to the bar, not a character: it focuses without typing itself (FIX4 U7)
+          if (e.key === '/') e.preventDefault();
+          document.getElementById('y-input')?.focus();
+        }
         return;
       }
       if (typing) return;
