@@ -345,8 +345,21 @@ export async function svgTargets(svg: string, n: number, vp: Viewport, key: stri
   }
 }
 
+/**
+ * Glyphs with a plainer stand-in for a small stage (POSTFIX4 E3): the open envelope's letter and flap turn to mush
+ * on a phone; the closed envelope reads.
+ */
+export const SMALL_VARIANTS: Readonly<Record<string, string>> = { 'envelope-open': 'envelope' };
+/** A stage this small (min side, CSS px) — or a phone's 2k dots — takes the small variants. */
+export const SMALL_STAGE = 320;
+export function smallStage(n: number, vp: Viewport): boolean {
+  const s = vp.stage;
+  return n <= TINY_COUNT || Math.min(s ? s.w : vp.w, s ? s.h : vp.h) < SMALL_STAGE;
+}
+
 export async function glyphTargets(id: GlyphId | string, n: number, vp: Viewport, depthMul = 1): Promise<Targets> {
   if (id === 'yoyo') return yoyo3dTargets(n, vp);
+  if (SMALL_VARIANTS[id] && smallStage(n, vp)) id = SMALL_VARIANTS[id]!;
   const svg = await loadGlyphSvg(id);
   if (!svg) return textTargets('?', n, vp, depthMul);
   return svgTargets(svg, n, vp, id, depthMul);

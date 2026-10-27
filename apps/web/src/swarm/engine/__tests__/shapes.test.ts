@@ -95,3 +95,13 @@ describe('isEmoji', () => {
     expect(isEmoji('hi 🚀')).toBe(false);
   });
 });
+
+describe('small-stage glyph variants (FIX4 E3)', () => {
+  it('a phone (small stage or 2k dots) takes the closed envelope for the open one', async () => {
+    const { smallStage, SMALL_VARIANTS } = await import('../shapes');
+    expect(SMALL_VARIANTS['envelope-open']).toBe('envelope');
+    expect(smallStage(2000, { w: 1440, h: 900 })).toBe(true);
+    expect(smallStage(12000, { w: 390, h: 844, stage: { x: 16, y: 60, w: 358, h: 287 } })).toBe(true);
+    expect(smallStage(40000, { w: 1440, h: 900, stage: { x: 920, y: 72, w: 488, h: 638 } })).toBe(false);
+  });
+});
