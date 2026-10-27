@@ -54,7 +54,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "convince",
       "good at"
     ],
-    "reply": "I ship. 917 public commits this year, a real game, a published connector, a search engine. || I'm early. I was writing Solidity in 2022 and running agent factories before they had a name. || And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]"
+    "reply": "I ship. 917 public commits this year, a game, a published connector, a search engine. || I was writing Solidity in 2022 and building with agents before it was normal. || And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]"
   },
   {
     "id": "weakness",
@@ -121,7 +121,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "airdrop",
       "chain"
     ],
-    "reply": "[[become:btc]] Since 2021. Trading, DeFi, on-chain research, communities. I know the ecosystem of every major chain the way other people know football tables. || Dumbest thing I did: trade on emotion. Smartest: farm protocols early and get paid for it. [[chips:What have you built?|gm]]"
+    "reply": "[[become:btc]] Since 2021. Trading, DeFi, on-chain research, communities. I know the big chains inside out. || Dumbest thing I did: trade on emotion. Smartest: farm protocols early and get paid for it. [[chips:What have you built?|gm]]"
   },
   {
     "id": "agents",
@@ -138,7 +138,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "loop",
       "how do you work"
     ],
-    "reply": "[[become:loop]] I write the spec. Agents build it in isolated worktrees and open pull requests. Another agent reviews. I merge. || 39% of my public commits are co-authored with an agent. 100% were merged by me. [[show:yoyo-loop]] [[chips:How fast is it?|What have you built?]]"
+    "reply": "[[become:loop]] I write the spec. Agents build it and open pull requests. Another agent reviews. I merge. || Most of my commits this year were written with an agent. Every one was merged by me. [[show:yoyo-loop]] [[chips:How fast is it?|What have you built?]]"
   },
   {
     "id": "why_agents",
@@ -161,7 +161,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "velocity",
       "burst"
     ],
-    "reply": "In one 96-hour stretch this October: 44 pull requests merged across 18 issues on one codebase. || Median time from open to merge: fifteen minutes. [[show:yoyo-loop]] [[chips:Build me something|What have you built?]]"
+    "reply": "Once, in four days: 44 pull requests merged on one codebase. || Most of them went from open to merged in about fifteen minutes. [[chips:Build me something|What have you built?]]"
   },
   {
     "id": "game",
@@ -233,7 +233,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "by hand",
       "odin"
     ],
-    "reply": "[[become:keyboard]] Before AI wrote code, I wrote all of mine. A year of it, full time. || A social network with its own REST API and auth, a shopping cart, a P&L bot. Small now. Mine then. [[chips:What have you built?|How do you work now?]]"
+    "reply": "[[become:keyboard]] Before AI wrote code, I wrote all of mine. A year of it, full time. || A small social network, back end and all. Small now. Mine then. [[show:yoyo-network]] [[chips:What have you built?|How do you work now?]]"
   },
   {
     "id": "polybot",
@@ -274,7 +274,9 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "part-time",
       "remote",
       "location",
-      "where"
+      "where",
+      "based",
+      "live"
     ],
     "reply": "Student role, two to three days a week. Near Tel Aviv, hybrid or remote. I can start when you can. [[contact]]"
   },
@@ -338,14 +340,15 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "games",
       "music",
       "football",
-      "travel",
       "gym"
     ],
-    "reply": "[[become:🎮]] Football, festivals, travel. CS2 now, high-level Fortnite building back in the day. || Lifting, a run on the beach. I want to learn piano. Haven't yet. [[chips:What have you built?|Who are you?]]"
+    "reply": "[[become:🎮]] Football, festivals, travel. CS2 now, Fortnite back in the day. || Lifting, a run on the beach. I want to learn piano. Haven't yet. [[chips:What have you built?|Who are you?]]"
   },
   {
     "id": "travel",
     "hints": [
+      "travel",
+      "travelling",
       "southeast asia",
       "trip",
       "2024",

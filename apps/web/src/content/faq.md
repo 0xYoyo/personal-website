@@ -12,7 +12,7 @@ hints: built, shipped, projects, work, portfolio, made, show me
 
 ## hire
 hints: hire, why, should we, reasons, pitch, sell, convince, good at
-→ `I ship. 917 public commits this year, a real game, a published connector, a search engine. || I'm early. I was writing Solidity in 2022 and running agent factories before they had a name. || And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]`
+→ `I ship. 917 public commits this year, a game, a published connector, a search engine. || I was writing Solidity in 2022 and building with agents before it was normal. || And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]`
 
 ## weakness
 hints: bad at, weakness, weaknesses, flaws, worst, struggle, not good
@@ -32,11 +32,11 @@ hints: army, idf, military, unit, combat, service, soldier
 
 ## crypto
 hints: crypto, bitcoin, btc, web3, trading, degen, solana, eth, defi, airdrop, chain
-→ `[[become:btc]] Since 2021. Trading, DeFi, on-chain research, communities. I know the ecosystem of every major chain the way other people know football tables. || Dumbest thing I did: trade on emotion. Smartest: farm protocols early and get paid for it. [[chips:What have you built?|gm]]`
+→ `[[become:btc]] Since 2021. Trading, DeFi, on-chain research, communities. I know the big chains inside out. || Dumbest thing I did: trade on emotion. Smartest: farm protocols early and get paid for it. [[chips:What have you built?|gm]]`
 
 ## agents
 hints: agent, agents, ai, claude, codex, cursor, llm, automation, factory, loop, how do you work
-→ `[[become:loop]] I write the spec. Agents build it in isolated worktrees and open pull requests. Another agent reviews. I merge. || 39% of my public commits are co-authored with an agent. 100% were merged by me. [[show:yoyo-loop]] [[chips:How fast is it?|What have you built?]]`
+→ `[[become:loop]] I write the spec. Agents build it and open pull requests. Another agent reviews. I merge. || Most of my commits this year were written with an agent. Every one was merged by me. [[show:yoyo-loop]] [[chips:How fast is it?|What have you built?]]`
 
 ## why_agents
 hints: why agents, stop coding, stopped writing code, switch, when did you
@@ -44,7 +44,7 @@ hints: why agents, stop coding, stopped writing code, switch, when did you
 
 ## fast
 hints: fast, how fast, speed, quick, velocity, burst
-→ `In one 96-hour stretch this October: 44 pull requests merged across 18 issues on one codebase. || Median time from open to merge: fifteen minutes. [[show:yoyo-loop]] [[chips:Build me something|What have you built?]]`
+→ `Once, in four days: 44 pull requests merged on one codebase. || Most of them went from open to merged in about fifteen minutes. [[chips:Build me something|What have you built?]]`
 
 ## game
 hints: game, play, kart, racing, racers, prompt racers
@@ -68,7 +68,7 @@ hints: pnl, p&l, discord bot, wallet, profit
 
 ## network
 hints: yoyo-network, social network, rest api, jwt, hand-written, by hand, odin
-→ `[[become:keyboard]] Before AI wrote code, I wrote all of mine. A year of it, full time. || A social network with its own REST API and auth, a shopping cart, a P&L bot. Small now. Mine then. [[chips:What have you built?|How do you work now?]]`
+→ `[[become:keyboard]] Before AI wrote code, I wrote all of mine. A year of it, full time. || A small social network, back end and all. Small now. Mine then. [[show:yoyo-network]] [[chips:What have you built?|How do you work now?]]`
 
 ## polybot
 hints: polybot, polymarket, prediction, odds, stopped, failed, failure, didn't work
@@ -79,7 +79,7 @@ hints: university, degree, study, student, gpa, school, semester
 → `[[become:cap]] Computer Science plus Entrepreneurship at Reichman. Started October 2025. First-year GPA 89.4. || Semester three of six. Looking for a student role, two to three days a week. [[chips:Why should we hire you?|How do I reach you?]]`
 
 ## availability
-hints: available, availability, when, start, days, hours, part-time, remote, location, where
+hints: available, availability, when, start, days, hours, part-time, remote, location, where, based, live
 → `Student role, two to three days a week. Near Tel Aviv, hybrid or remote. I can start when you can. [[contact]]`
 
 ## contact
@@ -99,11 +99,11 @@ hints: look like, photo, hair, curls, face, picture
 → `[[become:curls]] Long curly hair. You'd recognize me. [[chips:Who are you?|What have you built?]]`
 
 ## hobbies
-hints: hobby, hobbies, fun, free time, bored, weekend, like to do, games, music, football, travel, gym
-→ `[[become:🎮]] Football, festivals, travel. CS2 now, high-level Fortnite building back in the day. || Lifting, a run on the beach. I want to learn piano. Haven't yet. [[chips:What have you built?|Who are you?]]`
+hints: hobby, hobbies, fun, free time, bored, weekend, like to do, games, music, football, gym
+→ `[[become:🎮]] Football, festivals, travel. CS2 now, Fortnite back in the day. || Lifting, a run on the beach. I want to learn piano. Haven't yet. [[chips:What have you built?|Who are you?]]`
 
 ## travel
-hints: southeast asia, trip, 2024, gap, backpacking, thailand, cambodia
+hints: travel, travelling, southeast asia, trip, 2024, gap, backpacking, thailand, cambodia
 → `[[become:route]] 2024: most of the year alone in Southeast Asia. Twenty-one commits all year. || Best decision I've made. Also why the gap. [[chips:What happened after?|What have you built?]]`
 
 ## after_travel

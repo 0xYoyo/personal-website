@@ -84,7 +84,7 @@ export const CHIP_EXPECT = {
   'Build me something like this': { ui: 'build' },
   'sound on': { ui: 'sound-on' },
   'Tell me about Polybot': { intent: 'polybot', actions: ['become:glyph:diverge', 'show:polybot'] },
-  'How fast is it?': { intent: 'fast', actions: ['show:yoyo-loop'] },
+  'How fast is it?': { intent: 'fast', actions: [] },
   gm: { intent: 'gm', actions: ['become:glyph:btc'] },
   'Now a rocket': { intent: 'command:rocket', actions: ['become:emoji:🚀'] },
   '🚀': { intent: 'emoji', actions: ['become:emoji:🚀'] },
