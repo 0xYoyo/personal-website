@@ -3,6 +3,7 @@
 // (play, next project, change/share a build) so the obvious moves never wait
 // on a model.
 import { isEmojiOnly, type ProjectId, type ShapeSpec } from '@yoyo/protocol';
+import { EXAMPLE_RULES } from '../agent/client/pick-example';
 
 export type ChipContext = 'entry' | 'who' | 'project' | 'build' | 'story' | 'idle';
 
@@ -14,6 +15,38 @@ export const BUILD_CHIPS = ['Share it', 'Build another', 'How was this made?'];
 export const STORY_CHIPS = ['Next story', 'What have you built?', 'How do I reach you?'];
 /** The tour's end chips (WAVE3 V3). */
 export const TOUR_END_CHIPS = ['Who are you?', 'What have you built?', 'Play the game'];
+
+/** What the visitor would call an example build (FIX4 U9): never the app's own title ("Today"). */
+export const EXAMPLE_NAMES: Readonly<Record<string, string>> = {
+  todo: 'to-do list',
+  pomodoro: 'pomodoro timer',
+  landing: 'landing page',
+  weather: 'weather card',
+  habits: 'habit tracker',
+  birthday: 'birthday card',
+};
+
+/**
+ * A stored build's human name for "I kept your …" and "Open my …" (FIX4 U9): the example's name (from
+ * the build, or a strong word in the instruction: "build me a todo app" → "to-do list"), else the
+ * instruction's thing ("a calendar that guards focus" → "calendar").
+ */
+export function buildName(b: { example?: string | undefined; instruction: string }): string {
+  const low = b.instruction.toLowerCase();
+  const strong = EXAMPLE_RULES.find((r) => r.strong.some((w) => new RegExp(`(^|[^\\p{L}])${w}s?([^\\p{L}]|$)`, 'u').test(low)))?.id;
+  const id = b.example ?? strong;
+  if (id && EXAMPLE_NAMES[id]) return EXAMPLE_NAMES[id]!;
+  const thing = low
+    .replace(/[?.!]+$/, '')
+    .replace(/^(?:please\s+)?(?:can you\s+)?(?:build|make|create|generate|write|design)\s+(?:me\s+|us\s+)?/, '')
+    .replace(/^(?:an?|the|my|some)\s+/, '')
+    .split(/\s+(?:that|which|with|for|where|to|so)\s+/)[0]!
+    .split(/\s+/)
+    .slice(0, 4)
+    .join(' ')
+    .trim();
+  return thing || 'build';
+}
 
 /** Returning visitor with a stored build (POLISH1 A6): reopen it first, then the usual moves. */
 export const openBuildChip = (title: string): string => `Open my ${title}`;

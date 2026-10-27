@@ -99,6 +99,8 @@ export class BrainError extends Error {
 export interface StoredBuild {
   id: string;
   title: string;
+  /** the prebuilt example it was, if the scripted builder answered (its human name: FIX4 U9) */
+  example?: string | undefined;
   instruction: string;
   html: string;
   at: number;

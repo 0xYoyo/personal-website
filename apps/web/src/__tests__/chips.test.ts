@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILD_SEEDS, ROCKET_CHIP, clampChips, defaultChips, projectChips, resolveChip, rocketChips } from '../content/chips';
+import { BUILD_SEEDS, ROCKET_CHIP, buildName, clampChips, defaultChips, projectChips, resolveChip, rocketChips } from '../content/chips';
 
 const st = { project: null, hasBuild: false } as const;
 
@@ -42,5 +42,15 @@ describe('chips', () => {
     expect(rocketChips(row, { spelled: false, offered: false, rocket: false })).toEqual(['Build me something', 'Who are you?']);
     expect(rocketChips(row, { spelled: true, offered: true, rocket: false })).not.toContain(ROCKET_CHIP);
     expect(rocketChips(row, { spelled: true, offered: false, rocket: true })).not.toContain(ROCKET_CHIP);
+  });
+
+  it('a stored build goes by its human name, never its app title (FIX4 U9)', () => {
+    expect(buildName({ example: 'todo', instruction: 'make me something' })).toBe('to-do list');
+    expect(buildName({ example: 'pomodoro', instruction: 'x' })).toBe('pomodoro timer');
+    expect(buildName({ instruction: 'build me a todo app' })).toBe('to-do list');
+    expect(buildName({ instruction: 'Make me a pomodoro timer with big digits' })).toBe('pomodoro timer');
+    expect(buildName({ instruction: 'build me a calendar that guards my focus' })).toBe('calendar');
+    expect(buildName({ instruction: 'a tiny social feed where you can post' })).toBe('tiny social feed');
+    expect(buildName({ instruction: '' })).toBe('build');
   });
 });

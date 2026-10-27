@@ -1224,12 +1224,20 @@
   .y-build {
     width: calc(100vw - 32px);
   }
-  /* one line the flock keeps off (a keep-out, App.tsx) */
+  /* the flock keeps off it (a keep-out, App.tsx); a long line (welcome back, the resting builder's)
+     wraps to a second line instead of being cut off (FIX4 U9) */
   .y-build-caption {
     margin: 4px 0 0;
     font-size: 21px;
     line-height: 1.2;
     min-height: 1.2em;
+    white-space: normal;
+    text-overflow: clip;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    text-wrap: balance;
   }
   .y-build-controls {
     gap: 4px 16px;

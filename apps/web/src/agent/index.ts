@@ -146,6 +146,7 @@ export function createBrain(opts: BrainOptions = {}): Brain {
   const toStored = (b: (typeof cm.builds)[number]): StoredBuild => ({
     id: String(b.at),
     title: titleOf(b.html ?? '', (b.example && EXAMPLE_TITLES[b.example]) || b.instruction),
+    ...(b.example ? { example: b.example } : {}),
     instruction: b.instruction,
     html: b.html ?? '',
     at: b.at,

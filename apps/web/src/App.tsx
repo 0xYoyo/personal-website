@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Rect } from '@yoyo/protocol';
 import { createBrain, readSharedFromHash } from './agent';
-import { ENTRY_CHIPS, returningChips } from './content/chips';
+import { ENTRY_CHIPS, buildName, returningChips } from './content/chips';
 import { SHOW_AFTER_GREETING_MS } from './content/show';
 import { copy } from './content/copy';
 import { ctl } from './controller';
@@ -200,7 +200,8 @@ export function App() {
         const last = brain.memory.builds().find((b) => b.html);
         line = name ? copy.entry.welcomeBack(name) : copy.entry.welcomeBackAnon;
         if (last) {
-          const title = last.title.toLowerCase();
+          // the build's human name ("to-do list"), never its raw app title ("Today") (FIX4 U9)
+          const title = buildName(last);
           line += ` ${copy.entry.lastBuild(title)}`;
           chips = returningChips(title);
         }
