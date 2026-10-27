@@ -103,6 +103,7 @@ export const copy = {
     next: 'Next',
     prev: 'Back',
     stepHint: 'click for the next one',
+    stepHintTouch: 'tap for the next one',
   },
   history: {
     open: 'History',

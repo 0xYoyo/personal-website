@@ -211,13 +211,15 @@ export function Conversation() {
   );
 }
 
-/** The runner's controls (tour, stories): Back · Next · Skip, and the step hint. */
+const coarse = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
+/** The runner's controls (tour, stories): Back · Next · Skip, and the step hint ("tap …" on touch, FIX4 U11). */
 export function RunnerControls() {
   const runner = useStore((s) => s.runner);
   if (!runner) return null;
   return (
     <div className="y-runner" role="group" aria-label={runner.kind === 'tour' ? 'Tour' : 'Stories'}>
-      {runner.stepMode && <span className="y-runner-hint y-mono">{copy.runner.stepHint}</span>}
+      {runner.stepMode && <span className="y-runner-hint y-mono">{coarse() ? copy.runner.stepHintTouch : copy.runner.stepHint}</span>}
       <button className="y-textbtn" onClick={(e) => { e.stopPropagation(); ctl.runnerPrev(); }} disabled={runner.beat <= 0 && !runner.stepMode}>
         {copy.runner.prev}
       </button>

@@ -208,6 +208,12 @@ export function App() {
       }
       useStore.getState().setChips(chips);
       await ctl.speakLine(line);
+      // reduced motion: the still field was laid out as the entry let go, before the greeting had a box; now
+      // that it has one (and the chips), the keep-outs go in and the field is laid out again off them (FIX4 U11)
+      if (reduced && !cancelled && useStore.getState().overlay === 'none') {
+        pushStage();
+        swarm.release();
+      }
       // the idle timer starts when the greeting has landed
       useStore.getState().touch();
     })();
