@@ -109,6 +109,21 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
   }
 }
 
+/**
+ * A typed message while a build is open (FIX4 U1): one that starts like an edit is a change to the
+ * build, never a new build and never the unknown reply. A bare "change it" opens change mode (as the
+ * Change it button does); one that already says what to change ("make it dark") is applied.
+ */
+export type ChangeIntent = 'begin' | 'apply' | null;
+const CHANGE_START = /^(change|make it|turn it|add|remove|use|switch|colou?r|dark|light)\b/i;
+const CHANGE_BARE = /^(change|change it|change this|change that|make changes|make a change)$/i;
+export function changeIntent(text: string, buildOpen: boolean): ChangeIntent {
+  if (!buildOpen) return null;
+  const t = text.trim().replace(/[.!?…]+$/, '').trim();
+  if (CHANGE_BARE.test(t)) return 'begin';
+  return CHANGE_START.test(t) ? 'apply' : null;
+}
+
 /** Keep 3–5 chips (SPEC §3.3); dedupe, trim. */
 export function clampChips(chips: string[]): string[] {
   if (!chips.length) return [];

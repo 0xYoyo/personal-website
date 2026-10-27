@@ -3,7 +3,7 @@
 import type { Action, ProjectId, Rect, ShapeSpec, StoryId } from '@yoyo/protocol';
 import { PROJECT_IDS } from '@yoyo/protocol';
 import { BrainError, type Brain, type ReplyHandlers } from './agent';
-import { BUILD_CHIPS, ENTRY_CHIPS, WHO_CHIPS, STORY_CHIPS, projectChips, resolveChip } from './content/chips';
+import { BUILD_CHIPS, ENTRY_CHIPS, WHO_CHIPS, STORY_CHIPS, changeIntent, projectChips, resolveChip } from './content/chips';
 import { copy } from './content/copy';
 import { neighbour, projectById } from './content/projects';
 import { nextStory, stories, storyById } from './content/stories';
@@ -328,6 +328,10 @@ export const ctl = {
     const st = S();
     st.touch();
     st.spendIdle();
+    // a build is open: "change it" / "make it dark" edits it (FIX4 U1)
+    const edit = changeIntent(clean, st.overlay === 'build' && st.build.status === 'locked' && !!st.build.html);
+    if (edit === 'begin') return ctl.beginChange();
+    if (edit === 'apply') return ctl.changeBuild(clean);
     skipForAnswer();
     turn?.abort();
     for (const p of pacers) p.cancel();
