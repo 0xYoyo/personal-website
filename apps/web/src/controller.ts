@@ -12,6 +12,7 @@ import { applyScene, isMobileViewport } from './design';
 import { emptyBuild, useStore, type Overlay } from './state/store';
 import type { SwarmHandle } from './swarm';
 import { createRunner, type Runner, type Step } from './ui/runner/engine';
+import { markShowSeen } from './state/visit';
 import type { Scene } from '@yoyo/protocol';
 import type { Sound } from './ui/sound';
 import { createChannel, createPacer, readLeft, stripMarks, TURN_WORD_MS, type Pacer, type TurnFit } from './ui/turns';
@@ -612,6 +613,7 @@ export const ctl = {
     startRunner('stories', story.steps, () => story.id);
   },
   /** Menu "Stories": all five in a row, starting from the next unseen one. */
+    markShowSeen(); // once a visit by itself (FIX4 W10)
   startAllStories() {
     const seen = rt.brain?.memory.seenStories() ?? [];
     const first = stories.indexOf(nextStory(seen));

@@ -9,7 +9,7 @@ import { copy } from './content/copy';
 import { ctl } from './controller';
 import { isMobileViewport, prefersReducedMotion } from './design';
 import { useStore } from './state/store';
-import { keepSeen, readVisitOnce, settleVisits } from './state/visit';
+import { keepSeen, readVisitOnce, settleVisits, showSeen } from './state/visit';
 import { createSwarm } from './swarm';
 import { BuildFrame } from './ui/BuildFrame';
 import { Card } from './ui/Card';
@@ -302,7 +302,8 @@ export function App() {
     const iv = setInterval(() => {
       const s = useStore.getState();
       if (s.idleSpent) return;
-      if (s.visitor.returning) return s.spendIdle();
+      // returning visitors, and a reload in a visit that already saw it (FIX4 W10), get "watch again" instead
+      if (s.visitor.returning || showSeen()) return s.spendIdle();
       if (!greetAt) {
         // the greeting has landed once its line is on screen and done streaming (the boot touches the clock then)
         if (s.streaming || !s.lines.some((l) => l.role === 'agent')) return;

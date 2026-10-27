@@ -89,3 +89,25 @@ export function settleVisits(info: VisitInfo, now = Date.now(), s: Store | null 
   write(s, K_VISITS, String(info.visits));
   write(s, K_LAST, new Date(now).toISOString());
 }
+
+// ---- the show once a visit (FIX4 W10): a same-tab reload is the same visit, and the show does not start by
+// itself a second time in it; the visitor gets "watch again" instead.
+const K_SHOW = 'yoyo.v3.showSeen';
+
+function session(): Store | null {
+  try {
+    return globalThis.sessionStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Whether the show has started already in this tab's session. */
+export function showSeen(s: Store | null = session()): boolean {
+  return read(s, K_SHOW) === '1';
+}
+
+/** The show started: remember it for this tab's session. */
+export function markShowSeen(s: Store | null = session()): void {
+  write(s, K_SHOW, '1');
+}
