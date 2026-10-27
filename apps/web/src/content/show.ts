@@ -231,17 +231,8 @@ export function kartLap(box: StageBox, ms: number, o: { lag: number; scale: numb
   return out.sort((p, q) => p.t - q.t);
 }
 
-/** A thin dotted oval (the track) for the canvas2d kart: `n` small dots on the ellipse, as parts. */
-function ringShape(box: StageBox, rx: number, ry: number, dy: number, n = 40): SceneShape {
-  const d = 5; // px
-  return {
-    kind: 'parts',
-    parts: Array.from({ length: n }, (_, k) => {
-      const a = (k / n) * Math.PI * 2;
-      return { shape: { kind: 'rect', w: d / box.w, h: d / box.h } as SceneShape, share: 1, x: rx * Math.sin(a), y: ry * Math.cos(a) + dy };
-    }),
-  };
-}
+/** A thin dotted oval (the track) for the canvas2d kart: an ellipse outline through (±rx, 0) and (0, ±ry), in dashes. */
+const ringShape = (rx: number, ry: number): SceneShape => ({ kind: 'bar', oval: true, dashes: 36, thickness: 4, w: rx, h: ry });
 
 /**
  * 4: the kart drives (FIX4 W5). Three karts a third of a lap apart (so they never overlap) on a perspective oval;
@@ -264,7 +255,7 @@ function kartScene(box: StageBox, ms: number): Scene {
   const lite: Scene = {
     duration: ms, tableau: 1500,
     groups: [
-      { shape: ringShape(box, lrx, lry, wheels), share: 0.1, path: [at(0, 0, 0)], brightness: 0.6 },
+      { shape: ringShape(lrx, lry), share: 0.1, path: [at(0, 0, wheels)], brightness: 0.6 },
       { shape: glyph('kart'), share: 0.9, path: kartLap(box, ms, { lag: 0, scale: scaleForW(box, AR.kart, lw), lane: 1, rx: lrx, ry: lry }), brightness: 1 },
     ],
   };
