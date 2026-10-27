@@ -146,9 +146,9 @@ export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage> &
 // Id lists (the single source the guards and pickers use)
 // ---------------------------------------------------------------------------
 
-/** In the Work overlay's order (WAVE3 V4): the 2026 shelf, then "Written by hand, 2022–23". */
+/** In the Work overlay's order (WAVE3 V4, FIX4 C1): the main row ending with Vortex, then "Written by hand" (yoyo-network). */
 export const PROJECT_IDS = [
-  'unfiltered', 'prompt-racers', 'yoyo-loop', 'runi-connector', 'availability-monitor', 'pnl-bot', 'polybot', 'yoyo-network', 'vortex',
+  'unfiltered', 'prompt-racers', 'yoyo-loop', 'runi-connector', 'availability-monitor', 'pnl-bot', 'polybot', 'vortex', 'yoyo-network',
 ] as const satisfies readonly ProjectId[];
 
 export const GLYPH_IDS = [

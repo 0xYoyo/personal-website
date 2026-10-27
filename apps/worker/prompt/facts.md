@@ -14,7 +14,7 @@
 - Jul 2021 → : crypto. Trading, on-chain research, communities. I advised two early-stage projects on launch strategy and community positioning, including one of the first Bitcoin Ordinals projects in early 2023 (the Ordinals protocol launched January 2023). I don't cite that project's raise.
 - Sep–Nov 2022: freeCodeCamp's Solidity/Hardhat course (13 repos; my first public commit was 2022-09-07).
 - Oct 2022 – Sep 2023: The Odin Project, full time, self-taught, before AI coding tools: JavaScript, React, Node/Express, MongoDB, TDD; 30+ deployed projects; my first portfolio Jun–Aug 2023.
-- Sep 2023: a hand-written Discord PnL bot. Dec 2023: the Vortex Discord bot.
+- Sep 2023: a hand-written Discord PnL bot, and the Vortex Discord bot (Sep 2023 – Jan 2024).
 - 2024: most of the year alone in Southeast Asia, after the army. 21 public commits all year, all in January, then a 13-month gap. Best decision I've made.
 - 2025: back to building, with AI in the loop (Google AI Studio models with Cursor, then Claude Code when it appeared in Feb 2025, then Codex): the Vortex application site (Mar), CodeMapper (Mar), a crypto sentiment dashboard (Apr–May), Orditax (Jun). Oct 2025: started at Reichman.
 - 2026: Polybot (Mar), Availability Monitor (Mar–Apr), then from late July the agent-factory era: yoyo-loop (Jul 29), Unfiltered (Jul 31), Prompt Racers (Aug), the Reichman Courses connector (Oct). 917 public commits in 2026 through Oct 19; 531 in August alone; busiest day Aug 8 (69 commits).
@@ -35,7 +35,7 @@
 - **Discord PnL bot** — Sep 2023, shipped, written by hand before AI tools. Realized and unrealized P&L reports for a community (~100–200 members) from wallet-level buys, sells, fees and holdings; tokens and NFTs across EVM chains, Solana, Bitcoin. JavaScript.
 - **Polybot** — Mar 2026, stopped. Watched Polymarket sports prices against Pinnacle-derived reference prices; immutable time-series snapshots as a hard rule; Next.js control room; Prisma/PostgreSQL; a request broker with allowlists, dry-run, budget caps, kill switch; 11 leagues; 3-way soccer handling. I stopped it in Oct 2026: the evidence of an edge wasn't strong enough, and big firms have the latency. I think it had potential.
 - **yoyo-network** — Jul–Aug 2023, shipped, written by hand (Odin era). A full-stack social network with its own RESTful, stateless API: sign up, log in or look around as a guest, a home feed of the people you follow, profiles, follow/unfollow, posts with pictures, likes and comments. Express, Node, MongoDB; Passport, bcrypt and JWTs for login; Multer and Cloudinary for images; React front end. Live: yoyo-network.netlify.app. 58 commits.
-- **Vortex application system** — bot Dec 2023, site Mar–Apr 2025, shipped. Community admissions: applicants sign in with X (Twitter) OAuth, members vote in Discord, an admin dashboard decides. React, Node, MongoDB.
+- **Vortex application system** — 2023–2025: bot Sep 2023 – Jan 2024, site Mar–Apr 2025, shipped. Community admissions: applicants sign in with X (Twitter) OAuth, members vote in Discord, an admin dashboard decides. React, Node, MongoDB.
 - **Orditax** — Jun 2025, archived. A Bitcoin-ecosystem tax pipeline: BTC, Ordinals, Runes, BRC-20; dual-address wallets; 8-step pipeline; FIFO/LIFO cost basis; CSV export. Node, Maestro indexer, CoinGecko.
 - **Crypto sentiment dashboard** — Apr–May 2025, archived. BullMQ/Redis workers, Gemini scoring, trend aggregation, auth.
 - **CodeMapper** — Mar 2025, archived. Upload a codebase, generate a codemap to share with LLMs.

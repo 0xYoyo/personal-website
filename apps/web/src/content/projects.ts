@@ -1,4 +1,5 @@
-// The carded projects: seven from 2026, then two written by hand (WAVE3 V4). Facts are ported from v2's
+// The carded projects: the main row (2026, then the PnL bot, Polybot and Vortex), then yoyo-network alone
+// on the "Written by hand" shelf (WAVE3 V4, FIX4 C1). Facts are ported from v2's
 // projects.ts (verified against the baked GitHub data, 2026-10-23); commit and
 // PR counts are baked literals computed from data/commits.json and prs.json so
 // the site doesn't ship 300 kB of JSON. Status words are mine: be honest.
@@ -62,7 +63,7 @@ export const unfilteredQueries = ['elegant summer wedding dress, not black, unde
 /** Densest 96 hours on Unfiltered (summary.md): 2026-10-03 15:53Z → 10-07 15:24Z */
 export const burst = { prs: 44, issues: 18, start: '2026-10-03', end: '2026-10-07' } as const;
 
-// Order per WAVE3 V4: the 2026 shelf, then "Written by hand" (the card shows `shelf`).
+// Order per WAVE3 V4 / FIX4 C1: the main row, then "Written by hand" (the card shows `shelf`).
 /** The second shelf's header (WAVE3 V4). */
 export const HAND_SHELF = 'Written by hand';
 
@@ -224,6 +225,28 @@ export const projects: Project[] = [
     mergedPRs: 0,
   },
   {
+    id: 'vortex',
+    name: 'Vortex application system',
+    status: 'shipped',
+    period: '2023–2025',
+    voiceLine: 'How a community lets new people in: apply with X, members vote in Discord, an admin decides.',
+    oneLiner: 'Community admissions: X (Twitter) sign-in, Discord member voting and an admin dashboard.',
+    cardFacts: ['Members vote on every applicant in Discord.', 'The bot written by hand in 2023; the site in 2025.'],
+    facts: [
+      'Applicants sign in with X (Twitter) OAuth.',
+      'Community members vote on each application in Discord.',
+      'An admin dashboard shows the votes and decides.',
+      'The Discord bot is from Sep 2023 – Jan 2024; the application site from Mar–Apr 2025.',
+    ],
+    stack: ['React', 'Node.js', 'MongoDB', 'Discord.js', 'X OAuth'],
+    links: [gh('vortex-application'), { kind: 'repo', label: 'Bot', href: 'https://github.com/0xYoyo/vortex-bot' }],
+    glyph: 'check',
+    showcase: 'vortex',
+    commits: 89,
+    commitSpan: ['2023-09-04', '2025-04-08'],
+    mergedPRs: 0,
+  },
+  {
     id: 'yoyo-network',
     name: 'yoyo-network',
     status: 'shipped',
@@ -244,29 +267,6 @@ export const projects: Project[] = [
     shelf: HAND_SHELF,
     commits: 58,
     commitSpan: ['2023-07-30', '2023-08-25'],
-    mergedPRs: 0,
-  },
-  {
-    id: 'vortex',
-    name: 'Vortex application system',
-    status: 'shipped',
-    period: 'Dec 2023 – Apr 2025',
-    voiceLine: 'How a community lets new people in: apply with X, members vote in Discord, an admin decides.',
-    oneLiner: 'Community admissions: X (Twitter) sign-in, Discord member voting and an admin dashboard.',
-    cardFacts: ['Members vote on every applicant in Discord.', 'The bot written by hand in 2023; the site in 2025.'],
-    facts: [
-      'Applicants sign in with X (Twitter) OAuth.',
-      'Community members vote on each application in Discord.',
-      'An admin dashboard shows the votes and decides.',
-      'The Discord bot is from Dec 2023; the application site from Mar–Apr 2025.',
-    ],
-    stack: ['React', 'Node.js', 'MongoDB', 'Discord.js', 'X OAuth'],
-    links: [gh('vortex-application'), { kind: 'repo', label: 'Bot', href: 'https://github.com/0xYoyo/vortex-bot' }],
-    glyph: 'check',
-    showcase: 'vortex',
-    shelf: HAND_SHELF,
-    commits: 89,
-    commitSpan: ['2023-09-04', '2025-04-08'],
     mergedPRs: 0,
   },
 ];
