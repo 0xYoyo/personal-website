@@ -233,7 +233,34 @@ export class Controller {
     this.stage = r; this.keepOut = ko;
     this.free = r ? freeStage(r, ko) : null;
     if (this.frame?.dim) this.setMoodKnobs(this.mood);
+    // E4: reduced motion's still field moves off the new keep-outs at once (it never flies there on its own)
+    if (this.reduced && !koSame && (!this.holding || (this.staticT !== null && this.B === this.staticT))) this.placeStatic();
     this.relayout();
+  }
+
+  /** The reduced-motion still field: the scatter, every dot that would sit on a keep-out (+10 px) re-drawn elsewhere. */
+  staticField(): Float32Array {
+    const pos = this.spawn('scatter').pos;
+    const hw = this.vp.w / 2, hh = this.vp.h / 2, PAD = 10;
+    const hit = (x: number, y: number): boolean => {
+      const cx = x + hw, cy = hh - y;
+      return this.keepOut.some((k) => cx > k.x - PAD && cx < k.x + k.w + PAD && cy > k.y - PAD && cy < k.y + k.h + PAD);
+    };
+    if (!this.keepOut.length) return pos;
+    for (let i = 0; i < this.n; i++) {
+      const o = i * 4;
+      for (let j = 1; j <= 12 && hit(pos[o]!, pos[o + 1]!); j++) {
+        pos[o] = (hash01(i, 40 + j) * 2 - 1) * hw * 0.92; pos[o + 1] = (hash01(i, 60 + j) * 2 - 1) * hh * 0.88;
+      }
+    }
+    return pos;
+  }
+  private staticT: Targets | null = null;
+  private placeStatic(): void {
+    const t = emptyTargets(this.n);
+    t.pos.set(this.staticField());
+    this.knit(t, { transit: false });
+    this.staticT = t;
   }
 
   get keepOuts(): readonly Rect[] { return this.keepOut; }
@@ -359,10 +386,8 @@ export class Controller {
     this.p.selectFrac = 1.01;
     this.p.spinOn = 0;
     if (this.reduced) {
-      // reduced motion has no free flight: snap back to the still, scattered field
-      const t = emptyTargets(this.n);
-      t.pos.set(this.spawn('scatter').pos);
-      this.knit(t, { transit: false });
+      // reduced motion has no free flight: snap back to the still, scattered field (clear of the keep-outs, E4)
+      this.placeStatic();
     }
     if (this.mood === 'speaking' || this.mood === 'building' || this.mood === 'listening') this.mood = 'idle';
     this.setMoodKnobs(this.mood);

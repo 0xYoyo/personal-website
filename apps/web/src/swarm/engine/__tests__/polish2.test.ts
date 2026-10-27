@@ -312,3 +312,27 @@ describe('slow devices keep time (POSTFIX4 E1)', () => {
     expect(physStep(clockStep(250))).toBeCloseTo(1 / 15, 9);
   });
 });
+
+describe('reduced motion keeps its still field off the words (FIX4 E4)', () => {
+  it('the still dots are placed clear of the keep-outs, and move off new ones at once', () => {
+    const r = rig(3000);
+    r.ctrl.setReduced(true);
+    r.ctrl.setStage(STAGE, KO);
+    r.step(0.1);
+    const onKo = (rects: Rect[]): number => r.share((x, y) => rects.some((k) => x > k.x && x < k.x + k.w && y > k.y && y < k.y + k.h));
+    expect(onKo(KO)).toBe(0);
+    // a reply lands: the field moves off it in a frame (no flight in reduced motion)
+    const REPLY2: Rect = { x: 40, y: 120, w: 700, h: 420 };
+    r.ctrl.setStage(STAGE, [TOP, REPLY2, CHIPS, BAR]);
+    r.step(1 / 60);
+    expect(onKo([TOP, REPLY2, CHIPS, BAR])).toBe(0);
+    // a shape and back: the release goes back to a clear field too
+    void r.ctrl.become({ kind: 'frame', rect: { x: 900, y: 200, w: 300, h: 200 } });
+    r.step(0.3);
+    r.ctrl.release();
+    r.step(1 / 60);
+    expect(onKo([TOP, REPLY2, CHIPS, BAR])).toBe(0);
+    // and the field still fills the free viewport (not piled up somewhere)
+    expect(r.share((x) => x > 900)).toBeGreaterThan(0.2);
+  });
+});
