@@ -1,4 +1,4 @@
-// Showcase registry: the seven live motion pieces (SPEC §3.4), one per carded
+// Showcase registry: the live motion pieces (SPEC §3.4), one per carded
 // project. Each fills its slot, loops on its own, pauses offscreen / in hidden
 // tabs, and shows a static key frame when `reducedMotion` is true.
 import { showcases as parts } from './parts';

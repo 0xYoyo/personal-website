@@ -1,0 +1,179 @@
+.sc-sg-head {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 1.6cqw;
+}
+.sc-sg-token {
+  font-size: 4cqw;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.sc-sg-sub {
+  font-size: 2.2cqw;
+  color: var(--sc-muted);
+}
+.sc-sg-post {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 1.6cqw;
+  padding: 0 1.8cqw;
+  border-radius: 1.4cqw;
+  border: 1px solid var(--sc-line);
+  background: var(--sc-raise);
+}
+.sc-sg-av {
+  flex: none;
+  width: 5cqw;
+  height: 5cqw;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 2.3cqw;
+  font-weight: 700;
+  color: #171411;
+}
+.sc-sg-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4cqw;
+}
+.sc-sg-who {
+  font-size: 1.9cqw;
+  color: var(--sc-muted);
+}
+.sc-sg-text {
+  font-size: 2.5cqw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-sg-tag {
+  flex: none;
+  font-size: 1.9cqw;
+  padding: 0.35cqw 1cqw;
+  border-radius: 2cqw;
+  white-space: nowrap;
+}
+.sc-sg-tag.is-bullish {
+  color: var(--sc-up);
+  background: var(--sc-up-soft);
+}
+.sc-sg-tag.is-bearish {
+  color: var(--sc-down);
+  background: var(--sc-down-soft);
+}
+.sc-sg-tag.is-neutral {
+  color: var(--sc-muted);
+  background: var(--sc-soft);
+}
+.sc-sg-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sc-sg-band {
+  fill: none;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+.sc-sg-band.is-bearish {
+  stroke: var(--sc-down);
+  opacity: 0.75;
+}
+.sc-sg-band.is-neutral {
+  stroke: var(--sc-line-2);
+}
+.sc-sg-band.is-bullish {
+  stroke: var(--sc-up);
+  opacity: 0.85;
+}
+.sc-sg-needle {
+  stroke: var(--sc-fg);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+}
+.sc-sg-hub {
+  fill: var(--sc-fg);
+}
+.sc-sg-base {
+  stroke: var(--sc-line);
+  stroke-width: 0.25;
+}
+.sc-sg-trend {
+  fill: none;
+  stroke: var(--sc-up);
+  stroke-width: 0.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.sc-sg-dot {
+  fill: var(--sc-up);
+}
+.sc-sg-score {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1.4cqw;
+  white-space: nowrap;
+}
+.sc-sg-num {
+  font-size: 5.4cqw;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.sc-sg-score .sc-sg-tag {
+  font-size: 2.3cqw;
+}
+.sc-sg-trend-label {
+  position: absolute;
+  font-size: 2cqw;
+  color: var(--sc-muted);
+}
+.sc-fit[data-v='wide'] .sc-sg-text {
+  font-size: 2.7cqw;
+}
+.sc-fit[data-v='wide'] .sc-sg-who,
+.sc-fit[data-v='wide'] .sc-sg-tag {
+  font-size: 2.1cqw;
+}
+.sc-fit[data-v='wide'] .sc-sg-token {
+  font-size: 3.6cqw;
+}
+.sc-fit[data-v='wide'] .sc-sg-num {
+  font-size: 4.6cqw;
+}
+.sc-fit[data-v='wide'] .sc-sg-trend-label {
+  font-size: 2.2cqw;
+}
+.sc-fit[data-v='wide'] .sc-sg-av {
+  width: 4.6cqw;
+  height: 4.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-sg-text {
+  font-size: 2.75cqw;
+}
+.sc-fit[data-v='tall'] .sc-sg-who,
+.sc-fit[data-v='tall'] .sc-sg-tag,
+.sc-fit[data-v='tall'] .sc-sg-trend-label {
+  font-size: 2.1cqw;
+}
+.sc-fit[data-v='tall'] .sc-sg-score .sc-sg-tag {
+  font-size: 2.5cqw;
+}
+.sc-fit[data-v='tall'] .sc-sg-num {
+  font-size: 6cqw;
+}
+.sc-fit[data-v='tall'] .sc-sg-token {
+  font-size: 4.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-sg-sub {
+  font-size: 2.5cqw;
+}

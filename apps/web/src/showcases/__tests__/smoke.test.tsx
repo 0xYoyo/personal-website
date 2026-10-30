@@ -3,9 +3,9 @@ import { render } from '@testing-library/react';
 import { ShowcaseFrame, showcaseOrder, showcases, showcaseTiming } from '../parts';
 
 describe('showcases', () => {
-  it('exports all seven project ids', () => {
+  it('exports one piece per project id', () => {
     expect(Object.keys(showcases).sort()).toEqual([...showcaseOrder].sort());
-    expect(showcaseOrder).toHaveLength(9);
+    expect(showcaseOrder).toHaveLength(10);
   });
 
   for (const id of showcaseOrder) {

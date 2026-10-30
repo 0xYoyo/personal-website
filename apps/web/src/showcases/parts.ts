@@ -11,6 +11,7 @@ import { PnlBot, pnlBotMeta } from './parts/pnl-bot/PnlBot';
 import { Polybot, polybotMeta } from './parts/polybot/Polybot';
 import { YoyoNetwork, yoyoNetworkMeta } from './parts/yoyo-network/YoyoNetwork';
 import { Vortex, vortexMeta } from './parts/vortex/Vortex';
+import { SentimentGauge, sentimentGaugeMeta } from './parts/sentiment-gauge/SentimentGauge';
 
 export type { ProjectId } from '@yoyo/protocol';
 export type { ShowcaseProps } from './lib/clock';
@@ -28,6 +29,7 @@ export const showcases: Record<ProjectId, ComponentType<ShowcaseProps>> = {
   polybot: Polybot,
   'yoyo-network': YoyoNetwork,
   vortex: Vortex,
+  'sentiment-gauge': SentimentGauge,
 };
 
 /** Loop length and the reduced-motion key frame (seconds) of each piece. Prompt Racers is the footage length. */
@@ -41,6 +43,7 @@ export const showcaseTiming: Record<ProjectId, { duration: number; keyTime: numb
   polybot: polybotMeta,
   'yoyo-network': yoyoNetworkMeta,
   vortex: vortexMeta,
+  'sentiment-gauge': sentimentGaugeMeta,
 };
 
 export const showcaseOrder: ProjectId[] = [...PROJECT_IDS];
