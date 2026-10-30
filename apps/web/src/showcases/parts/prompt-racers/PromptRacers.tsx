@@ -55,7 +55,7 @@ export function PromptRacers({ reducedMotion, playing = true, seek }: ShowcasePr
   return (
     <div ref={ref} className="sc-root sc-prompt-racers">
       <p className="sc-sr">
-        Prompt Racers: real gameplay from the shipped game — a kart race on the Data Oasis track. One HTML file, zero network calls.
+        Prompt Racers: real gameplay from the shipped game, a kart race on the Data Oasis track. One HTML file, zero network calls.
       </p>
       {still ? (
         <img className="sc-prompt-racers-media" src={footageUrl('prompt-racers-poster.jpg')} alt="" aria-hidden="true" draggable={false} />
