@@ -4,7 +4,7 @@
 // Everything after it is additive: id lists, runtime guards (no Zod), the
 // inline action-tag parser, and the wire schema for /chat and /build.
 
-export type ProjectId = 'prompt-racers'|'unfiltered'|'yoyo-loop'|'runi-connector'|'availability-monitor'|'pnl-bot'|'polybot'|'yoyo-network'|'vortex';
+export type ProjectId = 'prompt-racers'|'unfiltered'|'yoyo-loop'|'runi-connector'|'availability-monitor'|'pnl-bot'|'polybot'|'yoyo-network'|'vortex'|'sentiment-gauge';
 export type GlyphId = 'kart'|'magnifier'|'loop'|'cap'|'tent'|'chart'|'diverge'|'envelope'|'envelope-open'|'keyboard'|'cursor'|'wave'|'frame'|'question'|'shield'|'route'|'btc'|'piano'|'ramp'|'curls'|'heart'|'star'|'check'|'yoyo';
 export type Mood = 'idle'|'listening'|'thinking'|'speaking'|'excited'|'building'|'celebrate'|'asleep';
 export type ShapeSpec = { kind:'text'; text:string } | { kind:'emoji'; emoji:string } | { kind:'glyph'; id:GlyphId } | { kind:'yoyo3d' } | { kind:'frame'; rect:{x:number;y:number;w:number;h:number} } | { kind:'none' };
@@ -12,7 +12,10 @@ export type StoryId = 'factory'|'road';
 export type Action =
   | { type:'become'; shape:ShapeSpec } | { type:'mood'; mood:Mood } | { type:'show'; project:ProjectId }
   | { type:'play' } | { type:'story'; id:StoryId|'next' } | { type:'tour' } | { type:'build'; instruction:string }
-  | { type:'contact' } | { type:'lights'; mode:'dark'|'light'|'toggle' } | { type:'chips'; chips:string[] };
+  | { type:'contact' } | { type:'lights'; mode:'dark'|'light'|'toggle' } | { type:'chips'; chips:string[] }
+  | { type:'work'; era:WorkEra };
+/** The Work overlay's two eras (WAVE4 C1/U8): AI-assisted (Polybot and later) and hand-written (the sentiment gauge and earlier). */
+export type WorkEra = 'ai'|'hand';
 export interface SwarmApi {
   become(shape: ShapeSpec, opts?: { hold?: number; depth?: number }): void;
   release(): void;
@@ -151,10 +154,13 @@ export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage> &
 // Id lists (the single source the guards and pickers use)
 // ---------------------------------------------------------------------------
 
-/** In the Work overlay's order (WAVE3 V4, FIX4 C1): the main row ending with Vortex, then "Written by hand" (yoyo-network). */
+/** In the Work overlay's order (WAVE4 C1): the AI-assisted era, then the hand-written one. */
 export const PROJECT_IDS = [
-  'unfiltered', 'prompt-racers', 'yoyo-loop', 'runi-connector', 'availability-monitor', 'pnl-bot', 'polybot', 'vortex', 'yoyo-network',
+  'unfiltered', 'prompt-racers', 'yoyo-loop', 'runi-connector', 'availability-monitor', 'polybot',
+  'sentiment-gauge', 'pnl-bot', 'vortex', 'yoyo-network',
 ] as const satisfies readonly ProjectId[];
+
+export const WORK_ERAS = ['ai', 'hand'] as const satisfies readonly WorkEra[];
 
 export const GLYPH_IDS = [
   'kart', 'magnifier', 'loop', 'cap', 'tent', 'chart', 'diverge', 'envelope', 'envelope-open', 'keyboard',
@@ -187,6 +193,8 @@ export const isGlyphId = (v: unknown): v is GlyphId =>
 export const isMood = (v: unknown): v is Mood => typeof v === 'string' && (MOODS as readonly string[]).includes(v);
 export const isStoryId = (v: unknown): v is StoryId =>
   typeof v === 'string' && (STORY_IDS as readonly string[]).includes(v);
+export const isWorkEra = (v: unknown): v is WorkEra =>
+  typeof v === 'string' && (WORK_ERAS as readonly string[]).includes(v);
 
 export const isRect = (v: unknown): v is Rect =>
   isObj(v) && isNum(v.x) && isNum(v.y) && isNum(v.w) && isNum(v.h) && v.w >= 0 && v.h >= 0;
@@ -214,6 +222,7 @@ export function isAction(v: unknown): v is Action {
     case 'build': return typeof v.instruction === 'string' && v.instruction.trim().length > 0;
     case 'lights': return v.mode === 'dark' || v.mode === 'light' || v.mode === 'toggle';
     case 'chips': return Array.isArray(v.chips) && v.chips.every((c) => typeof c === 'string');
+    case 'work': return isWorkEra(v.era);
     default: return false;
   }
 }
@@ -271,6 +280,12 @@ export function parseActionTag(body: string): Action | null {
     case 'chips': {
       const chips = arg.split('|').map((c) => c.trim()).filter(Boolean).slice(0, 5);
       a = chips.length ? { type: 'chips', chips } : null;
+      break;
+    }
+    // `[[work:hand]]` opens the Work overlay on that era at its first card; `[[work]]` = AI-assisted (WAVE4 C2/U8)
+    case 'work': {
+      const era = arg || 'ai';
+      a = isWorkEra(era) ? { type: 'work', era } : null;
       break;
     }
     default: a = null;

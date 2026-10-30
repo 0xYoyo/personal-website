@@ -6,12 +6,14 @@ import {
   MOODS,
   PROJECT_IDS,
   STORY_IDS,
+  WORK_ERAS,
   type Action,
   type GlyphId,
   type Mood,
   type ProjectId,
   type ShapeSpec,
   type StoryId,
+  type WorkEra,
 } from '@yoyo/protocol';
 
 // ---------------------------------------------------------------------------
@@ -91,6 +93,11 @@ export function resolveTag(body: string, opts: ResolveOptions): Action | null {
     case 'chips': {
       const chips = arg.split('|').map((c) => c.trim()).filter(Boolean).slice(0, 5);
       return chips.length ? { type: 'chips', chips } : null;
+    }
+    case 'work': {
+      // `[[work:hand]]`: the Work overlay on that era, first card (WAVE4 C2; the UI acts on it, U8)
+      const era = arg || 'ai';
+      return (WORK_ERAS as readonly string[]).includes(era) ? { type: 'work', era: era as WorkEra } : null;
     }
     default:
       return null;

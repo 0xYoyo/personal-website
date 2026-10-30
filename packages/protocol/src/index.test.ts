@@ -19,6 +19,10 @@ describe('parseActionTag', () => {
     expect(parseActionTag('mirror')).toBeNull();
     expect(parseActionTag('lights:toggle')).toEqual({ type: 'lights', mode: 'toggle' });
     expect(parseActionTag('chips:a|b| c |')).toEqual({ type: 'chips', chips: ['a', 'b', 'c'] });
+    expect(parseActionTag('work:hand')).toEqual({ type: 'work', era: 'hand' });
+    expect(parseActionTag('work')).toEqual({ type: 'work', era: 'ai' });
+    expect(parseActionTag('work:old')).toBeNull();
+    expect(parseActionTag('show:sentiment-gauge')).toEqual({ type: 'show', project: 'sentiment-gauge' });
   });
   it('rejects unknown or malformed tags', () => {
     expect(parseActionTag('show:orditax')).toBeNull();
