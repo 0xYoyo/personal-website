@@ -33,7 +33,7 @@ DAILY_SHARE_CAP = "1000"
 #   npx wrangler kv namespace create LIMITS
 [[kv_namespaces]]
 binding = "SHARES"
-id = "REPLACE_WITH_SHARES_NAMESPACE_ID"
+id = "722b52a599a64c0faa36b4cc02b2be95"
 
 [[kv_namespaces]]
 binding = "LIMITS"
