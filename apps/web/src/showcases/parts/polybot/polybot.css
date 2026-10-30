@@ -1,7 +1,3 @@
-.sc-polybot-stage {
-  position: absolute;
-  inset: 0;
-}
 .sc-polybot-legend {
   position: absolute;
   left: 6cqw;
@@ -23,25 +19,10 @@
   border-top: 0.42cqw solid var(--sc-fg);
 }
 .sc-polybot-legend i.is-ref {
-  border-top: 0.32cqw dashed var(--sc-muted);
+  border-top: 0.32cqw solid var(--sc-accent);
 }
 .sc-polybot-legend span:last-child {
   color: var(--sc-muted);
-}
-.sc-polybot-edge {
-  position: absolute;
-  right: 6cqw;
-  top: 4.4cqw;
-  font-size: 2.6cqw;
-  color: var(--sc-muted);
-  white-space: nowrap;
-}
-.sc-polybot-edge span {
-  display: inline-block;
-  min-width: 6.4cqw;
-  text-align: right;
-  color: var(--sc-fg);
-  font-variant-numeric: tabular-nums;
 }
 .sc-polybot-chart {
   position: absolute;
@@ -65,9 +46,8 @@
   stroke-linecap: round;
 }
 .sc-polybot-ref {
-  stroke: var(--sc-muted);
+  stroke: var(--sc-accent);
   stroke-width: 2px;
-  stroke-dasharray: 5 4;
 }
 .sc-polybot-poly {
   stroke: var(--sc-fg);
@@ -91,7 +71,7 @@
   width: 1.2cqw;
   height: 1.2cqw;
   margin: -0.6cqw 0 0 -0.6cqw;
-  background: var(--sc-muted);
+  background: var(--sc-accent);
 }
 .sc-polybot-gap {
   position: absolute;
@@ -103,17 +83,9 @@
   color: #f4efe6;
   white-space: nowrap;
 }
-.sc-polybot-axis span {
-  position: absolute;
-  left: 95cqw;
-  transform: translate(-100%, -130%);
-  font-size: 1.8cqw;
-  color: var(--sc-muted);
-}
 .sc-polybot-stamp {
   position: absolute;
   left: 50%;
-  top: 85%;
   padding: 1.6cqw 3cqw;
   border: 0.5cqw solid var(--sc-accent);
   border-radius: 1.2cqw;
@@ -123,18 +95,45 @@
   white-space: nowrap;
   z-index: 3;
 }
-@container (max-width: 520px) {
-  .sc-polybot-axis {
-    display: none;
-  }
-  .sc-polybot-legend,
-  .sc-polybot-edge {
-    font-size: 3cqw;
-  }
-  .sc-polybot-gap {
-    font-size: 2.8cqw;
-  }
-  .sc-polybot-stamp {
-    font-size: 4.8cqw;
-  }
+
+.sc-polybot-gap.is-late {
+  background: var(--sc-raise);
+  color: var(--sc-fg);
+  border: 1px solid var(--sc-line-2);
+}
+.sc-polybot-bet {
+  position: absolute;
+  font-size: 2.3cqw;
+  padding: 0.3cqw 1cqw;
+  border-radius: 0.6cqw;
+  border: 1px solid var(--sc-accent);
+  color: var(--sc-fg);
+  background: var(--sc-panel);
+  white-space: nowrap;
+  transform-origin: 50% 0;
+}
+.sc-polybot-bet.is-missed {
+  border-color: var(--sc-line-2);
+  text-decoration: line-through;
+}
+.sc-fit[data-v='wide'] .sc-polybot-legend {
+  font-size: 3cqw;
+}
+.sc-fit[data-v='wide'] .sc-polybot-gap,
+.sc-fit[data-v='wide'] .sc-polybot-bet {
+  font-size: 2.7cqw;
+}
+.sc-fit[data-v='wide'] .sc-polybot-stamp {
+  font-size: 4.2cqw;
+  padding: 1cqw 2.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-polybot-legend {
+  font-size: 3cqw;
+}
+.sc-fit[data-v='tall'] .sc-polybot-gap,
+.sc-fit[data-v='tall'] .sc-polybot-bet {
+  font-size: 2.7cqw;
+}
+.sc-fit[data-v='tall'] .sc-polybot-stamp {
+  font-size: 5cqw;
 }
