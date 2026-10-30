@@ -40,7 +40,18 @@ export function geminiSse(texts: string[], split = 7): ReadableStream<Uint8Array
 
 export type GeminiCall = { url: string; body: Record<string, unknown>; headers: Headers };
 
-export function setup(opts: { reply?: string[]; status?: number; errorBody?: string; env?: Partial<Env> } = {}) {
+/** A non-streamed generateContent answer whose text is `route` as JSON (or a raw string). */
+export function geminiJson(route: unknown, extraParts: { text: string; thought?: boolean }[] = []): Response {
+  const text = typeof route === 'string' ? route : JSON.stringify(route);
+  return new Response(JSON.stringify({ candidates: [{ content: { role: 'model', parts: [...extraParts, { text }] } }], usageMetadata: { promptTokenCount: 5000, candidatesTokenCount: 40 } }), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
+export const DEFAULT_ROUTE = { intent: 'none', turns: ['Hello there.'], shape: 'wave', chips: ['What have you built?'] };
+
+export function setup(opts: { reply?: string[]; route?: unknown; status?: number; errorBody?: string; env?: Partial<Env> } = {}) {
   let t = Date.UTC(2026, 9, 23, 12, 0, 0);
   const now = () => t;
   const LIMITS = new MemoryKV(now);
@@ -48,11 +59,13 @@ export function setup(opts: { reply?: string[]; status?: number; errorBody?: str
   const calls: GeminiCall[] = [];
   const state: {
     reply: string[];
+    /** what the router (generateContent) answers */
+    route: unknown;
     status: number;
     errorBody: string;
     /** per-call overrides, consumed in order */
     queue: { status: number; body?: string; stream?: () => ReadableStream<Uint8Array> }[];
-  } = { reply: opts.reply ?? ['Hello', ' there.'], status: opts.status ?? 200, errorBody: opts.errorBody ?? '', queue: [] };
+  } = { reply: opts.reply ?? ['Hello', ' there.'], route: opts.route ?? DEFAULT_ROUTE, status: opts.status ?? 200, errorBody: opts.errorBody ?? '', queue: [] };
   const fetchMock = (async (input: RequestInfo | URL, init?: RequestInit) => {
     calls.push({
       url: String(input),
@@ -62,6 +75,7 @@ export function setup(opts: { reply?: string[]; status?: number; errorBody?: str
     const q = state.queue.shift();
     if (q) return new Response(q.stream ? q.stream() : (q.body ?? ''), { status: q.status });
     if (state.status !== 200) return new Response(state.errorBody, { status: state.status });
+    if (String(input).includes(':generateContent')) return geminiJson(state.route);
     return new Response(geminiSse(state.reply), { status: 200, headers: { 'content-type': 'text/event-stream' } });
   }) as typeof fetch;
   const counter = new DailyCounter(LIMITS as unknown as KVNamespace, { refreshMs: 0, flushMs: 0 });
@@ -71,6 +85,8 @@ export function setup(opts: { reply?: string[]; status?: number; errorBody?: str
     LIMITS: LIMITS as unknown as KVNamespace,
     GEMINI_API_KEY: 'test-key',
     ALLOWED_ORIGINS: 'https://yoyo.example,http://localhost:*',
+    // the build tests exercise the live builder; production leaves it off (WAVE4 A4)
+    LIVE_BUILDS: 'on',
     ...opts.env,
   };
   const waits: Promise<unknown>[] = [];
@@ -107,3 +123,26 @@ export const chatBody = (content: string, extra: Record<string, unknown> = {}) =
   mode: 'chat',
   ...extra,
 });
+
+
+/** A Messages API stream as Anthropic sends it (event: + data: lines), cut at awkward places. */
+export function anthropicSse(texts: string[], opts: { split?: number; error?: boolean } = {}): ReadableStream<Uint8Array> {
+  const ev = (type: string, data: Record<string, unknown>) => `event: ${type}\ndata: ${JSON.stringify({ type, ...data })}\n\n`;
+  let raw =
+    ev('message_start', { message: { id: 'msg_1', role: 'assistant', content: [] } }) +
+    ev('content_block_start', { index: 0, content_block: { type: 'text', text: '' } }) +
+    ev('ping', {});
+  for (const t of texts) raw += ev('content_block_delta', { index: 0, delta: { type: 'text_delta', text: t } });
+  if (opts.error) raw += ev('error', { error: { type: 'overloaded_error', message: 'Overloaded' } });
+  raw += ev('content_block_stop', { index: 0 }) + ev('message_delta', { delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 9 } }) + ev('message_stop', {});
+  const bytes = enc.encode(raw);
+  const split = opts.split ?? 11;
+  let i = 0;
+  return new ReadableStream({
+    pull(c) {
+      if (i >= bytes.length) return c.close();
+      c.enqueue(bytes.slice(i, i + split));
+      i += split;
+    },
+  });
+}

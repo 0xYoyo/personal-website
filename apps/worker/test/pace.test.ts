@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { paceChat } from '../src/app';
 import { balanceTurn, countWords, createPacer, paceReply, TURN_MAX_WORDS } from '../src/pace';
-import { chatBody, events, setup } from './helpers';
+import { anthropicSse, chatBody, events, setup } from './helpers';
 
 // POLISH2 C4: the Worker paces replies the model didn't.
 
@@ -79,7 +79,9 @@ describe('pacer', () => {
 
 describe('/chat', () => {
   it('streams an unpaced long reply out paced', async () => {
-    const { post } = setup({ reply: UNPACED.match(/[\s\S]{1,5}/g)! });
+    // the streamed path is the Anthropic provider's since the router (WAVE4 A1)
+    const { post, state } = setup({ env: { PROVIDER: 'anthropic', ANTHROPIC_API_KEY: 'a-key' } });
+    state.queue.push({ status: 200, stream: () => anthropicSse(UNPACED.match(/[\s\S]{1,5}/g)!) });
     const ev = await events(await post('/chat', chatBody('agents?')));
     expect(ev.at(-1)).toEqual({ type: 'done' });
     const text = ev.filter((e) => e.type === 'token').map((e) => e.text).join('');

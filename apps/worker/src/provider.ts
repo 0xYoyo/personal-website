@@ -4,13 +4,15 @@
 
 import { ANTHROPIC_DEFAULT_MODEL, streamAnthropic } from './anthropic';
 import { streamGemini, type GeminiContent } from './gemini';
+import { ROUTER_DEFAULT_MODEL } from './router-core.mjs';
 
 export type Provider = 'gemini' | 'anthropic';
 
 export type ModelFailure = { ok: false; status: number; kind: 'quota' | 'rate' | 'upstream'; detail: string };
 export type ModelResult = { ok: true; stream: AsyncGenerator<string> } | ModelFailure;
 
-export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
+// the router's model (WAVE4 A2); MODEL overrides it
+export const GEMINI_DEFAULT_MODEL = ROUTER_DEFAULT_MODEL;
 
 export interface ProviderEnv {
   PROVIDER?: string;

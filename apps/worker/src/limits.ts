@@ -129,3 +129,39 @@ export function clientIp(req: Request): string {
     'unknown'
   );
 }
+
+/**
+ * A fixed per-UTC-day allowance for one key (WAVE4 A4: 20 live replies per IP a day). One KV read
+ * and one write per allowed use; fails open on KV errors, like the buckets.
+ */
+export async function takeDaily(kv: KVNamespace, key: string, cap: number, now: number): Promise<TakeResult> {
+  const k = `${key}:${utcDay(now)}`;
+  let used = 0;
+  try {
+    used = Number((await kv.get(k, 'text')) ?? 0) || 0;
+  } catch (e) {
+    console.warn('limits: kv get failed', k, e);
+    return { ok: true, retryAfter: 0 };
+  }
+  if (used >= cap) {
+    const midnight = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate() + 1);
+    return { ok: false, retryAfter: Math.max(1, Math.ceil((midnight - now) / 1000)) };
+  }
+  const write = kv.put(k, String(used + 1), { expirationTtl: 2 * 86_400 }).catch((e: unknown) => {
+    console.warn('limits: kv put failed', k, e);
+  });
+  return { ok: true, retryAfter: 0, write };
+}
+
+/** In-memory stand-in for a KV binding (local dev without one; WAVE4 A4). Per isolate, so approximate. */
+export class MemoryKV {
+  private store = new Map<string, { v: string; exp: number | null }>();
+  async get(key: string, type?: 'text' | 'json'): Promise<unknown> {
+    const e = this.store.get(key);
+    if (!e || (e.exp !== null && e.exp <= Date.now())) return null;
+    return type === 'json' ? JSON.parse(e.v) : e.v;
+  }
+  async put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> {
+    this.store.set(key, { v: value, exp: opts?.expirationTtl ? Date.now() + opts.expirationTtl * 1000 : null });
+  }
+}

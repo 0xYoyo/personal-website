@@ -14,9 +14,12 @@ workers_dev = true
 ALLOWED_ORIGINS = "http://localhost:*,http://127.0.0.1:*"
 # Which model answers (README "Switching the model"): "gemini" (default) or "anthropic".
 PROVIDER = "gemini"
-# MODEL = "claude-sonnet-4-5"   # optional; default gemini-2.5-flash, or claude-sonnet-4-5 with PROVIDER = "anthropic"
-GEMINI_MODEL = "gemini-2.5-flash"
-DAILY_CHAT_CAP = "2000"
+# MODEL = "gemini-2.5-flash"   # optional; default gemini-3.1-flash-lite, or claude-sonnet-4-5 with PROVIDER = "anthropic"
+# Live replies (the router) per UTC day: for the whole site, and per visitor IP. Past either, the site is scripted for the day.
+DAILY_CHAT_CAP = "300"
+CHAT_PER_IP_DAY = "20"
+# Builds never call the model (the site streams its prebuilt examples). "on" turns live builds back on.
+LIVE_BUILDS = "off"
 DAILY_BUILD_CAP = "300"
 DAILY_SHARE_CAP = "1000"
 

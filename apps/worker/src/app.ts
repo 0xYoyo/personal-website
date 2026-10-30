@@ -1,8 +1,9 @@
 // Yoyo's agent — the mind. The fetch router (index.ts only re-exports it as the default handler,
 // because workerd treats every named export of the entry module as an entrypoint).
 //
-//   POST /chat   → SSE  data: {"type":"token","text":"..."} … data: {"type":"done"}
-//   POST /build  → SSE  data: {"type":"chunk","html":"<html chunk>"} … data: {"type":"done","bytes":N}
+//   POST /chat   → JSON {type:'route', intent, turns, shape, chips} (Gemini: the router, ./router)
+//                  SSE  data: {"type":"token","text":"..."} … data: {"type":"done"} (PROVIDER=anthropic)
+//   POST /build  → 503 offline unless LIVE_BUILDS=on (WAVE4 A4: builds never call the model); then SSE  data: {"type":"chunk","html":"<html chunk>"} … data: {"type":"done","bytes":N}
 //   (the @yoyo/protocol ChatEvent / BuildEvent framing; requests are ChatRequest / BuildRequest)
 //   POST /share  → {id, url}
 //   GET  /s/:id  → the shared HTML, under a sandbox CSP
@@ -16,7 +17,8 @@ import { createFenceStripper } from './fence';
 import { createPacer } from './pace';
 import type { GeminiContent } from './gemini';
 import { apiKey, modelName, provider, streamModel as callModel } from './provider';
-import { BUCKETS, DailyCounter, clientIp, ipKey, takeToken, type LimitKind } from './limits';
+import { BUCKETS, DailyCounter, MemoryKV, clientIp, ipKey, takeDaily, takeToken, type LimitKind } from './limits';
+import { routeGemini } from './router';
 import {
   BUILD_SYSTEM_PROMPT,
   CAPS,
@@ -31,7 +33,8 @@ import { SSE_HEADERS, sseStream } from './sse';
 
 export interface Env {
   SHARES: KVNamespace;
-  LIMITS: KVNamespace;
+  /** optional in local dev: an in-memory stand-in is used without it */
+  LIMITS?: KVNamespace;
   /** `gemini` (default) or `anthropic` */
   PROVIDER?: string;
   /** model id for the selected provider; default gemini-2.5-flash / claude-sonnet-4-5 */
@@ -42,7 +45,12 @@ export interface Env {
   ANTHROPIC_API_KEY?: string;
   GEMINI_THINKING_BUDGET?: string;
   ALLOWED_ORIGINS?: string;
+  /** live replies for the whole site per UTC day (default 300) */
   DAILY_CHAT_CAP?: string;
+  /** live replies per visitor IP per UTC day (default 20) */
+  CHAT_PER_IP_DAY?: string;
+  /** "on" lets /build call the model; anything else answers 503 offline (the site builds from examples) */
+  LIVE_BUILDS?: string;
   DAILY_BUILD_CAP?: string;
   DAILY_SHARE_CAP?: string;
   IP_SALT?: string;
@@ -62,6 +70,9 @@ const BUILD_MAX_OUTPUT_BYTES = 60_000;
 
 type Ctx = Pick<ExecutionContext, 'waitUntil'>;
 
+/** KV stand-in for `wrangler dev` without a LIMITS binding (per isolate). */
+const devLimits = new MemoryKV() as unknown as KVNamespace;
+
 export function createApp(deps: Partial<Deps> = {}) {
   const fetchImpl = deps.fetch ?? ((...a: Parameters<typeof fetch>) => fetch(...a));
   const now = deps.now ?? (() => Date.now());
@@ -77,7 +88,8 @@ export function createApp(deps: Partial<Deps> = {}) {
     const origin = req.headers.get('origin');
     const allow = parseAllowlist(env.ALLOWED_ORIGINS);
     const cors = isAllowedOrigin(origin, allow) ? corsHeaders(origin) : {};
-    counter ??= new DailyCounter(env.LIMITS);
+    const limits = env.LIMITS ?? devLimits;
+    counter ??= new DailyCounter(limits);
 
     const json = (status: number, data: unknown, extra: Record<string, string> = {}) =>
       new Response(JSON.stringify(data), {
@@ -124,7 +136,9 @@ export function createApp(deps: Partial<Deps> = {}) {
     // Returns a Response when the request must stop here.
     const gate = async (kind: LimitKind, dailyCap: number): Promise<Response | null> => {
       const t = now();
-      const bucket = await takeToken(env.LIMITS, `rl:${kind}:${ip}`, BUCKETS[kind], t);
+      // chat: a fixed allowance per IP per day (WAVE4 A4), then scripted for the day
+      const bucket = kind === 'chat' ? await takeDaily(limits, `day:chat-ip:${ip}`, cap(env.CHAT_PER_IP_DAY, 20), t) : await takeToken(limits, `rl:${kind}:${ip}`, BUCKETS[kind], t);
+      if (!bucket.ok && kind === 'chat') return json(429, { reason: 'quota' });
       if (!bucket.ok) return json(429, { reason: 'rate', retryAfter: bucket.retryAfter }, { 'retry-after': String(bucket.retryAfter) });
       if (bucket.write) ctx.waitUntil(bucket.write);
       const used = await counter!.count(kind, t);
@@ -138,8 +152,18 @@ export function createApp(deps: Partial<Deps> = {}) {
       const parsed = parseChatBody(body);
       if (!parsed.ok) return json(parsed.status, { reason: parsed.reason });
       if (!apiKey(env)) return json(503, { reason: 'offline' });
-      const stop = await gate('chat', cap(env.DAILY_CHAT_CAP, 2000));
+      const stop = await gate('chat', cap(env.DAILY_CHAT_CAP, 300));
       if (stop) return stop;
+      if (provider(env) === 'gemini') {
+        const result = await routeGemini({ apiKey: apiKey(env), model: modelName(env), turns: parsed.turns, fetchImpl, signal: req.signal }).catch(
+          (e: unknown) => ({ ok: false as const, status: 0, kind: 'upstream' as const, detail: e instanceof Error ? e.message : 'network' }),
+        );
+        if (result.ok) return json(200, result.route, { 'cache-control': 'no-store' });
+        console.warn('gemini router failed', result.status, result.detail.slice(0, 300));
+        if (result.kind === 'quota') return json(429, { reason: 'quota' });
+        if (result.kind === 'rate') return json(429, { reason: 'rate', retryAfter: 30 }, { 'retry-after': '30' });
+        return json(502, { reason: 'upstream' });
+      }
       return streamModel({
         env,
         system: chatSystemPrompt(parsed.visitor),
@@ -153,6 +177,8 @@ export function createApp(deps: Partial<Deps> = {}) {
     if (route === '/build') {
       const parsed = parseBuildBody(body);
       if (!parsed.ok) return json(parsed.status, { reason: parsed.reason });
+      // WAVE4 A4: builds never call the model unless switched on; the site streams its examples
+      if (env.LIVE_BUILDS?.trim().toLowerCase() !== 'on') return json(503, { reason: 'offline' });
       if (!apiKey(env)) return json(503, { reason: 'offline' });
       const stop = await gate('build', cap(env.DAILY_BUILD_CAP, 300));
       if (stop) return stop;

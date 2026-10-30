@@ -3,19 +3,38 @@ import { BUCKETS, DailyCounter, takeToken } from '../src/limits';
 import { MemoryKV, chatBody, setup } from './helpers';
 
 describe('token bucket', () => {
-  it('allows 20 chats per 10 minutes per IP, then 429 rate with retryAfter, and refills', async () => {
+  it('allows 20 live replies per IP per UTC day, then 429 quota (scripted for the day); other IPs unaffected', async () => {
     const { post, advance } = setup();
     for (let i = 0; i < 20; i++) expect((await post('/chat', chatBody(`hi ${i}`))).status).toBe(200);
     const blocked = await post('/chat', chatBody('one more'));
     expect(blocked.status).toBe(429);
-    const body = (await blocked.json()) as { reason: string; retryAfter: number };
-    expect(body.reason).toBe('rate');
-    expect(body.retryAfter).toBe(30); // 10 min / 20 tokens
-    expect(blocked.headers.get('retry-after')).toBe('30');
-    // a different IP is unaffected
+    expect(await blocked.json()).toEqual({ reason: 'quota' });
     expect((await post('/chat', chatBody('hi'), { ip: '198.51.100.1' })).status).toBe(200);
-    advance(30_000);
+    advance(6 * 3600_000); // still the same UTC day (12:00 → 18:00)
+    expect((await post('/chat', chatBody('again'))).status).toBe(429);
+    advance(7 * 3600_000); // past midnight UTC
     expect((await post('/chat', chatBody('again'))).status).toBe(200);
+  });
+
+  it('CHAT_PER_IP_DAY overrides the per-IP allowance', async () => {
+    const { post } = setup({ env: { CHAT_PER_IP_DAY: '2' } });
+    expect((await post('/chat', chatBody('a'))).status).toBe(200);
+    expect((await post('/chat', chatBody('b'))).status).toBe(200);
+    expect((await post('/chat', chatBody('c'))).status).toBe(429);
+  });
+
+  it('the global default is 300 live replies a day', async () => {
+    const { post, LIMITS } = setup();
+    LIMITS.store.set('day:chat:2026-10-23', { value: '300', expires: null });
+    const res = await post('/chat', chatBody('hi'));
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual({ reason: 'quota' });
+  });
+
+  it('works without a LIMITS binding (local dev: in memory)', async () => {
+    const { post } = setup({ env: { LIMITS: undefined, CHAT_PER_IP_DAY: '1' } });
+    expect((await post('/chat', chatBody('a'), { ip: '192.0.2.50' })).status).toBe(200);
+    expect((await post('/chat', chatBody('b'), { ip: '192.0.2.50' })).status).toBe(429);
   });
 
   it('allows 5 builds per hour per IP', async () => {
@@ -30,7 +49,7 @@ describe('token bucket', () => {
     const { post, LIMITS } = setup();
     await post('/chat', chatBody('hi'), { ip: '203.0.113.99' });
     expect([...LIMITS.store.keys()].some((k) => k.includes('203.0.113.99'))).toBe(false);
-    expect([...LIMITS.store.keys()].some((k) => /^rl:chat:[0-9a-f]{16}$/.test(k))).toBe(true);
+    expect([...LIMITS.store.keys()].some((k) => /^day:chat-ip:[0-9a-f]{16}:2026-10-23$/.test(k))).toBe(true);
   });
 
   it('fails open when KV throws', async () => {
