@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { copy } from '../content/copy';
 import { projectById } from '../content/projects';
-import { ctl } from '../controller';
+import { ctl, lastOfShelf, MORE_ON_GITHUB } from '../controller';
 import { getShowcase } from '../showcases';
 import { useStore } from '../state/store';
 import { useDialog } from './useDialog';
@@ -59,19 +59,20 @@ export function Card() {
 
   if (!id) return null;
   const p = projectById(id);
-  // a project on the second shelf (WAVE3 S3: "Written by hand") carries its shelf's label,
-  // shown as a tiny mono header above the card; the ←/→ sequence runs straight through both shelves
-  const shelf = p.shelf;
+  // the two shelves (WAVE4 U8): a small toggle above the card picks one; ←/→ go round the active one, and its
+  // last card ends with a quiet link to the rest on GitHub
+  const era = p.era;
+  const last = lastOfShelf(id);
   const Showcase = getShowcase(p.showcase);
 
   return (
-    <div className="y-card-wrap" data-shelf={!!shelf}>
+    <div className="y-card-wrap">
       <section
         ref={ref}
         className="y-card"
         role="dialog"
         aria-modal="true"
-        aria-labelledby={shelf ? 'y-card-shelf y-card-name' : 'y-card-name'}
+        aria-labelledby="y-card-name"
         aria-describedby="y-card-voice"
         tabIndex={-1}
         key={p.id}
@@ -85,11 +86,13 @@ export function Card() {
           if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && performance.now() - s.t < 700) ctl.nextProject(dx < 0 ? 1 : -1);
         }}
       >
-        {shelf && (
-          <p className="y-card-shelf y-mono" id="y-card-shelf">
-            {shelf}
-          </p>
-        )}
+        <div className="y-card-era y-mono" role="group" aria-label={copy.card.erasLabel}>
+          {(['ai', 'hand'] as const).map((e) => (
+            <button key={e} className="y-card-era-btn" aria-pressed={era === e} onClick={() => era !== e && ctl.openWork(e)}>
+              {copy.card.eras[e]}
+            </button>
+          ))}
+        </div>
         <div className="y-card-show">
           <Showcase reducedMotion={reducedMotion} />
         </div>
@@ -127,6 +130,11 @@ export function Card() {
                 {l.label}
               </a>
             ))}
+            {last && (
+              <a className="y-link y-mono y-card-more" href={MORE_ON_GITHUB} target="_blank" rel="noreferrer">
+                {copy.card.more}
+              </a>
+            )}
           </div>
         </div>
         <nav className="y-card-nav" aria-label="Projects">
@@ -136,6 +144,7 @@ export function Card() {
           <button className="y-textbtn" onClick={() => ctl.nextProject(1)}>
             {copy.card.next}
           </button>
+
           <button className="y-textbtn y-card-close" onClick={() => ctl.closeOverlay()}>
             {copy.card.close}
           </button>

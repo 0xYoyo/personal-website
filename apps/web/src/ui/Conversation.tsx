@@ -159,6 +159,7 @@ export function Conversation() {
   }); // every render: the room beneath changes as words arrive
 
   const settling = useStore((s) => s.settling);
+  const skipHint = useStore((s) => s.skipHint);
   // after a card / game / build closes, the words come back once the flock has gathered off them (POLISH2 A2)
   const hidden = overlay === 'card' || overlay === 'build' || overlay === 'contact' || overlay === 'game' || overlay === 'history' || !!settling;
   const waiting = !runner && lines[lines.length - 1]?.role === 'visitor';
@@ -190,6 +191,7 @@ export function Conversation() {
           {/* the hidden clone each turn is sized on before it is shown */}
           <p className="y-agent-line y-agent-measure" ref={cloneRef} />
         </div>
+        {skipHint && !runner && <p className="y-skip-hint y-mono" aria-hidden="true">{copy.runner.skipHint}</p>}
         {echo && (
           <p className="y-echo y-mono" key={`e-${echo.id}`} aria-hidden="true">
             {echo.text}

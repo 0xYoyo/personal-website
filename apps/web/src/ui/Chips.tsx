@@ -26,7 +26,8 @@ export function Chips() {
     if (!el) return;
     // a short row (three chips or fewer) wraps centred on a phone (WAVE3 S5); decided once per row, so it
     // can't flip-flop. Only over the conversation: a build frame (and its controls) is laid out for a one-line row.
-    const few = chips.length <= 3 && (overlay === 'none' || overlay === 'tour');
+    // contact too (WAVE4 U6): its three chips wrap on a phone instead of one scrolling off the edge
+    const few = chips.length <= 3 && (overlay === 'none' || overlay === 'tour' || overlay === 'contact');
     el.dataset.few = String(few);
     el.dataset.compact = 'false';
     const first = el.firstElementChild as HTMLElement | null;

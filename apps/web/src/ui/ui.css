@@ -196,25 +196,16 @@
   display: none;
 }
 
+/* the visitor's question: the muted mono style alone, no leading dash (WAVE4 U9) */
 .y-echo {
   margin: 22px 0 0;
   color: var(--muted);
   font-size: var(--t-mono);
   line-height: 1.5;
-  padding-left: 18px;
   position: relative;
   max-width: 60ch;
   overflow-wrap: anywhere;
   animation: y-line-in var(--dur-2) var(--ease-out) both;
-}
-.y-echo::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.75em;
-  width: 10px;
-  height: 1px;
-  background: var(--muted);
 }
 
 .y-history-toggle {
@@ -270,6 +261,16 @@
   color: var(--muted);
   font-size: var(--t-mono-xs);
   margin-right: 6px;
+}
+
+/* once a visit, under the first long reply (WAVE4 U3) */
+.y-skip-hint {
+  margin: 14px 0 0;
+  font-size: var(--t-mono-xs);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  opacity: 0.8;
+  animation: y-line-in var(--dur-3) var(--ease-out) both;
 }
 
 /* -------------------------------------------------------------- chips */
@@ -546,22 +547,43 @@
 .y-card {
   position: relative;
 }
-/* a card on the shelf sits at the same y as the others (FIX4 U12: the wrap's padding pushed it 16 px down);
-   every card leaves room above it for the shelf's label instead */
+/* every card leaves room above it for the era toggle (WAVE4 U8), so both shelves sit at the same y */
 .y-card-wrap {
-  padding: 32px 0;
+  padding: 40px 0 8px;
 }
-/* the second shelf's header ("Written by hand"): a tiny mono label just above the card (WAVE3 S3) */
-.y-card-shelf {
+/* the Work overlay's era toggle (WAVE4 U8): a small segmented control just above the card */
+.y-card-era {
   position: absolute;
-  left: 4px;
-  bottom: calc(100% + 14px);
-  margin: 0;
+  left: 0;
+  bottom: calc(100% + 10px);
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hairline);
+  background: var(--scene);
   font-size: var(--t-mono-xs);
-  letter-spacing: 0.04em;
+}
+.y-card-era-btn {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
   color: var(--muted);
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  pointer-events: none;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.y-card-era-btn:hover {
+  color: var(--ink);
+}
+.y-card-era-btn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--scene);
+}
+/* the end of a shelf: a quiet link to the rest, after the project's own links */
+.y-card-links .y-card-more {
+  margin-left: auto;
+  font-size: var(--t-mono-xs);
+  color: var(--muted);
+  text-decoration-color: var(--hairline);
 }
 @keyframes y-card-in {
   from {
@@ -1219,15 +1241,15 @@
     background: var(--scene);
     overscroll-behavior: contain;
   }
-  .y-card-wrap,
-  .y-card-wrap[data-shelf='true'] {
+  .y-card-wrap {
     padding: 0;
   }
-  /* the sheet starts under the top bar: the shelf label is its first line instead */
-  .y-card-shelf {
+  /* the sheet starts under the top bar: the era toggle is its first line instead */
+  .y-card-era {
     position: static;
     order: -1;
-    margin: 0 0 10px;
+    align-self: flex-start;
+    margin: 0 0 12px;
   }
   .y-card-show {
     flex: none;
