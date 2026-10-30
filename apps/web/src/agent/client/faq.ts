@@ -177,7 +177,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "racers",
       "prompt racers"
     ],
-    "reply": "[[become:kart]] Prompt Racers. A kart racer that teaches kids how to talk to AI. One file, zero network calls. || Seven opponents on your physics. Press play. [[show:prompt-racers]] [[chips:Play it|Next one]]"
+    "reply": "[[become:kart]] Prompt Racers. A 3D kart racer that teaches kids how to talk to AI. || Seven AI rivals, upgrades, races that get harder. Press play. [[show:prompt-racers]] [[chips:Play it|Next one]]"
   },
   {
     "id": "unfiltered",

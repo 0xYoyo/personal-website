@@ -63,13 +63,13 @@ describe('turn markers', () => {
     expect(stripMarks('Three reasons. || He ships. ||')).toBe('Three reasons. He ships.');
   });
 
-  it('waits its read time from when it is fully on screen: ≥ 3.6 s, 440 ms a word (WAVE4 U1)', () => {
-    expect(TURN_READ_MIN).toBe(3600);
-    expect(TURN_MS_PER_WORD).toBe(440);
+  it('waits its read time from when it is fully on screen: ≥ 3.2 s, 380 ms a word (WAVE4 U1)', () => {
+    expect(TURN_READ_MIN).toBe(3200);
+    expect(TURN_MS_PER_WORD).toBe(380);
     expect(turnWait(5, 0, 0)).toBe(TURN_READ_MIN);
-    expect(turnWait(20, 500, 0)).toBe(8800); // 20 words × 440 ms, counted from the end of the turn
-    expect(turnWait(20, 12000, 8800)).toBe(0);
-    expect(turnWait(5, 2000, 3599)).toBe(1);
+    expect(turnWait(20, 500, 0)).toBe(7600); // 20 words × 380 ms, counted from the end of the turn
+    expect(turnWait(20, 12000, 7600)).toBe(0);
+    expect(turnWait(5, 2000, 3199)).toBe(1);
   });
 });
 

@@ -661,9 +661,10 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 0.72em;
-  width: 8px;
-  height: 1px;
+  top: 0.6em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
   background: var(--muted);
 }
 /* the stack line (WAVE3 V4, FIX4 C2): small mono under the two facts */

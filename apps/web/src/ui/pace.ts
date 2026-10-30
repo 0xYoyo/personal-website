@@ -7,9 +7,9 @@
 /** The one knob: 1 = the WAVE4 pace. Every read time below scales with it. */
 export const PACE = 1;
 /** A line rests at least this long once it is fully on screen. */
-export const READ_FLOOR_MS = Math.round(3600 * PACE);
+export const READ_FLOOR_MS = Math.round(3200 * PACE);
 /** …and this long per word. */
-export const READ_PER_WORD_MS = Math.round(440 * PACE);
+export const READ_PER_WORD_MS = Math.round(380 * PACE);
 
 /** Visible words in a line (turn marks and spaces excluded). */
 export const wordCount = (text: string): number => text.split(/\s+/).filter((w) => w && w !== '||').length;

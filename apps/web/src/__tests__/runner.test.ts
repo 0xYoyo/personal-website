@@ -50,9 +50,9 @@ function recorder(now: () => number) {
 }
 
 describe('beat timing (POLISH1 A2)', () => {
-  it('reads on the one clock (WAVE4 U1): 440 ms a word with a 3.6 s floor', () => {
+  it('reads on the one clock (WAVE4 U1): 380 ms a word with a 3.2 s floor', () => {
     expect(READ_MIN).toBe(READ_FLOOR_MS);
-    expect(readMs('This is what I do.')).toBe(3600);
+    expect(readMs('This is what I do.')).toBe(3200);
     expect(readMs('one two three four five six seven eight nine ten')).toBe(10 * READ_PER_WORD_MS);
   });
 
