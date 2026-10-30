@@ -93,7 +93,7 @@ describe('the show stopped by a message or a chip (FIX4 W1, W2)', () => {
       await done;
       unsub();
       const v = visibleExchange(S().lines);
-      expect(S().lines.some((l) => l.role === 'agent' && /I'm Yoyo\. I build/.test(l.text))).toBe(true);
+      expect(S().lines.some((l) => l.role === 'agent' && /I'm Yoyo, a software engineer/.test(l.text))).toBe(true);
       // the interrupted caption and the greeting are never shown again (not even muted beneath the reply's first turn)
       // (seen[0]: the caption rests in place for the same synchronous tick, before the message lands — never painted)
       expect(seen[0]).toBe(SHOW_LINES[3]);

@@ -53,10 +53,12 @@ export const openBuildChip = (title: string): string => `Open my ${title}`;
 export const returningChips = (buildTitle?: string): string[] =>
   buildTitle ? [openBuildChip(buildTitle), 'Who are you?', 'What have you built?'] : ENTRY_CHIPS;
 
+/** The card chip is "Build me something" (WAVE4 C2); with a card open it builds that project's seed. */
+export const CARD_BUILD_CHIP = 'Build me something';
 export function projectChips(id: ProjectId): string[] {
   return id === 'prompt-racers'
-    ? ['Next one', 'Play it', 'Build me something like this']
-    : ['Next one', 'Build me something like this'];
+    ? ['Next one', 'Play it', CARD_BUILD_CHIP]
+    : ['Next one', CARD_BUILD_CHIP];
 }
 
 export function defaultChips(ctx: ChipContext, project?: ProjectId | null): string[] {
@@ -75,7 +77,7 @@ export function defaultChips(ctx: ChipContext, project?: ProjectId | null): stri
   }
 }
 
-/** Seed instructions for "Build me something like this", one per project. */
+/** Seed instructions for "Build me something" pressed on a card, one per project. */
 export const BUILD_SEEDS: Record<ProjectId, string> = {
   'prompt-racers': 'a tiny top-down racing game with arrow-key steering, a drift boost and a lap timer',
   unfiltered: 'a product search page where a plain-language query filters and ranks a small catalogue',
@@ -86,6 +88,7 @@ export const BUILD_SEEDS: Record<ProjectId, string> = {
   polybot: 'a chart of two price lines that highlights where they diverge',
   'yoyo-network': 'a tiny social feed where you can post, like and follow, all in the page',
   vortex: 'an application form with a members vote tally and an approve button',
+  'sentiment-gauge': 'a mood gauge for a topic: a list of short posts tagged positive, negative or neutral, and a needle that shows the overall score',
 };
 
 export type ChipCommand =
@@ -122,6 +125,8 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
       return { kind: 'play' };
     case 'next one':
       return st.project ? { kind: 'next-project' } : { kind: 'say', text: 'What have you built?' };
+    // on a card: that project's seed; anywhere else the brain answers (faq.md `build`)
+    case 'build me something':
     case 'build me something like this':
       return st.project ? { kind: 'build', instruction: BUILD_SEEDS[st.project] } : { kind: 'say', text: 'Build me something' };
     case 'change it':

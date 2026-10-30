@@ -10,7 +10,7 @@ export const copy = {
     nameLine: 'Yoav Zrihan · 0xYoyo',
     /** WAVE3 V1: the site speaks as Yoyo */
     // a no-break space before the last word: a phone never leaves "it." alone on a line (FIX4 W9)
-    greeting: "hey. I'm Yoyo. Ask me anything — or type a word and I'll become\u00a0it.",
+    greeting: "hey. I'm Yoyo. Ask me anything, or type a word and I'll become\u00a0it.",
     /** SPEC §2.1: "welcome back, Dana." */
     welcomeBack: (name: string) => `welcome back, ${name}.`,
     /** ui: returning visitor without a stored name */
@@ -58,9 +58,9 @@ export const copy = {
     /** SPEC §2.6: `14 seconds. Want changes?` */
     done: (seconds: number) => `${seconds} seconds. Want changes?`,
     /** SPEC §2.6 / faq.md build (scripted) */
-    resting: "the live builder is resting. here's one I made earlier — same speed, same idea.",
+    resting: "the live builder is resting. here's one I made earlier. same speed, same idea.",
     /** ui: cap reached (SPEC §2.6 asks for an honest message) */
-    capped: "that's five builds this hour. come back in a bit — or ask me something.",
+    capped: "that's five builds this hour. come back in a bit, or ask me something.",
     /** POLISH1 A3: the caption while the code streams */
     writing: 'writing…',
     /** ui */
@@ -94,7 +94,7 @@ export const copy = {
   game: {
     title: 'Prompt Racers',
     close: 'Close (Esc)',
-    /** ui (FIX4 U10): on a touch device, one line — the first only if the game had touch steering */
+    /** ui (FIX4 U10): on a touch device, one line: the first only if the game had touch steering */
     touchHint: 'tap to start · tilt or touch to steer',
     keyboardHint: 'best on a keyboard',
   },
@@ -123,7 +123,7 @@ export const copy = {
   /** SPEC §2.8 */
   konami: 'nice.',
   /** SPEC §7 */
-  brainResting: 'the live brain is resting — I still know everything.',
+  brainResting: 'the live brain is resting. I still know everything.',
   share: {
     title: 'Built on Yoyo’s site',
   },

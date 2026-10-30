@@ -16,7 +16,7 @@ describe('faq.ts', () => {
   it('has every intent from faq.md, verbatim', () => {
     expect(FAQ_INTENTS.map((i) => i.id)).toEqual([
       'who', 'built', 'hire', 'weakness', 'like', 'story', 'army', 'crypto', 'agents', 'why_agents', 'fast', 'game', 'unfiltered',
-      'connector', 'monitor', 'pnl', 'network', 'polybot', 'university', 'availability', 'contact', 'salary', 'phone', 'looks',
+      'connector', 'monitor', 'pnl', 'sentiment', 'hand_work', 'network', 'polybot', 'university', 'availability', 'contact', 'salary', 'phone', 'looks',
       'hobbies', 'travel', 'after_travel', 'ambition', 'opinion', 'opinion_ai', 'opinion_crypto', 'stack', 'this_site',
       'build', 'tour', 'help', 'thanks', 'greeting', 'gm', 'lights', 'politics', 'jailbreak', 'mirror_gone',
     ]);
@@ -154,7 +154,8 @@ describe('special rules from faq.md', () => {
   it('"Next one" walks the project order', () => {
     expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: null, random: () => 0 })).toBe('[[show:unfiltered]]');
     expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'unfiltered', random: () => 0 })).toBe('[[show:prompt-racers]]');
-    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'polybot', random: () => 0 })).toBe('[[show:vortex]]');
+    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'polybot', random: () => 0 })).toBe('[[show:sentiment-gauge]]');
+    expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'pnl-bot', random: () => 0 })).toBe('[[show:vortex]]');
     expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'vortex', random: () => 0 })).toBe('[[show:yoyo-network]]');
     expect(replyFor({ kind: 'command', id: 'next-one' }, { name: null, lastShown: 'yoyo-network', random: () => 0 })).toBe('[[show:unfiltered]]');
   });

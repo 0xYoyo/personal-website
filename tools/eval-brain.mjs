@@ -16,8 +16,10 @@
 //    (pacer → tag parser → turn splitter): each turn ≤ 22 words, no `|` left on screen, nothing
 //    lost, and the resting line a turn of its own. The Worker's pacer (apps/worker/src/pace.ts,
 //    C4) must pace every one of them — and long unpaced replies — exactly like the client's.
-// 4. Once-only facts (FIX4 C5): no scripted or mock reply says "44 pull requests" (the story and
-//    the yoyo-loop card do).
+// 4. Once-only facts (FIX4 C5, WAVE4): "44 pull requests" only in the "How fast is it?" reply (and the
+//    yoyo-loop showcase); "since 2021" only in the crypto reply (and the show's scene 6).
+// 5. Questions (WAVE4 C4): typed questions → the intent they must land on, with words their reply
+//    must not say.
 
 import { fileURLToPath } from 'node:url';
 import { normalize } from 'node:path';
@@ -59,14 +61,18 @@ const hasAll = (wants, gots) => wants.every((w) => gots.some((g) => keyMatch(w, 
  * `say`: the text a UI chip forwards to the brain when it has nothing to act on.
  */
 export const CHIP_EXPECT = {
-  'Who are you?': { intent: 'who', actions: ['become:glyph:curls', 'chips'] },
+  'Who are you?': { intent: 'who', actions: ['become:glyph:curls', 'become:glyph:cap', 'chips'] },
   'What have you built?': { intent: 'built', actions: ['become:glyph:magnifier', 'show:unfiltered'] },
   // with no name known the chip asks itself, in one line (FIX4 U6): it never reaches the brain
   'Spell my name': { ui: 'ask-name' },
-  'Build me something': { intent: 'build', actions: ['build:*'] },
+  // the card chip (WAVE4 C2): with a card open it builds the project's seed; elsewhere the brain's `build`
+  'Build me something': { ui: 'build' },
   'Play the game': { ui: 'play' },
   'Tell me a story': { ui: 'story-next' },
   'What are you like?': { intent: 'like', actions: ['chips'] },
+  'And crypto?': { intent: 'crypto', actions: ['become:glyph:btc', 'chips'] },
+  // opens Work on the Hand-written tab (the UI acts on the `work` action, WAVE4 U8)
+  'Show me those': { intent: 'hand_work', actions: ['work'] },
   'What are you bad at?': { intent: 'weakness', actions: ['chips'] },
   'Why should we hire you?': { intent: 'hire', actions: ['chips'] },
   'How do I reach you?': { intent: 'contact', actions: ['become:glyph:envelope-open', 'contact'] },
@@ -78,13 +84,14 @@ export const CHIP_EXPECT = {
   'What do you think about crypto?': { intent: 'opinion_crypto', actions: ['chips'] },
   'Change it': { ui: 'change-build' },
   'Share it': { ui: 'share-build' },
-  'Build another': { ui: 'say', say: 'Build me something' },
-  'Another example': { ui: 'say', say: 'Build me something' },
+  // the build's row (WAVE4 U7): closes the build in the UI
+  Close: { ui: 'close' },
+  'Build another': { ui: 'say', say: 'Build me something', intent: 'build', actions: ['build:*'] },
+  'Another example': { ui: 'say', say: 'Build me something', intent: 'build', actions: ['build:*'] },
   'How was this made?': { intent: 'this_site', actions: ['become:yoyo3d'] },
   'Next story': { ui: 'story-next' },
   'Next one': { ui: 'next-project' },
   'Play it': { ui: 'play' },
-  'Build me something like this': { ui: 'build' },
   'sound on': { ui: 'sound-on' },
   'Tell me about Polybot': { intent: 'polybot', actions: ['become:glyph:diverge', 'show:polybot'] },
   'How fast is it?': { intent: 'fast', actions: [] },
@@ -237,11 +244,52 @@ export function evalWorkerPace(replies) {
  * Once-only facts (FIX4 C5): "44 pull requests" belongs to the factory story and the yoyo-loop card,
  * never to a reply (it would repeat what the card or the story just said). Returns rows.
  */
-export const ONCE_FACTS = [{ id: '44 pull requests', re: /\b44[\s-]*(pull requests|PRs?)\b/i }];
+export const ONCE_FACTS = [
+  { id: '44 pull requests', re: /\b44[\s-]*(pull requests|PRs?)\b/i, home: ['fast'] },
+  { id: 'since 2021', re: /\bsince 2021\b/i, home: ['crypto'] },
+];
+/** `fast`, `resting+fast`, `mock:<chip>` → the intent id a reply row belongs to. */
+const homeOf = (input) => (input.startsWith('mock:') ? classKey(A.classify(input.slice(5))) : input.replace(/^resting\+/, ''));
 export function evalOnceFacts(replies) {
-  return ONCE_FACTS.flatMap(({ id, re }) =>
-    replies.map(([input, raw]) => ({ kind: 'facts/once', input, want: `no "${id}"`, got: re.test(raw) ? 'has it' : 'clean', ok: !re.test(raw) })),
+  return ONCE_FACTS.flatMap(({ id, re, home }) =>
+    replies
+      .filter(([input]) => !home.includes(homeOf(input)))
+      .map(([input, raw]) => ({ kind: 'facts/once', input, want: `no "${id}"`, got: re.test(raw) ? 'has it' : 'clean', ok: !re.test(raw) })),
   );
+}
+
+/**
+ * Typed questions (WAVE4 C4) → the intent they must land on; `not`: words the reply must not say.
+ */
+export const QUESTIONS = [
+  { q: 'what languages do you know', intent: 'stack' },
+  { q: 'And crypto?', intent: 'crypto' },
+  { q: 'and crypto', intent: 'crypto' },
+  { q: 'do you like football', intent: 'hobbies', not: /football/i },
+  { q: 'did you trade cs skins', intent: 'crypto' },
+  { q: 'tell me about the sentiment gauge', intent: 'sentiment', actions: ['show:sentiment-gauge'] },
+  { q: 'Show me those', intent: 'hand_work', actions: ['work'] },
+];
+export function evalQuestions(replyFn, label = 'scripted') {
+  return QUESTIONS.map(({ q, intent, not, actions = [] }) => {
+    const got = classKey(A.classify(q));
+    const raw = replyFn(q);
+    const acts = actionsOf(raw);
+    const problems = [];
+    if (got !== intent) problems.push(`landed on ${got}`);
+    if (not && not.test(A.extractActions(raw, { glyphs: A.GLYPH_IDS }).text)) problems.push(`says ${not}`);
+    if (!hasAll(actions, acts)) problems.push(`actions ${acts.join(' ')}`);
+    return { kind: `ask/${label}`, input: q, want: `${intent} ${actions.join(' ')}${not ? ` not ${not}` : ''}`, got: problems.join(', ') || got, ok: !problems.length };
+  });
+}
+
+/** No em dash (or a ` -- `) in anything the visitor can read from the brain (WAVE4 copy rules). */
+export function evalDashes(replies) {
+  return replies.map(([input, raw]) => {
+    const shown = A.extractActions(raw, { glyphs: A.GLYPH_IDS }).text;
+    const bad = /—| -- /.test(shown) || /\[\[chips:[^\]]*—/.test(raw);
+    return { kind: 'copy/dash', input, want: 'no em dash', got: bad ? 'has one' : 'clean', ok: !bad };
+  });
 }
 
 /** Every reply the scripted brain can give, plain and behind the resting line. */
@@ -269,6 +317,9 @@ export async function runEval({ quiet = false } = {}) {
     ...evalTurns(UNPACED, 'unpaced'),
     ...evalWorkerPace([...scriptedReplies(), ...UNPACED]),
     ...evalOnceFacts([...scriptedReplies(), ...allChipLabels().map((c) => [`mock:${c}`, mockReply(c, {}, [])])]),
+    ...evalQuestions((t) => A.scriptedReply(t, CTX).raw, 'scripted'),
+    ...evalQuestions((t) => mockReply(t, {}, []), 'mock'),
+    ...evalDashes(scriptedReplies()),
   ];
   const fails = rows.filter((r) => !r.ok);
   const by = (k) => rows.filter((r) => r.kind === k);
@@ -290,6 +341,9 @@ export async function runEval({ quiet = false } = {}) {
       line('turns/unpaced'),
       line('pace/worker'),
       line('facts/once'),
+      line('ask/scripted'),
+      line('ask/mock'),
+      line('copy/dash'),
       fails.length ? `${fails.length} FAILED` : 'all passed',
     ].join('\n'),
   );

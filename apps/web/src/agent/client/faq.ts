@@ -12,7 +12,7 @@ export interface FaqIntent {
 }
 
 /** The rules paragraph at the top of faq.md (name capture, emoji-only, spell X). */
-export const FAQ_RULES = "# Scripted brain — intents and replies (first person; verbatim)\n\nFormat: `intent` — hints → reply. A `||` is a turn break (each part ≤ 22 words). The site speaks as Yoyo. Names: \"I'm X\" → `nice to meet you, X. [[become:X]]`. Emoji only → `[[become:<emoji>]]` + a beat from `emoji_beats`. \"spell X\" / a single unknown word → `[[become:X]] done.`";
+export const FAQ_RULES = "# Scripted brain: intents and replies (first person; verbatim)\n\nFormat: `intent`, hints → reply. A `||` is a turn break (each part ≤ 22 words). The site speaks as Yoyo. Names: \"I'm X\" → `nice to meet you, X. [[become:X]]`. Emoji only → `[[become:<emoji>]]` + a beat from `emoji_beats`. \"spell X\" / a single unknown word → `[[become:X]] done.`";
 
 export const FAQ_INTENTS: readonly FaqIntent[] = [
   {
@@ -27,7 +27,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "introduce",
       "guy"
     ],
-    "reply": "[[become:curls]] I'm Yoyo. I build software, mostly by directing AI agents, and I've been in crypto since 2021. || Second year of Computer Science and Entrepreneurship at Reichman. Self-taught before that. [[chips:What have you built?|What are you like?|How do I reach you?]]"
+    "reply": "[[become:curls]] I'm Yoyo, a software engineer who builds products with AI agents. || [[become:cap]] Computer Science and Entrepreneurship at Reichman. Self-taught before that. [[chips:What are you like?|What have you built?|How do I reach you?]]"
   },
   {
     "id": "built",
@@ -40,7 +40,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "made",
       "show me"
     ],
-    "reply": "[[become:magnifier]] A search engine, a kart racer, a software factory, a university connector. Start with the search engine. [[show:unfiltered]] [[chips:Next one|Play the game|Who are you?]]"
+    "reply": "[[become:magnifier]] A search engine, a 3D game, my own AI software team, a tool for my university. Start with the search engine. [[show:unfiltered]]"
   },
   {
     "id": "hire",
@@ -54,7 +54,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "convince",
       "good at"
     ],
-    "reply": "I ship. 917 public commits this year, a game, a published connector, a search engine. || I was writing Solidity in 2022 and building with agents before it was normal. || And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]"
+    "reply": "[[become:check]] I ship real products: a search engine, a 3D game, a tool my whole university can use. || [[become:loop]] I like being early. I was building with AI agents when most people called it a toy. || [[become:diverge]] And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]"
   },
   {
     "id": "weakness",
@@ -67,7 +67,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "struggle",
       "not good"
     ],
-    "reply": "LeetCode interviews. I build real things faster than I solve puzzles on a whiteboard. || Distribution. I can build it in a week and then under-sell it for a month. || And I get bored when things move slowly. [[chips:Why should we hire you?|What have you built?]]"
+    "reply": "LeetCode interviews. I build real things faster than I solve puzzles on a whiteboard. || Distribution. I can build it in a week and then under-sell it for a month. || And I get bored when things move slowly. [[chips:Why should we hire you?|And crypto?|What have you built?]]"
   },
   {
     "id": "like",
@@ -79,7 +79,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "kind of person",
       "vibe"
     ],
-    "reply": "Direct. I'd rather hear the number than the reassurance. || Chronically online. If something new ships, I'm already in it. || And I don't think like everyone else, which is either my best trait or my worst, depending who you ask. [[chips:What do you do for fun?|What are you bad at?|What have you built?]]"
+    "reply": "Direct. I'd rather hear the number than the reassurance. || Chronically online. If something new ships, I'm already in it. || And I don't think like everyone else, which is either my best trait or my worst, depending who you ask. [[chips:What do you do for fun?|And crypto?|What are you bad at?]]"
   },
   {
     "id": "story",
@@ -119,9 +119,13 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "eth",
       "defi",
       "airdrop",
-      "chain"
+      "chain",
+      "and crypto",
+      "cs skins",
+      "csgo",
+      "trader"
     ],
-    "reply": "[[become:btc]] Since 2021. Trading, DeFi, on-chain research, communities. I know the big chains inside out. || Dumbest thing I did: trade on emotion. Smartest: farm protocols early and get paid for it. [[chips:What have you built?|gm]]"
+    "reply": "[[become:$10,000]] I've always been a trader. At 13 I built a $10,000 inventory from nothing, trading CS:GO skins. || [[become:btc]] In blockchain since 2021: trading, on-chain research, advising early projects. I go where the new things are. || [[become:chart]] I build for it too: a profit tracker, a sentiment dashboard, a members system for a private community. [[chips:Show me those|Why should we hire you?|What have you built?]]"
   },
   {
     "id": "agents",
@@ -184,7 +188,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "product search",
       "engine"
     ],
-    "reply": "[[become:magnifier]] Unfiltered. Type \"elegant summer wedding dress, not black, under ₪400\" in any language and get the right products. || Paused. No paying merchants, and it hadn't cleared my own bar. I'd rather say that than romance it. [[show:unfiltered]]"
+    "reply": "[[become:magnifier]] Unfiltered. A search engine for online stores that understands people. || Type \"elegant summer wedding dress, not black, under ₪400\" and it finds the right products. [[show:unfiltered]]"
   },
   {
     "id": "connector",
@@ -197,7 +201,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "courses",
       "university tool"
     ],
-    "reply": "[[become:cap]] Students ask Claude or ChatGPT \"what's due this week?\" and get a real answer from Moodle, grades, lectures and Piazza. || Published on npm. Installs by double-click. [[show:runi-connector]]"
+    "reply": "[[become:cap]] It lets students talk to AI about their own university courses. || Ask Claude or ChatGPT what's due, how you did, or what a lecture covered. Free for every Reichman student. [[show:runi-connector]]"
   },
   {
     "id": "monitor",
@@ -209,7 +213,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "passover",
       "booking"
     ],
-    "reply": "[[become:tent]] I wanted a room at a sold-out desert hotel. || So I wrote a monitor that pings Telegram the second one opens. Got the room. [[show:availability-monitor]]"
+    "reply": "[[become:tent]] A bot that tells me the moment a sold-out hotel has a room. || It checks around the clock and messages me on Telegram. Got me a room over Passover. [[show:availability-monitor]]"
   },
   {
     "id": "pnl",
@@ -220,7 +224,29 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "wallet",
       "profit"
     ],
-    "reply": "[[become:chart]] A Discord bot I wrote by hand in 2023, before AI tools. || Realized and unrealized P&L for a community, across EVM chains, Solana and Bitcoin. [[show:pnl-bot]]"
+    "reply": "[[become:chart]] A Discord bot that shows crypto traders what they really made or lost. || Coins and NFTs across Ethereum, Solana and Bitcoin. Written by hand in 2023. [[show:pnl-bot]]"
+  },
+  {
+    "id": "sentiment",
+    "hints": [
+      "sentiment",
+      "sentiment gauge",
+      "gauge",
+      "mood of crypto",
+      "sentiment dashboard"
+    ],
+    "reply": "[[become:chart]] A dashboard that measures the mood around any crypto project. || AI reads thousands of posts on X and turns them into one score. Written by hand in 2025. [[show:sentiment-gauge]]"
+  },
+  {
+    "id": "hand_work",
+    "hints": [
+      "show me those",
+      "hand-written projects",
+      "hand-written work",
+      "older projects"
+    ],
+    "reply": "[[work:hand]]",
+    "note": "(opens Work on the Hand-written tab, at its first card)"
   },
   {
     "id": "network",
@@ -233,7 +259,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "by hand",
       "odin"
     ],
-    "reply": "[[become:keyboard]] Before AI wrote code, I wrote all of mine. A year of it, full time. || A small social network, back end and all. Small now. Mine then. [[show:yoyo-network]] [[chips:What have you built?|How do you work now?]]"
+    "reply": "[[become:keyboard]] A social network I built from scratch, written by hand in 2023. || Profiles, posts, photos, likes and follows, with its own server and login. Still live today. [[show:yoyo-network]] [[chips:What have you built?|How do you work now?]]"
   },
   {
     "id": "polybot",
@@ -247,7 +273,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "failure",
       "didn't work"
     ],
-    "reply": "[[become:diverge]] Polybot watched Polymarket sports prices against a sharp bookmaker's. Clean data, careful design. || I stopped it. The edge wasn't strong enough and big firms have the latency. || It had potential. I moved on. That's the part worth knowing. [[show:polybot]]"
+    "reply": "[[become:diverge]] Polybot hunted for mispriced sports bets on Polymarket, against a top bookmaker. || I shut it down when the data showed the edge was too small to win. [[show:polybot]]"
   },
   {
     "id": "university",
@@ -339,10 +365,16 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "like to do",
       "games",
       "music",
-      "football",
-      "gym"
+      "gym",
+      "run",
+      "running",
+      "festival",
+      "coding for fun",
+      "sport",
+      "sports",
+      "like football"
     ],
-    "reply": "[[become:🎮]] Football, festivals, travel. CS2 now, Fortnite back in the day. || Lifting, a run on the beach. I want to learn piano. Haven't yet. [[chips:What have you built?|Who are you?]]"
+    "reply": "[[become:🎮]] Festivals, travel, video games. || [[become:🏃]] Lifting, running on the beach. Sometimes coding, just for fun. [[chips:What are you bad at?|And crypto?|What have you built?]]"
   },
   {
     "id": "travel",
@@ -429,9 +461,12 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "react",
       "node",
       "python",
-      "java"
+      "java",
+      "language",
+      "what do you code in",
+      "programming"
     ],
-    "reply": "TypeScript end to end: Node, React, Postgres, Prisma. Java and C from the degree. Python basic. || LLM APIs, MCP, embeddings, agent orchestration. Three.js when a game needs it. [[chips:What have you built?|Build me something]]"
+    "reply": "[[become:keyboard]] TypeScript and JavaScript every day. Java and C from the degree, some Python. || Around that: React, Node.js, databases, and AI tools like Claude Code. [[chips:What have you built?|Why should we hire you?]]"
   },
   {
     "id": "this_site",
@@ -519,7 +554,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "ser",
       "degen"
     ],
-    "reply": "[[become:btc]] gm. since 2021. [[chips:What have you built?|Who are you?]]"
+    "reply": "[[become:btc]] gm. [[chips:What have you built?|Who are you?]]"
   },
   {
     "id": "lights",

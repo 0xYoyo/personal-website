@@ -8,7 +8,7 @@ import { classify, type Classification } from './intents';
 import { PROJECT_IDS, type ProjectId } from '@yoyo/protocol';
 
 /** The one-time honesty line after a live failure (SPEC §7). */
-export const RESTING_LINE = 'the live brain is resting — I still know everything.';
+export const RESTING_LINE = 'the live brain is resting. I still know everything.';
 
 /**
  * Lines that are not in faq.md but are needed to close a path the chips open.

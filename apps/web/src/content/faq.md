@@ -1,26 +1,26 @@
-# Scripted brain — intents and replies (first person; verbatim)
+# Scripted brain: intents and replies (first person; verbatim)
 
-Format: `intent` — hints → reply. A `||` is a turn break (each part ≤ 22 words). The site speaks as Yoyo. Names: "I'm X" → `nice to meet you, X. [[become:X]]`. Emoji only → `[[become:<emoji>]]` + a beat from `emoji_beats`. "spell X" / a single unknown word → `[[become:X]] done.`
+Format: `intent`, hints → reply. A `||` is a turn break (each part ≤ 22 words). The site speaks as Yoyo. Names: "I'm X" → `nice to meet you, X. [[become:X]]`. Emoji only → `[[become:<emoji>]]` + a beat from `emoji_beats`. "spell X" / a single unknown word → `[[become:X]] done.`
 
 ## who
 hints: who, yoyo, yoav, about, you, yourself, introduce, guy
-→ `[[become:curls]] I'm Yoyo. I build software, mostly by directing AI agents, and I've been in crypto since 2021. || Second year of Computer Science and Entrepreneurship at Reichman. Self-taught before that. [[chips:What have you built?|What are you like?|How do I reach you?]]`
+→ `[[become:curls]] I'm Yoyo, a software engineer who builds products with AI agents. || [[become:cap]] Computer Science and Entrepreneurship at Reichman. Self-taught before that. [[chips:What are you like?|What have you built?|How do I reach you?]]`
 
 ## built
 hints: built, shipped, projects, work, portfolio, made, show me
-→ `[[become:magnifier]] A search engine, a kart racer, a software factory, a university connector. Start with the search engine. [[show:unfiltered]] [[chips:Next one|Play the game|Who are you?]]`
+→ `[[become:magnifier]] A search engine, a 3D game, my own AI software team, a tool for my university. Start with the search engine. [[show:unfiltered]]`
 
 ## hire
 hints: hire, why, should we, reasons, pitch, sell, convince, good at
-→ `I ship. 917 public commits this year, a game, a published connector, a search engine. || I was writing Solidity in 2022 and building with agents before it was normal. || And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]`
+→ `[[become:check]] I ship real products: a search engine, a 3D game, a tool my whole university can use. || [[become:loop]] I like being early. I was building with AI agents when most people called it a toy. || [[become:diverge]] And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]`
 
 ## weakness
 hints: bad at, weakness, weaknesses, flaws, worst, struggle, not good
-→ `LeetCode interviews. I build real things faster than I solve puzzles on a whiteboard. || Distribution. I can build it in a week and then under-sell it for a month. || And I get bored when things move slowly. [[chips:Why should we hire you?|What have you built?]]`
+→ `LeetCode interviews. I build real things faster than I solve puzzles on a whiteboard. || Distribution. I can build it in a week and then under-sell it for a month. || And I get bored when things move slowly. [[chips:Why should we hire you?|And crypto?|What have you built?]]`
 
 ## like
 hints: what are you like, personality, character, describe yourself, kind of person, vibe
-→ `Direct. I'd rather hear the number than the reassurance. || Chronically online. If something new ships, I'm already in it. || And I don't think like everyone else, which is either my best trait or my worst, depending who you ask. [[chips:What do you do for fun?|What are you bad at?|What have you built?]]`
+→ `Direct. I'd rather hear the number than the reassurance. || Chronically online. If something new ships, I'm already in it. || And I don't think like everyone else, which is either my best trait or my worst, depending who you ask. [[chips:What do you do for fun?|And crypto?|What are you bad at?]]`
 
 ## story
 hints: story, stories, tell me something, background, life, past
@@ -31,8 +31,8 @@ hints: army, idf, military, unit, combat, service, soldier
 → `[[become:shield]] Three years, like everyone here. Field Intelligence. || It taught me to stay calm and do the boring part properly. That's it, no speech. [[chips:What have you built?|Who are you?]]`
 
 ## crypto
-hints: crypto, bitcoin, btc, web3, trading, degen, solana, eth, defi, airdrop, chain
-→ `[[become:btc]] Since 2021. Trading, DeFi, on-chain research, communities. I know the big chains inside out. || Dumbest thing I did: trade on emotion. Smartest: farm protocols early and get paid for it. [[chips:What have you built?|gm]]`
+hints: crypto, bitcoin, btc, web3, trading, degen, solana, eth, defi, airdrop, chain, and crypto, cs skins, csgo, trader
+→ `[[become:$10,000]] I've always been a trader. At 13 I built a $10,000 inventory from nothing, trading CS:GO skins. || [[become:btc]] In blockchain since 2021: trading, on-chain research, advising early projects. I go where the new things are. || [[become:chart]] I build for it too: a profit tracker, a sentiment dashboard, a members system for a private community. [[chips:Show me those|Why should we hire you?|What have you built?]]`
 
 ## agents
 hints: agent, agents, ai, claude, codex, cursor, llm, automation, factory, loop, how do you work
@@ -52,27 +52,35 @@ hints: game, play, kart, racing, racers, prompt racers
 
 ## unfiltered
 hints: unfiltered, search, shopify, product search, engine
-→ `[[become:magnifier]] Unfiltered. Type "elegant summer wedding dress, not black, under ₪400" in any language and get the right products. || Paused. No paying merchants, and it hadn't cleared my own bar. I'd rather say that than romance it. [[show:unfiltered]]`
+→ `[[become:magnifier]] Unfiltered. A search engine for online stores that understands people. || Type "elegant summer wedding dress, not black, under ₪400" and it finds the right products. [[show:unfiltered]]`
 
 ## connector
 hints: connector, reichman, moodle, runi, mcp, courses, university tool
-→ `[[become:cap]] Students ask Claude or ChatGPT "what's due this week?" and get a real answer from Moodle, grades, lectures and Piazza. || Published on npm. Installs by double-click. [[show:runi-connector]]`
+→ `[[become:cap]] It lets students talk to AI about their own university courses. || Ask Claude or ChatGPT what's due, how you did, or what a lecture covered. Free for every Reichman student. [[show:runi-connector]]`
 
 ## monitor
 hints: monitor, hotel, telegram, availability, passover, booking
-→ `[[become:tent]] I wanted a room at a sold-out desert hotel. || So I wrote a monitor that pings Telegram the second one opens. Got the room. [[show:availability-monitor]]`
+→ `[[become:tent]] A bot that tells me the moment a sold-out hotel has a room. || It checks around the clock and messages me on Telegram. Got me a room over Passover. [[show:availability-monitor]]`
 
 ## pnl
 hints: pnl, p&l, discord bot, wallet, profit
-→ `[[become:chart]] A Discord bot I wrote by hand in 2023, before AI tools. || Realized and unrealized P&L for a community, across EVM chains, Solana and Bitcoin. [[show:pnl-bot]]`
+→ `[[become:chart]] A Discord bot that shows crypto traders what they really made or lost. || Coins and NFTs across Ethereum, Solana and Bitcoin. Written by hand in 2023. [[show:pnl-bot]]`
+
+## sentiment
+hints: sentiment, sentiment gauge, gauge, mood of crypto, sentiment dashboard
+→ `[[become:chart]] A dashboard that measures the mood around any crypto project. || AI reads thousands of posts on X and turns them into one score. Written by hand in 2025. [[show:sentiment-gauge]]`
+
+## hand_work
+hints: show me those, hand-written projects, hand-written work, older projects
+→ `[[work:hand]]` (opens Work on the Hand-written tab, at its first card)
 
 ## network
 hints: yoyo-network, social network, rest api, jwt, hand-written, by hand, odin
-→ `[[become:keyboard]] Before AI wrote code, I wrote all of mine. A year of it, full time. || A small social network, back end and all. Small now. Mine then. [[show:yoyo-network]] [[chips:What have you built?|How do you work now?]]`
+→ `[[become:keyboard]] A social network I built from scratch, written by hand in 2023. || Profiles, posts, photos, likes and follows, with its own server and login. Still live today. [[show:yoyo-network]] [[chips:What have you built?|How do you work now?]]`
 
 ## polybot
 hints: polybot, polymarket, prediction, odds, stopped, failed, failure, didn't work
-→ `[[become:diverge]] Polybot watched Polymarket sports prices against a sharp bookmaker's. Clean data, careful design. || I stopped it. The edge wasn't strong enough and big firms have the latency. || It had potential. I moved on. That's the part worth knowing. [[show:polybot]]`
+→ `[[become:diverge]] Polybot hunted for mispriced sports bets on Polymarket, against a top bookmaker. || I shut it down when the data showed the edge was too small to win. [[show:polybot]]`
 
 ## university
 hints: university, degree, study, student, gpa, school, semester
@@ -99,8 +107,8 @@ hints: look like, photo, hair, curls, face, picture
 → `[[become:curls]] Long curly hair. You'd recognize me. [[chips:Who are you?|What have you built?]]`
 
 ## hobbies
-hints: hobby, hobbies, fun, free time, bored, weekend, like to do, games, music, football, gym
-→ `[[become:🎮]] Football, festivals, travel. CS2 now, Fortnite back in the day. || Lifting, a run on the beach. I want to learn piano. Haven't yet. [[chips:What have you built?|Who are you?]]`
+hints: hobby, hobbies, fun, free time, bored, weekend, like to do, games, music, gym, run, running, festival, coding for fun, sport, sports, like football
+→ `[[become:🎮]] Festivals, travel, video games. || [[become:🏃]] Lifting, running on the beach. Sometimes coding, just for fun. [[chips:What are you bad at?|And crypto?|What have you built?]]`
 
 ## travel
 hints: travel, travelling, southeast asia, trip, 2024, gap, backpacking, thailand, cambodia
@@ -127,8 +135,8 @@ hints: think about crypto, is crypto dead, bitcoin price, bull run, should i buy
 → `It's a market. Most of it is noise, some of it is the most interesting financial engineering alive. || I don't give price calls to strangers through a particle swarm. [[chips:What have you built?|gm]]`
 
 ## stack
-hints: stack, languages, skills, technologies, typescript, react, node, python, java
-→ `TypeScript end to end: Node, React, Postgres, Prisma. Java and C from the degree. Python basic. || LLM APIs, MCP, embeddings, agent orchestration. Three.js when a game needs it. [[chips:What have you built?|Build me something]]`
+hints: stack, languages, skills, technologies, typescript, react, node, python, java, language, what do you code in, programming
+→ `[[become:keyboard]] TypeScript and JavaScript every day. Java and C from the degree, some Python. || Around that: React, Node.js, databases, and AI tools like Claude Code. [[chips:What have you built?|Why should we hire you?]]`
 
 ## this_site
 hints: this site, who made, built this, website, how was this made, swarm, particles
@@ -156,7 +164,7 @@ hints: hi, hello, hey, yo, sup, shalom
 
 ## gm
 hints: gm, wagmi, ngmi, ser, degen
-→ `[[become:btc]] gm. since 2021. [[chips:What have you built?|Who are you?]]`
+→ `[[become:btc]] gm. [[chips:What have you built?|Who are you?]]`
 
 ## lights
 hints: lights, light mode, dark mode, bright

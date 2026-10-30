@@ -25,7 +25,7 @@ function twoShapes(say: string, first: Step['become'], then: Step['become'], moo
 }
 
 const FACTORY_1 = 'The day the code it wrote was better than mine, and took a hundredth of the time, I stopped typing.';
-const FACTORY_2 = 'Now I write the spec, agents build, another agent reviews, and I merge. 44 pull requests in four days, once.';
+const FACTORY_2 = 'Now I write what to build, agents build it, another agent reviews, and I approve.';
 
 export const stories: Story[] = [
   {

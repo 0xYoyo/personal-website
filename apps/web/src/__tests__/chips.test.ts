@@ -16,7 +16,9 @@ describe('chips', () => {
     expect(resolveChip('Play the game', st)).toEqual({ kind: 'play' });
     expect(resolveChip('Next one', { ...st, project: 'unfiltered' })).toEqual({ kind: 'next-project' });
     expect(resolveChip('Next one', st)).toEqual({ kind: 'say', text: 'What have you built?' });
-    expect(resolveChip('Build me something like this', { ...st, project: 'polybot' })).toEqual({ kind: 'build', instruction: BUILD_SEEDS.polybot });
+    expect(resolveChip('Build me something', { ...st, project: 'polybot' })).toEqual({ kind: 'build', instruction: BUILD_SEEDS.polybot });
+    expect(resolveChip('Build me something', st)).toEqual({ kind: 'say', text: 'Build me something' });
+    expect(projectChips('polybot')).toEqual(['Next one', 'Build me something']);
     expect(resolveChip('Change it', { ...st, hasBuild: true })).toEqual({ kind: 'change-build' });
     expect(resolveChip('Share it', { ...st, hasBuild: true })).toEqual({ kind: 'share-build' });
     expect(resolveChip('Tell me a story', st)).toEqual({ kind: 'story-next' });

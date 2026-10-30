@@ -11,7 +11,8 @@ export interface ExtraIntent {
 
 export const EXTRA_INTENTS: readonly ExtraIntent[] = [
   { id: 'fortnite', match: /\bfortnite\b/, reply: '[[become:ramp]] I could build a ramp before you could aim.' },
-  { id: 'cs2', match: /\b(cs2|csgo|cs go|counter strike|counter-strike)\b/, reply: "[[become:rush B]] rush B. don't stop." },
+  // trading CS:GO skins is the crypto story (WAVE4 C2): a message about skins goes to faq.md's `crypto`
+  { id: 'cs2', match: /^(?!.*\bskins?\b).*\b(cs2|csgo|cs go|counter strike|counter-strike)\b/, reply: "[[become:rush B]] rush B. don't stop." },
   // POLISH1 A7: "curls" on its own gets the short line; "what do you look like" keeps faq.md's `looks`.
   { id: 'curls', match: /\bcurls\b/, reply: "[[become:curls]] yes, they're real." },
   { id: 'piano', match: /\bpiano\b/, reply: "[[become:piano]] I want to learn. haven't yet. ask me in a year." },
