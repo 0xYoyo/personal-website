@@ -219,8 +219,7 @@ export const projects: Project[] = [
     name: 'Polybot',
     status: 'stopped',
     era: 'ai',
-    statusNote: 'the edge was too small',
-    period: 'Mar 2026 · stopped Oct 2026',
+    period: 'Mar – Oct 2026',
     voiceLine: 'Bot that hunted for mispriced sports bets on Polymarket.',
     oneLiner: 'A bot that hunted for mispriced sports bets on Polymarket by comparing live prices against a top bookmaker.',
     cardFacts: [

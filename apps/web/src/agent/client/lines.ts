@@ -2,7 +2,7 @@
 // to the UI with the build result, so an example never claims a time it didn't take.
 
 /** Done line for a prebuilt example (scripted mode). Never claims seconds for the example itself. */
-export const EXAMPLE_DONE_LINE = "one I made earlier. the live builder makes these in about 15 seconds.";
+export const EXAMPLE_DONE_LINE = "the live builder makes one like this in about 15 seconds.";
 
 /** "Change it" while the live builder is unavailable: said when the substitute example starts. */
 export const CHANGE_RESTING_LINE = "the live builder is resting, so I can't change this one. here's the closest I have.";

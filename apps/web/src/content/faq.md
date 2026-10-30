@@ -92,7 +92,7 @@ hints: available, availability, when, start, days, hours, part-time, remote, loc
 
 ## contact
 hints: contact, email, reach, talk to you, linkedin, github, cv, resume
-→ `[[become:envelope-open]] yoavyoav310@gmail.com. I read everything. [[contact]]`
+→ `[[become:envelope-open]] Email is easiest. [[contact]]`
 
 ## salary
 hints: salary, pay, rate, money, compensation

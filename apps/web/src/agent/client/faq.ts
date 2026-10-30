@@ -318,7 +318,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "cv",
       "resume"
     ],
-    "reply": "[[become:envelope-open]] yoavyoav310@gmail.com. I read everything. [[contact]]"
+    "reply": "[[become:envelope-open]] Email is easiest. [[contact]]"
   },
   {
     "id": "salary",

@@ -56,7 +56,7 @@ test('replies like the live model for builds, names, emoji', () => {
 });
 
 test('"How do I reach you?" is the contact reply, not "who" (POLISH1 C2)', () => {
-  assert.equal(mockReply('How do I reach you?'), '[[become:envelope-open]] yoavyoav310@gmail.com. I read everything. [[contact]]');
+  assert.equal(mockReply('How do I reach you?'), '[[become:envelope-open]] Email is easiest. [[contact]]');
 });
 
 test('"Next one" walks on from the last card in the conversation', () => {

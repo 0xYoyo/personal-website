@@ -11,7 +11,7 @@ export type ChipContext = 'entry' | 'who' | 'project' | 'build' | 'story' | 'idl
 export const ENTRY_CHIPS = ['Who are you?', 'What have you built?', 'Spell my name'];
 export const WHO_CHIPS = ['What are you like?', 'What are you bad at?', 'Why should we hire you?', 'How do I reach you?'];
 /** The build's row (WAVE4 U7): no "Change it" (changes aren't on here yet), no "How was this made?". */
-export const BUILD_CHIPS = ['Share it', 'Build another', 'Close'];
+export const BUILD_CHIPS = ['Build another', 'What have you built?', 'How do I reach you?'];
 export const STORY_CHIPS = ['Next story', 'What have you built?', 'How do I reach you?'];
 /** The tour's end chips (WAVE3 V3). */
 export const TOUR_END_CHIPS = ['Who are you?', 'What have you built?', 'Play the game'];
