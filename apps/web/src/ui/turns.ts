@@ -6,13 +6,14 @@
 // advances early. A turn that still runs past the line budget at the minimum
 // size is split at its last sentence boundary into two turns.
 import { realClock, type Clock } from './runner/engine';
+import { READ_FLOOR_MS, READ_PER_WORD_MS, readFor } from './pace';
 
 /** The turn marker in reply text. */
 export const TURN_MARK = '||';
-/** A turn rests at least this long once it is fully on screen (WAVE3 S2: 2.2 → 2.8 s). */
-export const TURN_READ_MIN = 2800;
-/** …and at least this long per word, counted from its first word (WAVE3 S2: 300 → 320 ms). */
-export const TURN_MS_PER_WORD = 320;
+/** A turn rests at least this long once it is fully on screen (the one clock: ui/pace.ts, WAVE4 U1). */
+export const TURN_READ_MIN = READ_FLOOR_MS;
+/** …and at least this long per word, counted from when it is fully on screen. */
+export const TURN_MS_PER_WORD = READ_PER_WORD_MS;
 /** Pace of the words within a turn (the buffer has the whole turn; this is only the reveal). */
 export const TURN_WORD_MS = 55;
 
@@ -21,9 +22,12 @@ export const wordsOf = (text: string): string[] => text.split(/[^\S\u00a0]+/).fi
 /** Reply text without turn markers (voice, history, read time). */
 export const stripMarks = (text: string): string => text.split(TURN_MARK).map((s) => s.trim()).filter(Boolean).join(' ');
 
-/** How long a turn must stay before the next one may start. */
-export function turnWait(words: number, shownFor: number, sinceDone: number): number {
-  return Math.max(0, words * TURN_MS_PER_WORD - shownFor, TURN_READ_MIN - sinceDone);
+/**
+ * How long a turn must stay before the next one may start: its read time (ui/pace.ts), counted from
+ * when it was fully on screen (`sinceDone`). `_shownFor` (since its first word) is kept for callers.
+ */
+export function turnWait(words: number, _shownFor: number, sinceDone: number): number {
+  return Math.max(0, readFor(words) - sinceDone);
 }
 
 /** Pieces of one streamed word around turn markers: `do.||He` → ['do.', '||', 'He']. */
@@ -161,6 +165,12 @@ export interface Pacer {
   line(text: string): void;
   /** the brain's turn boundary */
   boundary(): void;
+  /**
+   * Run `fn` as the turn it belongs to starts (WAVE4 U10: a turn's own `[[become:…]]` morphs at its
+   * first word): the turn being collected, or, at a boundary, the next one; after the last turn, as
+   * the reply ends. Dropped on cancel.
+   */
+  cue(fn: () => void): void;
   /** the reply is complete; resolves once every turn is on screen */
   close(): Promise<void>;
   /** skip the read wait / finish the current turn's words at once */
@@ -180,7 +190,19 @@ export function createPacer(h: PacerHooks, o: PacerOptions = {}): Pacer {
   const pace = o.pace ?? TURN_WORD_MS;
   const ch = o.channel ?? createChannel();
   let buf: string[] = [];
-  const queue: string[] = [];
+  /** cues for the turn in `buf`, and for the next turn while `buf` is empty */
+  let bufCues: (() => void)[] = [];
+  let nextCues: (() => void)[] = [];
+  const queue: { text: string; cues: (() => void)[] }[] = [];
+  const run = (cues: (() => void)[]) => {
+    for (const c of cues) {
+      try {
+        c();
+      } catch (e) {
+        console.error('pacer: cue threw', e);
+      }
+    }
+  };
   let closed = false;
   let cancelled = false;
   let running = false;
@@ -221,12 +243,19 @@ export function createPacer(h: PacerHooks, o: PacerOptions = {}): Pacer {
         if (cancelled) break;
         const next = queue.shift();
         if (next === undefined) {
-          if (closed) break;
+          if (closed) {
+            // cues after the last turn: the reply ends here
+            const late = [...bufCues, ...nextCues];
+            bufCues = [];
+            nextCues = [];
+            run(late);
+            break;
+          }
           await new Promise<void>((r) => (poke = r));
           continue;
         }
-        const parts = fitTurn(next, measure);
-        queue.unshift(...parts.slice(1).map((p) => p.text));
+        const parts = fitTurn(next.text, measure);
+        queue.unshift(...parts.slice(1).map((p) => ({ text: p.text, cues: [] })));
         const turn = parts[0]!;
         // the turn on screen keeps its read time
         const last = ch.last;
@@ -241,6 +270,7 @@ export function createPacer(h: PacerHooks, o: PacerOptions = {}): Pacer {
         rush = false;
         inWords = true;
         let startedAt = clock.now();
+        run(next.cues);
         h.begin(turn);
         // its first word is read from when it is actually on screen
         void o.painted?.().then(() => (startedAt = Math.max(startedAt, clock.now())));
@@ -267,9 +297,17 @@ export function createPacer(h: PacerHooks, o: PacerOptions = {}): Pacer {
 
   const boundary = () => {
     if (!buf.length) return;
-    queue.push(buf.join(' '));
+    queue.push({ text: buf.join(' '), cues: bufCues });
     buf = [];
+    bufCues = [];
     kick();
+  };
+  const take = (w: string) => {
+    if (!buf.length && nextCues.length) {
+      bufCues = nextCues;
+      nextCues = [];
+    }
+    buf.push(w);
   };
 
   return {
@@ -277,18 +315,28 @@ export function createPacer(h: PacerHooks, o: PacerOptions = {}): Pacer {
       if (closed || cancelled) return;
       for (const p of splitMarks(word)) {
         if (p === TURN_MARK) boundary();
-        else buf.push(p);
+        else take(p);
       }
     },
     line(text) {
       if (closed || cancelled) return;
       boundary();
       if (stripMarks(text)) {
-        for (const part of text.split(TURN_MARK)) if (part.trim()) queue.push(part.trim());
+        for (const part of text.split(TURN_MARK)) {
+          if (!part.trim()) continue;
+          queue.push({ text: part.trim(), cues: nextCues });
+          nextCues = [];
+        }
         kick();
       }
     },
     boundary,
+    cue(fn) {
+      if (cancelled) return;
+      if (closed) return run([fn]);
+      if (buf.length) bufCues.push(fn);
+      else nextCues.push(fn);
+    },
     close() {
       if (!closed) {
         boundary();
@@ -309,6 +357,9 @@ export function createPacer(h: PacerHooks, o: PacerOptions = {}): Pacer {
     cancel() {
       if (cancelled) return;
       cancelled = true;
+      bufCues = [];
+      nextCues = [];
+      queue.length = 0;
       ch.skip?.();
       kick();
       finish();

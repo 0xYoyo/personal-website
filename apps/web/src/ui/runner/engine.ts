@@ -8,6 +8,7 @@
 // beats. In step mode (reduced motion) nothing advances on its own: every
 // next() applies exactly one step, shape and caption at once.
 import type { Mood, Scene, ShapeSpec } from '@yoyo/protocol';
+import { READ_FLOOR_MS, readMs as paceRead } from '../pace';
 
 export type Viewport = { w: number; h: number };
 export type ShapeRef = ShapeSpec | ((vp: Viewport) => ShapeSpec);
@@ -39,13 +40,16 @@ export const CAPTION_DELAY = 900;
 export const CAPTION_TYPE_MS = 60;
 /** How long a caption takes to type in completely. */
 export const typeMs = (text: string): number => Math.max(0, text.split(/\s+/).filter(Boolean).length - 1) * CAPTION_TYPE_MS + 280;
-/** Extra time a caption stays after it has been read. */
-export const CAPTION_TAIL = 600;
-/** Floor for a caption's read time. */
-export const READ_MIN = 2400;
+/**
+ * Extra time a caption stays after it has been read. 0 since WAVE4 U1: the read time (ui/pace.ts) is
+ * counted from when the caption is fully typed in, so a beat's caption stays typeMs + readMs.
+ */
+export const CAPTION_TAIL = 0;
+/** Floor for a caption's read time (the one clock, ui/pace.ts). */
+export const READ_MIN = READ_FLOOR_MS;
 
-/** How long a caption takes to read: ~300 ms a word, never under 2.4 s. */
-export const readMs = (text: string): number => Math.max(READ_MIN, text.split(/\s+/).filter(Boolean).length * 300);
+/** How long a caption takes to read once it is fully on screen (ui/pace.ts). */
+export const readMs = (text: string): number => paceRead(text);
 
 export type BeatSpec = Omit<Step, 'at' | 'hold' | 'sayAt'> & {
   /** override the computed length (ms the caption stays, read time + tail by default) */
@@ -58,14 +62,14 @@ export type BeatSpec = Omit<Step, 'at' | 'hold' | 'sayAt'> & {
 
 /**
  * One authored beat → a Step with the A2 timing: `become` first, the caption
- * CAPTION_DELAY later (immediately when there is no shape), then the caption's
- * read time + CAPTION_TAIL (or `captionHold`).
+ * CAPTION_DELAY later (immediately when there is no shape), then the time it takes to type in plus its
+ * read time (or `captionHold`).
  */
 export function beat(b: BeatSpec): Omit<Step, 'at'> {
   const { captionHold, hold, sync, ...rest } = b;
   if (rest.say === undefined) return { ...rest, hold: hold ?? READ_MIN };
   const sayAt = rest.become && !sync ? CAPTION_DELAY : 0;
-  const stay = captionHold ?? readMs(rest.say) + CAPTION_TAIL;
+  const stay = captionHold ?? typeMs(rest.say) + readMs(rest.say) + CAPTION_TAIL;
   return { ...rest, sayAt, hold: sayAt + stay };
 }
 

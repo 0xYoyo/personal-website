@@ -1,5 +1,6 @@
 // Timing shared by the scripted brain and the mock worker so a scripted reply is
 // indistinguishable from a live one: first token ≈ 600 ms, then ≈ 40 tokens/s.
+import { READ_FLOOR_MS, READ_PER_WORD_MS } from '../../ui/pace';
 
 export interface Timing {
   /** delay before the first token of a chat reply */
@@ -27,8 +28,9 @@ export const DEFAULT_TIMING: Timing = {
   buildFirstChunkMs: 600,
   buildTotalMs: 6_000,
   buildTickMs: 60,
-  readPerWordMs: 300,
-  readMinMs: 2_200,
+  // the one pacing clock (ui/pace.ts, WAVE4 U1)
+  readPerWordMs: READ_PER_WORD_MS,
+  readMinMs: READ_FLOOR_MS,
 };
 
 export const ZERO_TIMING: Timing = { firstTokenMs: 0, perTokenMs: 0, jitter: 0, buildFirstChunkMs: 0, buildTotalMs: 0, buildTickMs: 0, readPerWordMs: 0, readMinMs: 0 };
@@ -59,7 +61,7 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 export const jittered = (ms: number, jitter: number, random: () => number) =>
   Math.max(0, Math.round(ms * (1 + (random() * 2 - 1) * jitter)));
 
-/** How long a line rests before the next thing happens: 300 ms a word, at least 2.2 s. */
+/** How long a line rests before the next thing happens (the pace of ui/pace.ts unless a test overrides it). */
 export const readMs = (line: string, t: Pick<Timing, 'readPerWordMs' | 'readMinMs'>) =>
   Math.max(t.readMinMs, line.split(/\s+/).filter(Boolean).length * t.readPerWordMs);
 

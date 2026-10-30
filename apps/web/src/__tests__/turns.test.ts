@@ -63,11 +63,13 @@ describe('turn markers', () => {
     expect(stripMarks('Three reasons. || He ships. ||')).toBe('Three reasons. He ships.');
   });
 
-  it('waits ≥ 2.8 s after a turn lands and 320 ms a word from its start (WAVE3 S2)', () => {
+  it('waits its read time from when it is fully on screen: ≥ 3.6 s, 440 ms a word (WAVE4 U1)', () => {
+    expect(TURN_READ_MIN).toBe(3600);
+    expect(TURN_MS_PER_WORD).toBe(440);
     expect(turnWait(5, 0, 0)).toBe(TURN_READ_MIN);
-    expect(turnWait(20, 500, 0)).toBe(5900); // 6.4 s of words from the start
-    expect(turnWait(20, 7000, 3000)).toBe(0);
-    expect(turnWait(5, 2000, 2799)).toBe(1);
+    expect(turnWait(20, 500, 0)).toBe(8800); // 20 words × 440 ms, counted from the end of the turn
+    expect(turnWait(20, 12000, 8800)).toBe(0);
+    expect(turnWait(5, 2000, 3599)).toBe(1);
   });
 });
 
@@ -90,8 +92,8 @@ describe('the pacer (POLISH2 A1)', () => {
     await done;
     const b1 = at('begin:Three'), e1 = at('end:Three'), b2 = at('begin:He'), e2 = at('end:He'), b3 = at('begin:And');
     expect(b1).toBe(0);
-    expect(b2 - e1).toBeGreaterThanOrEqual(TURN_READ_MIN); // 4 words: the 2.8 s floor rules
-    expect(b3 - b2).toBeGreaterThanOrEqual(13 * TURN_MS_PER_WORD); // 13 words: 320 ms a word from its start
+    expect(b2 - e1).toBeGreaterThanOrEqual(TURN_READ_MIN); // 4 words: the 3.6 s floor rules
+    expect(b3 - e2).toBeGreaterThanOrEqual(13 * TURN_MS_PER_WORD); // 13 words: 440 ms a word from when it is on screen
     expect(b3 - e2).toBeGreaterThanOrEqual(TURN_READ_MIN);
   });
 
@@ -231,8 +233,41 @@ describe('read time counts from when the turn is on screen (FIX4 U4)', () => {
     await done;
     const b2 = Number(log.find((l) => l.includes('begin:Four'))!.split(' ')[0]);
     expect(paintedAt).toBeGreaterThan(0);
-    // the first turn's 2.8 s run from when it was painted (900 ms), not from when it was handed over (0)
+    // the first turn's read time runs from when it was painted (900 ms), not from when it was handed over (0)
     expect(b2).toBeGreaterThanOrEqual(900 + TURN_READ_MIN);
   });
 });
 
+describe('cues: a turn’s own action runs as that turn starts (WAVE4 U10)', () => {
+  it('a cue with a turn being collected runs with it; at a boundary, with the next one; after the last, at the end', async () => {
+    const { pacer, log } = harness({ pace: 0 });
+    pacer.cue(() => log.push('cue:first'));
+    feed(pacer, 'One two.');
+    pacer.cue(() => log.push('cue:mid'));
+    feed(pacer, 'three. ||');
+    pacer.cue(() => log.push('cue:second'));
+    feed(pacer, 'Four five.');
+    pacer.boundary();
+    pacer.cue(() => log.push('cue:late'));
+    const done = pacer.close();
+    await vi.advanceTimersByTimeAsync(30_000);
+    await done;
+    const order = log.filter((l) => l.startsWith('cue:') || l.includes('begin:'));
+    const at = (k: string) => order.findIndex((l) => l.includes(k));
+    expect(at('cue:first')).toBeLessThan(at('begin:One'));
+    expect(at('cue:mid')).toBeLessThan(at('begin:One'));
+    expect(at('cue:second')).toBeGreaterThan(at('begin:One'));
+    expect(at('cue:second')).toBeLessThan(at('begin:Four'));
+    expect(at('cue:late')).toBeGreaterThan(at('begin:Four'));
+  });
+
+  it('a cancelled reply drops its cues', async () => {
+    const { pacer, log } = harness({ pace: 0 });
+    feed(pacer, 'One. ||');
+    feed(pacer, 'Two.');
+    pacer.cue(() => log.push('cue:two'));
+    pacer.cancel();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(log).not.toContain('cue:two');
+  });
+});

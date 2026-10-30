@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CAPTION_DELAY, CAPTION_TAIL, READ_MIN, beat, beatStarts, createRunner, duration, readMs, seq, type Clock, type Step } from '../ui/runner/engine';
+import { CAPTION_DELAY, CAPTION_TAIL, READ_MIN, beat, beatStarts, createRunner, duration, readMs, seq, typeMs, type Clock, type Step } from '../ui/runner/engine';
+import { READ_FLOOR_MS, READ_PER_WORD_MS } from '../ui/pace';
 import { KART_FLIP_MS, KART_PITCH_MAX, SCENE6_LINES, SCENE_MS, SCENES, SHOW_CAPTIONS, SHOW_LINES, showSteps } from '../content/show';
 import type { PathKey } from '@yoyo/protocol';
 import { stories } from '../content/stories';
@@ -49,15 +50,16 @@ function recorder(now: () => number) {
 }
 
 describe('beat timing (POLISH1 A2)', () => {
-  it('reads ~300 ms a word with a 2.4 s floor', () => {
-    expect(readMs('This is what I do.')).toBe(READ_MIN);
-    expect(readMs('one two three four five six seven eight nine ten')).toBe(3000);
+  it('reads on the one clock (WAVE4 U1): 440 ms a word with a 3.6 s floor', () => {
+    expect(READ_MIN).toBe(READ_FLOOR_MS);
+    expect(readMs('This is what I do.')).toBe(3600);
+    expect(readMs('one two three four five six seven eight nine ten')).toBe(10 * READ_PER_WORD_MS);
   });
 
-  it('puts the shape first and the caption 900 ms later, then read time + 600 ms', () => {
+  it('puts the shape first and the caption 900 ms later, then its typing + read time', () => {
     const b = beat({ say: 'This is what I do.', become: glyph('wave') });
     expect(b.sayAt).toBe(CAPTION_DELAY);
-    expect(b.hold).toBe(CAPTION_DELAY + READ_MIN + CAPTION_TAIL);
+    expect(b.hold).toBe(CAPTION_DELAY + typeMs('This is what I do.') + READ_MIN + CAPTION_TAIL);
   });
 
   it('a caption with no shape lands at once; captionHold overrides the read time', () => {
@@ -67,16 +69,18 @@ describe('beat timing (POLISH1 A2)', () => {
 });
 
 describe('runner', () => {
+  // a one-word caption stays its typing (280 ms) + the 3.6 s floor: 3880 ms
+  const ONE = typeMs('one') + READ_MIN;
   const steps = seq([
-    beat({ say: 'one', become: glyph('wave') }), // 0 .. 3900, caption at 900
-    beat({ become: glyph('frame'), hold: 1000 }), // 3900 .. 4900, shape only
-    beat({ say: 'two', become: glyph('kart'), captionHold: 2600 }), // 4900 .. 8400, caption at 5800
-    beat({ say: 'three' }), // 8400 .. 11400, caption at once
+    beat({ say: 'one', become: glyph('wave') }), // 0 .. 900 + ONE, caption at 900
+    beat({ become: glyph('frame'), hold: 1000 }), // shape only, 1000 ms
+    beat({ say: 'two', become: glyph('kart'), captionHold: 2600 }), // 3500 ms, caption 900 ms in
+    beat({ say: 'three' }), // ONE, caption at once
   ]);
 
   it('computes beats and duration', () => {
     expect(beatStarts(steps)).toEqual([0, 2, 3]);
-    expect(duration(steps)).toBe(3900 + 1000 + 3500 + 3000);
+    expect(duration(steps)).toBe(900 + ONE + 1000 + 3500 + ONE);
   });
 
   it('forms each shape before its caption and ends after the last hold', () => {
@@ -90,16 +94,17 @@ describe('runner', () => {
     expect(rec.log).toHaveLength(1);
     c.advance(1);
     expect(rec.log.at(-1)).toBe('900 say:one');
-    c.advance(3000);
-    expect(rec.log.at(-1)).toBe('3900 shape:frame');
+    const t1 = 900 + ONE;
+    c.advance(ONE);
+    expect(rec.log.at(-1)).toBe(`${t1} shape:frame`);
     c.advance(1000);
-    expect(rec.log.at(-1)).toBe('4900 shape:kart');
+    expect(rec.log.at(-1)).toBe(`${t1 + 1000} shape:kart`);
     c.advance(900);
-    expect(rec.log.at(-1)).toBe('5800 say:two');
+    expect(rec.log.at(-1)).toBe(`${t1 + 1900} say:two`);
     c.advance(2600);
-    expect(rec.log.at(-1)).toBe('8400 say:three');
+    expect(rec.log.at(-1)).toBe(`${t1 + 4500} say:three`);
     expect(r.running()).toBe(true);
-    c.advance(3000);
+    c.advance(ONE);
     expect(ended).toBe('done');
     expect(r.running()).toBe(false);
   });
@@ -313,7 +318,8 @@ describe('the show and the stories', () => {
   it('stories have two lines each and end with reach-me chips', () => {
     for (const s of stories) {
       expect(s.steps.filter((x) => x.say).length).toBe(2);
-      expect(duration(s.steps)).toBeLessThanOrEqual(16_000);
+      // two lines on the one clock (WAVE4 U1: ≈ 1.4× the old read time)
+      expect(duration(s.steps)).toBeLessThanOrEqual(22_000);
       expect(s.steps.at(-1)?.chips).toContain('How do I reach you?');
     }
   });
