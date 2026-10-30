@@ -1258,6 +1258,8 @@
     aspect-ratio: 1 / 0.62;
   }
   .y-card-body {
+    /* never shrink to the sheet: the facts would run on under the sticky nav (QM) */
+    flex: none;
     overflow: visible;
     padding-top: 20px;
   }
