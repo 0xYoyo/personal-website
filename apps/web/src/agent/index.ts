@@ -60,6 +60,8 @@ export function createBrain(opts: BrainOptions = {}): Brain {
     held: (string | typeof TURN)[] | null;
     /** a turn boundary, reported right before the next word (so never after the last one) */
     turnBreak(): void;
+    /** a pending boundary, reported now: an action follows it, and belongs to the next turn (WAVE4 U10) */
+    breakNow(): void;
   }
   interface BuildTurn {
     h: BuildHandlers;
@@ -93,6 +95,8 @@ export function createBrain(opts: BrainOptions = {}): Brain {
             chat.words.flush();
             chat.held ??= [];
           }
+          // `A. || [[become:x]] B.`: the shell hears the boundary before the tag, so the shape waits for B (WAVE4 U10)
+          if (!chat.held) chat.breakNow();
           chat.actions.push(e.action);
           chat.h.onAction?.(e.action);
         }
@@ -185,12 +189,14 @@ export function createBrain(opts: BrainOptions = {}): Brain {
       // turns[i] = the words of turn i; a boundary opens a new (empty) turn, reported on its first word
       const turns: string[][] = [[]];
       let breakPending = false;
+      const flushBreak = () => {
+        if (!breakPending) return;
+        breakPending = false;
+        turns.push([]);
+        h.onTurn?.();
+      };
       const show = (w: string) => {
-        if (breakPending) {
-          breakPending = false;
-          turns.push([]);
-          h.onTurn?.();
-        }
+        flushBreak();
         turns.at(-1)!.push(w);
         h.onWord?.(w);
       };
@@ -204,6 +210,7 @@ export function createBrain(opts: BrainOptions = {}): Brain {
         turnBreak: () => {
           if (turns.at(-1)!.length) breakPending = true;
         },
+        breakNow: flushBreak,
       };
       chat = turn;
       const onAbort = () => {

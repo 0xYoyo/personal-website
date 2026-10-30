@@ -1,7 +1,7 @@
 // Splits display text on the `||` turn marks (POLISH2 C1). Sits after the tag parser: the text it
 // sees has no tags left, only the marks. Emits the text with the marks stripped and a `turn` boundary
-// between turns — lazily, right before the next turn's first visible text, so a mark at the very
-// start or end of a reply (or two in a row) never makes an empty turn. The first text of a turn
+// between turns — lazily, right before the next turn's first visible text or action, so a mark at the
+// very start or end of a reply (or two in a row) never makes an empty turn. The first text of a turn
 // carries no leading space.
 
 import type { Action } from '@yoyo/protocol';
@@ -63,7 +63,16 @@ export function createTurnSplitter(emit: (o: TurnOut) => void): TurnSplitter {
 
   return {
     text: (s) => run(s, false),
-    action: (a) => emit({ type: 'action', action: a }),
+    // a tag right after a mark belongs to the turn that follows it (`A. || [[become:x]] B.`): the boundary
+    // goes out first, so the UI can tie the tag to that turn (WAVE4 U10)
+    action: (a) => {
+      if (pendingBreak) {
+        emit({ type: 'turn' });
+        pendingBreak = false;
+        hasText = false;
+      }
+      emit({ type: 'action', action: a });
+    },
     end: () => run('', true),
   };
 }
