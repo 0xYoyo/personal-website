@@ -12,6 +12,10 @@
   --sc-accent: #2b4bff;
   --sc-on-accent: #f4efe6;
   --sc-accent-soft: rgba(43, 75, 255, 0.16);
+  --sc-up: #3ccf7f;
+  --sc-down: #ff6b5e;
+  --sc-up-soft: rgba(60, 207, 127, 0.14);
+  --sc-down-soft: rgba(255, 107, 94, 0.14);
   --sc-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', 'Heebo', system-ui, sans-serif;
   --sc-mono: 'Commit Mono', 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --sc-hebrew: 'Heebo', 'Bricolage Grotesque Variable', system-ui, sans-serif;
@@ -29,6 +33,10 @@
   --sc-accent: #2b4bff;
   --sc-on-accent: #f4f1eb;
   --sc-accent-soft: rgba(43, 75, 255, 0.12);
+  --sc-up: #138a4b;
+  --sc-down: #d23a2c;
+  --sc-up-soft: rgba(19, 138, 75, 0.12);
+  --sc-down-soft: rgba(210, 58, 44, 0.1);
 }
 
 /* A showcase fills its parent; its children size in container units (cqw) of this root. */
@@ -37,7 +45,7 @@
   width: 100%;
   height: 100%;
   aspect-ratio: 16 / 10;
-  container-type: inline-size;
+  container-type: size;
   overflow: hidden;
   color: var(--sc-fg);
   background: var(--sc-panel);
@@ -69,6 +77,17 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* The design canvas (lib/fit.tsx): a 100 × --sc-ah box, scaled to fit the slot and centred; 1cqw inside = one unit. */
+.sc-fit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(100cqw, calc(100cqh * 100 / var(--sc-ah, 62.5)));
+  height: calc(min(100cqw, calc(100cqh * 100 / var(--sc-ah, 62.5))) * var(--sc-ah, 62.5) / 100);
+  transform: translate(-50%, -50%);
+  container-type: inline-size;
 }
 
 /* The abstract device: a 16:10 rounded rectangle with a hairline. No shadow, no gradient. */
