@@ -1,213 +1,177 @@
 import { useRef } from 'react';
 import { useLoop, type ShowcaseProps } from '../../lib/clock';
+import { Fit, useVariant, type Variant } from '../../lib/fit';
 import { accel, inOut, lerp, out, prog, spring } from '../../lib/ease';
 import './yoyo-loop.css';
 
-const D = 11;
-const KEY = 9.6;
+const D = 12;
+const KEY = 11;
 
-/** Three real issues from the Oct 2026 Unfiltered burst, with the PRs that closed them (prs.json). */
-const ROWS = [
-  { issue: 'YOY-162', title: 'keep an excluded term only when it is negated', branch: 'YOY-162-exclusion-needs-negation', pr: 190 },
-  { issue: 'YOY-163', title: 'drop what the judge calls not relevant', branch: 'YOY-163-drop-not-relevant', pr: 192 },
-  { issue: 'YOY-161', title: 'size-missing is N/A on the seed catalog', branch: 'YOY-161-size-missing-na-on-seed', pr: 193 },
-] as const;
+const STAGES = ['Plan', 'Build', 'Review', 'Approve'] as const;
+/** Three tasks, in plain words. */
+const TASKS = ['Size filter', 'Fix checkout', 'Faster search'] as const;
 
-const ROW_Y = [10.5, 25.5, 40.5]; // card tops, cqw
-const CARD_H = 12.5;
-const PRESS = [6.25, 6.85, 7.45];
+const ENTER = 0.5; // first card appears in Plan
+const STAGGER = 0.7; // between cards
+const STEP = 1.6; // from one stage to the next
+const TRAVEL = 0.5; // the move itself
+const arrive = (i: number, s: number) => ENTER + i * STAGGER + s * STEP;
+const PRESS = (i: number) => arrive(i, 3) + 0.5;
+const COUNT = arrive(2, 3) + 1.2;
 
-function Check({ at, spinAt, t }: { at: number; spinAt: number; t: number }) {
-  const spinning = t >= spinAt && t < at;
-  const done = spring(prog(t, at, at + 0.45));
+// four equal columns, equal gaps: the header pills and the arrows between them are identical
+const MX = 4;
+const GAP = 2;
+const COL_W = (100 - 2 * MX - 3 * GAP) / 4;
+const PILL_W = 15;
+const colX = (s: number) => MX + s * (COL_W + GAP);
+
+const L: Record<Variant, { headY: number; headH: number; laneTop: number; laneBot: number; cardY: number[]; cardH: number; countY: number }> = {
+  tall: { headY: 7, headH: 6.4, laneTop: 17, laneBot: 77, cardY: [20.5, 39, 57.5], cardH: 15.5, countY: 84 },
+  wide: { headY: 2.6, headH: 5.6, laneTop: 10.8, laneBot: 51.6, cardY: [13, 25.8, 38.6], cardH: 11.4, countY: 54.2 },
+};
+
+function Status({ i, t }: { i: number; t: number }) {
+  // which stage the card is in (or arriving at) now
+  let s = 0;
+  for (let k = 1; k < 4; k++) if (t >= arrive(i, k) - TRAVEL * 0.5) s = k;
+  if (s === 0) return <span className="sc-yoyo-loop-st sc-mono">planned</span>;
+  if (s === 1) {
+    const p = prog(t, arrive(i, 1), arrive(i, 1) + STEP - TRAVEL - 0.15);
+    return (
+      <span className="sc-yoyo-loop-st sc-mono">
+        <span className="sc-yoyo-loop-bar">
+          <i style={{ transform: `scaleX(${p})` }} />
+          <b style={{ left: `${((t * 1.4) % 1) * 140 - 40}%`, opacity: p < 1 ? 1 : 0 }} />
+        </span>
+      </span>
+    );
+  }
+  if (s === 2) {
+    const ok = spring(prog(t, arrive(i, 2) + 0.4, arrive(i, 2) + 0.85));
+    return (
+      <span className="sc-yoyo-loop-st sc-mono">
+        <svg className="sc-yoyo-loop-check" viewBox="0 0 20 20" aria-hidden="true">
+          <circle className="sc-yoyo-loop-ring" cx="10" cy="10" r="7.5" />
+          {ok > 0 && (
+            <g style={{ transform: `scale(${0.3 + 0.7 * ok})`, transformOrigin: '10px 10px' }}>
+              <circle className="sc-yoyo-loop-ok" cx="10" cy="10" r="8" />
+              <path className="sc-yoyo-loop-tick" d="M6 10.4 L8.8 13 L14 7.4" />
+            </g>
+          )}
+        </svg>
+        {ok > 0 ? 'checked' : 'checking'}
+      </span>
+    );
+  }
+  const press = prog(t, PRESS(i), PRESS(i) + 0.26);
+  const merged = t >= PRESS(i) + 0.13;
+  const sc = press > 0 && press < 1 ? 1 - 0.12 * Math.sin(press * Math.PI) : 1;
   return (
-    <svg className="sc-yoyo-loop-check" viewBox="0 0 20 20" aria-hidden="true">
-      {t < at && <circle className="sc-yoyo-loop-ring" cx="10" cy="10" r="7" />}
-      {spinning && (
-        <circle
-          className="sc-yoyo-loop-spin"
-          cx="10"
-          cy="10"
-          r="7"
-          style={{ transform: `rotate(${(t - spinAt) * 540}deg)` }}
-          strokeDasharray="11 33"
-        />
-      )}
-      {t >= at && (
-        <g style={{ transform: `scale(${0.4 + 0.6 * done})`, transformOrigin: '10px 10px' }}>
-          <circle className="sc-yoyo-loop-ok" cx="10" cy="10" r="8" />
-          <path className="sc-yoyo-loop-tick" d="M6 10.4 L8.8 13 L14 7.4" />
-        </g>
-      )}
-    </svg>
+    <span className="sc-yoyo-loop-st sc-mono">
+      <span className={'sc-yoyo-loop-merge' + (merged ? ' is-merged' : '')} style={{ transform: `scale(${sc})` }}>
+        {merged ? 'Merged' : 'Merge'}
+      </span>
+    </span>
   );
 }
 
 export function YoyoLoop(props: ShowcaseProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const v = useVariant(ref);
   const { t } = useLoop(ref, D, KEY, props);
+  const lay = L[v];
 
   const stage = Math.min(out(prog(t, 0, 0.35)), 1 - accel(prog(t, D - 0.6, D - 0.1)));
-  const dim = lerp(1, 0.13, inOut(prog(t, 7.75, 8.3)));
-  const count = Math.round(44 * out(prog(t, 8.3, 9.3)));
-  const countIn = out(prog(t, 8.2, 8.8));
-  const daysIn = out(prog(t, 9.15, 9.6));
+  const heads = out(prog(t, 0.05, 0.5));
+  const countIn = out(prog(t, COUNT, COUNT + 0.5));
+  const count = Math.round(44 * out(prog(t, COUNT, COUNT + 1)));
 
-  // Cursor path: enters bottom right, visits each Merge button
-  const targets = ROW_Y.map((y) => ({ x: 89.5, y: y + CARD_H / 2 + 0.6 }));
-  const legs: [number, number, { x: number; y: number }, { x: number; y: number }][] = [
-    [5.55, 6.15, { x: 104, y: 70 }, targets[0]!],
-    [6.4, 6.75, targets[0]!, targets[1]!],
-    [7.0, 7.35, targets[1]!, targets[2]!],
-    [7.6, 8.3, targets[2]!, { x: 104, y: 72 }],
-  ];
-  let cx = 104;
-  let cy = 70;
-  for (const [a, b, p0, p1] of legs) {
-    if (t >= a) {
-      const k = inOut(prog(t, a, b));
-      cx = lerp(p0.x, p1.x, k);
-      cy = lerp(p0.y, p1.y, k);
-    }
-  }
-  const pressScale = PRESS.reduce((s, p) => {
-    const k = prog(t, p, p + 0.28);
-    return k > 0 && k < 1 ? Math.min(s, 1 - 0.16 * Math.sin(k * Math.PI)) : s;
-  }, 1);
+  // a stage header lights while a card sits in it
+  const busy = STAGES.map((_, s) =>
+    TASKS.some((_, i) => {
+      const a = arrive(i, s);
+      const end = s === 3 ? PRESS(i) + 0.3 : arrive(i, s + 1) - TRAVEL;
+      return t >= a && t < end;
+    }),
+  );
 
   return (
     <div ref={ref} className="sc-root sc-yoyo-loop">
       <p className="sc-sr">
-        yoyo-loop: three agent-ready Linear issues each get their own git worktree, open a pull request, pass CI and the agent review,
-        and a human presses Merge. 44 PRs in 4 days.
+        yoyo-loop: three tasks move through four stages, Plan, Build, Review and Approve. AI agents build and check each one, and I press
+        Merge. 44 updates in 4 days.
       </p>
-      <div className="sc-yoyo-loop-stage" style={{ opacity: stage }} aria-hidden="true">
-        <div className="sc-yoyo-loop-work" style={{ opacity: dim }}>
-          <svg className="sc-yoyo-loop-lanes" viewBox="0 0 100 62.5" preserveAspectRatio="none">
-            {ROWS.map((r, i) => {
-              const y = ROW_Y[i]! + CARD_H / 2;
-              const draw = out(prog(t, 1.45 + i * 0.16, 2.35 + i * 0.16));
-              const merged = prog(t, PRESS[i]! + 0.1, PRESS[i]! + 0.5);
+      <Fit v={v} className="sc-yoyo-loop-stage" style={{ opacity: stage }}>
+        <div aria-hidden="true">
+          {STAGES.map((name, s) => (
+            <div
+              key={`lane-${name}`}
+              className="sc-yoyo-loop-lane"
+              style={{ left: `${colX(s)}cqw`, width: `${COL_W}cqw`, top: `${lay.laneTop}cqw`, height: `${lay.laneBot - lay.laneTop}cqw`, opacity: heads }}
+            />
+          ))}
+          {STAGES.map((name, s) => (
+            <span
+              key={name}
+              className={'sc-yoyo-loop-head' + (busy[s] ? ' is-busy' : '')}
+              style={{
+                left: `${colX(s) + (COL_W - PILL_W) / 2}cqw`,
+                width: `${PILL_W}cqw`,
+                top: `${lay.headY}cqw`,
+                height: `${lay.headH}cqw`,
+                opacity: heads,
+              }}
+            >
+              {name}
+            </span>
+          ))}
+          <svg className="sc-yoyo-loop-arrows" viewBox={`0 0 100 ${v === 'tall' ? 100 : 62.5}`} style={{ opacity: heads }}>
+            {[0, 1, 2].map((s) => {
+              const x1 = colX(s) + (COL_W + PILL_W) / 2 + 1;
+              const x2 = colX(s + 1) + (COL_W - PILL_W) / 2 - 1;
+              const y = lay.headY + lay.headH / 2;
               return (
-                <g key={r.pr}>
-                  <line
-                    x1="35"
-                    y1={y}
-                    x2={lerp(35, 57, draw)}
-                    y2={y}
-                    className={'sc-yoyo-loop-lane' + (merged > 0 ? ' is-merged' : '')}
-                    vectorEffect="non-scaling-stroke"
-                  />
+                <g key={s} className="sc-yoyo-loop-arrow">
+                  <line x1={x1} y1={y} x2={x2 - 0.2} y2={y} />
+                  <path d={`M ${x2 - 1.3} ${y - 1.1} L ${x2} ${y} L ${x2 - 1.3} ${y + 1.1}`} />
                 </g>
               );
             })}
           </svg>
-          {ROWS.map((r, i) => {
-            const y = ROW_Y[i]!;
-            const a = 0.15 + i * 0.13;
-            const k = out(prog(t, a, a + 0.65));
-            const lab = spring(prog(t, 0.95 + i * 0.1, 1.5 + i * 0.1));
+
+          {TASKS.map((task, i) => {
+            const k = out(prog(t, ENTER + i * STAGGER - 0.3, ENTER + i * STAGGER + 0.2));
+            let x = colX(0);
+            for (let s = 1; s < 4; s++) {
+              const m = inOut(prog(t, arrive(i, s) - TRAVEL, arrive(i, s)));
+              if (m > 0) x = lerp(colX(s - 1), colX(s), m);
+            }
+            const merged = t >= PRESS(i) + 0.13;
             return (
               <div
-                key={r.issue}
-                className="sc-yoyo-loop-issue"
-                style={{ top: `${y}cqw`, opacity: k, transform: `translateY(${(1 - k) * -3}cqw)` }}
+                key={task}
+                className={'sc-yoyo-loop-card' + (merged ? ' is-merged' : '')}
+                style={{
+                  left: `${x + 1}cqw`,
+                  width: `${COL_W - 2}cqw`,
+                  top: `${lay.cardY[i]}cqw`,
+                  height: `${lay.cardH}cqw`,
+                  opacity: k,
+                  transform: `translateY(${(1 - k) * -1.5}cqw)`,
+                }}
               >
-                <div className="sc-yoyo-loop-issue-top">
-                  <span className="sc-mono sc-yoyo-loop-id">{r.issue}</span>
-                  <span className="sc-mono sc-yoyo-loop-label" style={{ opacity: Math.min(1, lab * 1.5), transform: `scale(${0.6 + 0.4 * lab})` }}>
-                    agent-ready
-                  </span>
-                </div>
-                <div className="sc-yoyo-loop-title">{r.title}</div>
+                <span className="sc-yoyo-loop-title">{task}</span>
+                <Status i={i} t={t} />
               </div>
             );
           })}
-          {ROWS.map((r, i) => {
-            const y = ROW_Y[i]! + CARD_H / 2;
-            return [0, 1, 2].map((j) => {
-              const at = 2.05 + i * 0.22 + j * 0.42;
-              const k = spring(prog(t, at, at + 0.4));
-              return (
-                <span
-                  key={`${r.pr}-${j}`}
-                  className="sc-yoyo-loop-commit"
-                  style={{ left: `${40 + j * 6}cqw`, top: `${y}cqw`, transform: `translate(-50%,-50%) scale(${k})` }}
-                />
-              );
-            });
-          })}
-          {ROWS.map((r, i) => {
-            const y = ROW_Y[i]! + CARD_H / 2;
-            const k = out(prog(t, 1.75 + i * 0.16, 2.4 + i * 0.16));
-            return (
-              <span
-                key={`b-${r.pr}`}
-                className="sc-mono sc-yoyo-loop-branch"
-                style={{ top: `${y - 3.6}cqw`, opacity: k }}
-              >
-                worktree
-              </span>
-            );
-          })}
-          {ROWS.map((r, i) => {
-            const y = ROW_Y[i]!;
-            const a = 3.05 + i * 0.2;
-            const k = out(prog(t, a, a + 0.7));
-            const merged = t >= PRESS[i]! + 0.08;
-            const fill = prog(t, PRESS[i]!, PRESS[i]! + 0.25);
-            const isPressing = t >= PRESS[i]! && t < PRESS[i]! + 0.28;
-            return (
-              <div
-                key={r.pr}
-                className={'sc-yoyo-loop-pr' + (merged ? ' is-merged' : '')}
-                style={{ top: `${y}cqw`, opacity: k, transform: `translateX(${(1 - k) * 8}cqw)` }}
-              >
-                <div className="sc-yoyo-loop-pr-top">
-                  <span className="sc-mono sc-yoyo-loop-num">#{r.pr}</span>
-                  <span className="sc-mono sc-yoyo-loop-br">{r.branch}</span>
-                </div>
-                <div className="sc-yoyo-loop-checks sc-mono">
-                  <span>
-                    <Check t={t} spinAt={3.9 + i * 0.15} at={4.55 + i * 0.22} /> ci
-                  </span>
-                  <span>
-                    <Check t={t} spinAt={4.35 + i * 0.15} at={5.05 + i * 0.22} />
-                    {t >= 5.05 + i * 0.22 ? (<><span className="sc-yoyo-loop-long">loop-approved</span><span className="sc-yoyo-loop-short">review</span></>) : 'review'}
-                  </span>
-                </div>
-                <span
-                  className="sc-yoyo-loop-merge"
-                  style={{
-                    transform: `translateY(-50%) scale(${isPressing ? pressScale : 1})`,
-                    ['--sc-yl-fill' as string]: fill,
-                  }}
-                >
-                  {merged ? 'Merged' : 'Merge'}
-                </span>
-              </div>
-            );
-          })}
-        </div>
 
-        <svg
-          className="sc-yoyo-loop-cursor"
-          viewBox="0 0 24 24"
-          style={{ left: `${cx}cqw`, top: `${cy}cqw`, transform: `scale(${pressScale})` }}
-          aria-hidden="true"
-        >
-          <path d="M3 2 L3 19.5 L7.6 15.3 L10.6 22 L13.8 20.6 L10.9 14.1 L17 14.1 Z" />
-        </svg>
-
-        <div className="sc-yoyo-loop-count" style={{ opacity: countIn, transform: `translateY(${(1 - countIn) * 3}cqw)` }}>
-          <span className="sc-yoyo-loop-big">
-            {count} <span className="sc-yoyo-loop-unit">PRs</span>
-          </span>
-          <span className="sc-yoyo-loop-days" style={{ opacity: daysIn, transform: `translateX(${(1 - daysIn) * -2}cqw)` }}>
-            · 4 days
-          </span>
+          <div className="sc-yoyo-loop-count" style={{ top: `${lay.countY}cqw`, opacity: countIn, transform: `translateY(${(1 - countIn) * 1.5}cqw)` }}>
+            <span className="sc-yoyo-loop-big">{count}</span> updates <span className="sc-yoyo-loop-dot">·</span> 4 days
+          </div>
         </div>
-      </div>
+      </Fit>
     </div>
   );
 }
