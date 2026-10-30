@@ -1,11 +1,10 @@
 // The conductor: the only module that talks to the swarm, the brain, sound and
 // voice. UI components call `ctl.*`; state lives in the zustand store.
-import type { Action, ProjectId, Rect, ShapeSpec, StoryId } from '@yoyo/protocol';
-import { PROJECT_IDS } from '@yoyo/protocol';
+import type { Action, ProjectId, Rect, ShapeSpec, StoryId, WorkEra } from '@yoyo/protocol';
 import { BrainError, type Brain, type ReplyHandlers } from './agent';
 import { BUILD_CHIPS, ENTRY_CHIPS, ROCKET_CHIP, WHO_CHIPS, STORY_CHIPS, changeIntent, projectChips, resolveChip, rocketChips } from './content/chips';
 import { copy } from './content/copy';
-import { neighbour, projectById } from './content/projects';
+import { projectById, projectsOf } from './content/projects';
 import { nextStory, stories, storyById } from './content/stories';
 import { SHOW_LINES, showSteps } from './content/show';
 import { applyScene, isMobileViewport } from './design';
@@ -16,6 +15,7 @@ import { markShowSeen } from './state/visit';
 import type { Scene } from '@yoyo/protocol';
 import type { Sound } from './ui/sound';
 import { createChannel, createPacer, readLeft, stripMarks, TURN_WORD_MS, type Pacer, type TurnFit } from './ui/turns';
+import { readMs as readTime } from './ui/pace';
 import type { Voice } from './ui/voice';
 
 interface Runtime {
@@ -27,7 +27,6 @@ interface Runtime {
 const rt: Runtime = { swarm: null, brain: null, sound: null, voice: null };
 
 const S = () => useStore.getState();
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const vp = () => ({ w: innerWidth, h: innerHeight });
 
 let turn: AbortController | null = null;
@@ -36,8 +35,14 @@ let runner: Runner | null = null;
 let deferred: Action[] = [];
 let lastBuildRect: Rect | null = null;
 let lockTimer: ReturnType<typeof setTimeout> | null = null;
-/** A shape the agent formed holds at least this long (POLISH1 A5). */
-const READ_FLOOR = 4000;
+/** Contact's chips (WAVE4 U6). */
+export const CONTACT_CHIPS = ['Copy my email', 'What have you built?', 'Why should we hire you?'];
+const COPIED_CHIP = 'Email copied';
+/** After a build closes (WAVE4 U7). */
+const AFTER_BUILD_CHIPS = ['Build another', 'What have you built?', 'How do I reach you?'];
+/** The Work overlay's end-of-shelf link (WAVE4 U8). */
+export const MORE_ON_GITHUB = 'https://github.com/0xYoyo?tab=repositories';
+const K_SKIP_HINT = 'yoyo.v3.skipHint';
 /** "Now a rocket" has been offered this visit (FIX4 U6). */
 let rocketOffered = false;
 /** Bumped by every turn; a pending "let the shape go" from an older turn checks it. */
@@ -147,8 +152,55 @@ function retire(p: Pacer) {
   if (!pacers.size) S().setStreaming(false);
 }
 
-/** Overlay-opening actions wait until the line has been said. */
-const DEFERRED = new Set<Action['type']>(['show', 'play', 'story', 'tour', 'build', 'contact']);
+/** Overlay-opening actions wait until the reply's last turn has been read (WAVE4 U2). */
+const DEFERRED = new Set<Action['type']>(['show', 'play', 'story', 'tour', 'build', 'contact', 'work']);
+
+/**
+ * A skippable wait (WAVE4 U2/U3): the reply's last turn being read before its overlay opens. A click,
+ * Enter, Space or → ends it early (ctl.advance), a new message cancels it.
+ */
+let holdSkip: (() => void) | null = null;
+function hold(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (ms <= 0 || signal.aborted) return resolve();
+    const done = () => {
+      clearTimeout(t);
+      signal.removeEventListener('abort', done);
+      if (holdSkip === done) holdSkip = null;
+      resolve();
+    };
+    const t = setTimeout(done, ms);
+    signal.addEventListener('abort', done, { once: true });
+    holdSkip = done;
+  });
+}
+
+/** The once-a-visit "tap to skip" hint (WAVE4 U3): on the first reply that runs to a second turn. */
+function skipHintSeen(): boolean {
+  try {
+    return sessionStorage.getItem(K_SKIP_HINT) === '1';
+  } catch {
+    return false;
+  }
+}
+function showSkipHint() {
+  if (S().skipHint || skipHintSeen()) return;
+  try {
+    sessionStorage.setItem(K_SKIP_HINT, '1');
+  } catch {
+    /* blocked storage: once this page load */
+  }
+  S().setSkipHint(true);
+}
+
+/** The Work overlay's shelf a project sits on, and that shelf in order (WAVE4 U8). */
+const eraOf = (id: ProjectId): WorkEra => projectById(id).era;
+const shelf = (era: WorkEra): ProjectId[] => projectsOf(era).map((p) => p.id);
+/** Whether `id` is the last card of its shelf (the "50+ more on GitHub" link sits there). */
+export const lastOfShelf = (id: ProjectId): boolean => {
+  const ids = shelf(eraOf(id));
+  return ids[ids.length - 1] === id;
+};
 
 function swarm(): SwarmHandle | null {
   return rt.swarm;
@@ -219,6 +271,9 @@ function runAction(a: Action) {
       break;
     case 'contact':
       ctl.contact();
+      break;
+    case 'work':
+      ctl.openWork(a.era);
       break;
   }
 }
@@ -358,15 +413,21 @@ export const ctl = {
     const st = S();
     st.touch();
     st.spendIdle();
-    // a build is open: "change it" / "make it dark" edits it (FIX4 U1)
+    // a build is open: changes aren't on here yet (WAVE4 U7); the frame stays as it is
     const edit = changeIntent(clean, st.overlay === 'build' && st.build.status === 'locked' && !!st.build.html);
-    if (edit === 'begin') return ctl.beginChange();
-    if (edit === 'apply') return ctl.changeBuild(clean);
+    if (edit) {
+      st.pushVisitor(clean);
+      await speakLine(copy.build.noChanges);
+      return;
+    }
+    st.markAnswered(clean);
     // typed with a card or contact open (the bar stays up over them, FIX4 U2): the answer needs the words
     if (st.overlay === 'card' || st.overlay === 'contact') closeAll();
     skipForAnswer();
     turn?.abort();
     for (const p of pacers) p.cancel();
+    holdSkip?.();
+    S().setSkipHint(false);
     S().finishAgent({ keepStreaming: true }); // a turn cut short rests as far as it got
     // the visitor moved on: the next turn does not wait for the one on screen
     channel.last = null;
@@ -378,12 +439,15 @@ export const ctl = {
     swarm()?.mood('thinking');
     st.setMood('thinking');
     let lastTurn = '';
+    let turnsBegun = 0;
     const pacer = turnPacer({
       onBegin() {
         if (S().mood === 'thinking') {
           swarm()?.mood('speaking');
           S().setMood('speaking');
         }
+        // a reply that runs to a second turn is a long one: the once-a-visit hint that a tap moves on
+        if (++turnsBegun === 2 && !S().reducedMotion) showSkipHint();
       },
     });
     ac.signal.addEventListener('abort', () => pacer.cancel(), { once: true });
@@ -413,7 +477,13 @@ export const ctl = {
         }
         if (a.type === 'show') opened = a.project;
         if (DEFERRED.has(a.type)) deferred.push(a);
-        else runAction(a);
+        // a turn's own shape morphs at that turn's first word (WAVE4 U10)
+        else if (a.type === 'become') {
+          const act = a;
+          pacer.cue(() => {
+            if (turn === ac) runAction(act);
+          });
+        } else runAction(a);
       },
       onNotice(t) {
         pacer.line(t);
@@ -430,14 +500,15 @@ export const ctl = {
       if (turn !== ac) return;
       lastTurn = [...S().lines].reverse().find((l) => l.role === 'agent')?.text ?? lastTurn;
       S().setMood('idle');
-      // The last turn rests on screen; keep its shape up while it is read (300 ms a word),
-      // and never less than 4 s after it lands — reduced motion too.
-      const readMs = Math.max(READ_FLOOR, lastTurn.split(/\s+/).length * 300);
+      // The last turn rests on screen; keep its shape up while it is read (the one clock, ui/pace.ts),
+      // reduced motion too.
       const seq = ++settleSeq;
       setTimeout(() => {
+        // the hint goes once the last turn has been read
+        if (seq === settleSeq) S().setSkipHint(false);
         if (seq !== settleSeq || turn || S().overlay !== 'none' || runner?.running()) return;
         swarm()?.mood('idle');
-      }, readMs);
+      }, readTime(lastTurn));
       // the rocket is up: its chip goes from the row the reply left (it set none of its own)
       if (rocket && S().chips.includes(ROCKET_CHIP)) S().setChips(rocketChips(S().chips, { spelled, rocket, offered: true }));
       if (!chipsSet) {
@@ -447,14 +518,11 @@ export const ctl = {
       const queue = deferred;
       deferred = [];
       if (queue.length) {
-        // let the line land before an overlay takes the stage
-        await sleep(text ? Math.min(1400, 500 + lastTurn.split(' ').length * 40) : 0);
+        // the reply's last turn is read in full before an overlay takes the stage (WAVE4 U2); a tap moves on
+        if (text) await hold(readLeft(channel, performance.now()), ac.signal);
         if (turn !== ac) return;
-        for (const a of queue) {
-          if (a.type !== 'show') runAction(a);
-          // the reply's own chips stay until its last turn has been read, then the card's (FIX4 U3)
-          else ctl.openProject(a.project, chipsSet ? { chipsAfter: readLeft(channel, performance.now()) } : {});
-        }
+        S().setSkipHint(false);
+        for (const a of queue) runAction(a);
       }
     } catch (e) {
       if (e instanceof BrainError && e.reason === 'aborted') return;
@@ -467,12 +535,14 @@ export const ctl = {
     }
   },
 
-  /** A click or Enter: the turn on screen has been read — the next one now (POLISH2 A1). */
+  /** A click, Enter, Space or →: the turn on screen has been read, the next one (or the reply's overlay) now (POLISH2 A1, WAVE4 U3). */
   advance() {
-    for (const p of pacers) p.advance();
+    if (S().skipHint) S().setSkipHint(false);
+    if (pacers.size) for (const p of pacers) p.advance();
+    else holdSkip?.();
   },
-  /** Whether a reply is still pacing its turns (Enter on an empty bar advances it). */
-  pacing: () => pacers.size > 0,
+  /** Whether a reply is still pacing its turns or holding its last one before an overlay (a tap advances it). */
+  pacing: () => pacers.size > 0 || !!holdSkip,
   /** Conversation registers the hidden clone each turn is sized on. */
   setMeasure(fn: ((text: string) => TurnFit | null) | null) {
     measureFn = fn;
@@ -483,6 +553,11 @@ export const ctl = {
     st.touch();
     st.spendIdle();
     skipForAnswer();
+    // contact's and the build's own moves (WAVE4 U6, U7)
+    const low = label.trim().toLowerCase();
+    if (low === 'copy my email' || low === COPIED_CHIP.toLowerCase()) return void ctl.copyEmail();
+    if (low === 'close' && st.overlay !== 'none') return ctl.closeOverlay();
+    if (low !== 'what have you built?') st.markAnswered(label);
     const cmd = resolveChip(label, { project: st.project, name: st.visitor.name ?? rt.brain?.memory.name(), hasBuild: !!st.build.html, hasStoredBuild: !!rt.brain?.memory.builds().some((b) => b.html) });
     switch (cmd.kind) {
       case 'say':
@@ -544,6 +619,7 @@ export const ctl = {
   openProject(id: ProjectId, opts: { chipsAfter?: number } = {}) {
     claimBody();
     closeAll('card');
+    S().setEra(eraOf(id));
     S().showProject(id);
     if (opts.chipsAfter === undefined) return S().setChips(projectChips(id));
     const key = S().chipsKey;
@@ -553,10 +629,18 @@ export const ctl = {
       if (s.chipsKey === key && s.overlay === 'card' && s.project === id) s.setChips(projectChips(id));
     }, opts.chipsAfter);
   },
+  /** ←/→ and "Next one": round the active shelf (WAVE4 U8); no card open yet, its first card. */
   nextProject(dir: 1 | -1) {
     const cur = S().project;
-    // no card open yet: "next" starts at the first project (Unfiltered), not a neighbour of it
-    ctl.openProject(cur ? neighbour(cur, dir).id : PROJECT_IDS[0]);
+    const ids = shelf(cur ? eraOf(cur) : S().era);
+    const i = cur ? ids.indexOf(cur) : -1;
+    const n = ids.length;
+    ctl.openProject(i < 0 ? ids[0]! : ids[(((i + dir) % n) + n) % n]!);
+  },
+  /** The Work overlay on a shelf, at its first card (the toggle; `[[work:hand]]`). */
+  openWork(era: WorkEra) {
+    const first = shelf(era)[0];
+    if (first) ctl.openProject(first);
   },
   /** The open card reports its rect; the swarm holds its outline. */
   frameFor(rect: Rect) {
@@ -578,7 +662,8 @@ export const ctl = {
     if (was === 'card' || was === 'game' || was === 'build') {
       // the game covers the bar; a card (the phone's sheet too, FIX4 U2) and the build frame don't
       const covered = was === 'game';
-      const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who are you?', 'What have you built?'] : null;
+      // the build's row ("Share it", "Close") means nothing once it is closed (WAVE4 U7)
+      const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who are you?', 'What have you built?'] : AFTER_BUILD_CHIPS;
       if (chips) S().setChips([]);
       settleBody(covered, () => chips && S().setChips(chips));
     } else {
@@ -595,10 +680,21 @@ export const ctl = {
     claimBody();
     closeAll('contact');
     S().openOverlay('contact');
+    S().setChips(CONTACT_CHIPS);
     swarm()?.become({ kind: 'glyph', id: 'envelope' });
     setTimeout(() => {
       if (S().overlay === 'contact') swarm()?.become({ kind: 'glyph', id: 'envelope-open' });
     }, S().reducedMotion ? 0 : 900);
+  },
+  /** Contact's "Copy my email" chip: the address on the clipboard, the chip says so (WAVE4 U6). */
+  async copyEmail() {
+    try {
+      await navigator.clipboard.writeText(copy.contact.email);
+    } catch {
+      /* clipboard blocked: the address is on screen */
+    }
+    const chips = S().chips;
+    if (chips.some((c) => c.toLowerCase() === 'copy my email')) S().setChips(chips.map((c) => (c.toLowerCase() === 'copy my email' ? COPIED_CHIP : c)));
   },
   history() {
     closeAll('history');
@@ -764,12 +860,10 @@ export const ctl = {
   get lastBuildRect() {
     return lastBuildRect;
   },
+  /** Changes aren't on here yet (WAVE4 U7): the build stays as it is and says so. */
   beginChange() {
-    const st = S();
-    if (!st.build.html) return;
-    if (st.overlay !== 'build') st.openOverlay('build');
-    st.setBarMode('change');
-    document.getElementById('y-input')?.focus();
+    if (!S().build.html) return;
+    void speakLine(copy.build.noChanges);
   },
   async changeBuild(text: string) {
     const st = S();

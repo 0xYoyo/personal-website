@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBrain } from '../agent';
 import { changeIntent, projectChips } from '../content/chips';
+import { copy } from '../content/copy';
 import { ctl } from '../controller';
 import { useStore } from '../state/store';
 
@@ -19,7 +20,7 @@ describe('changeIntent (FIX4 U1)', () => {
   });
 });
 
-describe('ctl.say with a build open (FIX4 U1)', () => {
+describe('ctl.say with a build open (FIX4 U1, WAVE4 U7)', () => {
   beforeEach(() => {
     localStorage.clear();
     useStore.getState().reset();
@@ -31,20 +32,18 @@ describe('ctl.say with a build open (FIX4 U1)', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('typed "change it" goes into change mode, never a reply or a new build', async () => {
-    const build = vi.spyOn(ctl, 'startBuild').mockResolvedValue(undefined);
-    await ctl.say('change it');
-    const st = useStore.getState();
-    expect(st.barMode).toBe('change');
-    expect(build).not.toHaveBeenCalled();
-    expect(st.lines.some((l) => l.role === 'agent')).toBe(false);
-  });
-
-  it('typed "make it dark" changes the open build', async () => {
-    const build = vi.spyOn(ctl, 'startBuild').mockResolvedValue(undefined);
-    await ctl.say('make it dark');
-    expect(build).toHaveBeenCalledWith('make it dark', expect.objectContaining({ previousHtml: expect.stringContaining('<title>Today</title>') }));
-    expect(useStore.getState().lines.some((l) => /don't have an answer/.test(l.text))).toBe(false);
+  it('a typed change ("change it", "make it dark") gets the scripted line: no change mode, no new build', async () => {
+    for (const t of ['change it', 'make it dark']) {
+      const build = vi.spyOn(ctl, 'startBuild').mockResolvedValue(undefined);
+      await ctl.say(t);
+      const st = useStore.getState();
+      expect(st.barMode).toBe('chat');
+      expect(build).not.toHaveBeenCalled();
+      expect(st.overlay).toBe('build');
+      expect([...st.lines].reverse().find((l) => l.role === 'agent')?.text).toBe(copy.build.noChanges);
+      expect(st.lines.some((l) => /don't have an answer/.test(l.text))).toBe(false);
+      build.mockRestore();
+    }
   });
 
   it('with no build open it is an ordinary message', async () => {
@@ -58,7 +57,7 @@ describe('ctl.say with a build open (FIX4 U1)', () => {
   });
 });
 
-describe('a reply that opens a card keeps its own chips until it has been read (FIX4 U3)', () => {
+describe('a reply that opens a card: the card waits until its last turn has been read (WAVE4 U2)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     localStorage.clear();
@@ -68,17 +67,31 @@ describe('a reply that opens a card keeps its own chips until it has been read (
   });
   afterEach(() => vi.useRealTimers());
 
-  it('reply chips while the last turn is read, then the card’s', async () => {
+  it('the overlay opens only after the last turn’s full read time; then the card’s chips', async () => {
     const done = ctl.say('What have you built?');
-    for (let i = 0; i < 100 && useStore.getState().overlay !== 'card'; i++) await vi.advanceTimersByTimeAsync(100);
+    // the reply's last turn is on screen once pacing has nothing left but the hold
+    let lastShownAt = -1;
+    let openedAt = -1;
+    for (let t = 0; t < 30_000 && openedAt < 0; t += 50) {
+      const st = useStore.getState();
+      if (lastShownAt < 0 && !st.streaming && st.lines.some((l) => l.role === 'agent')) lastShownAt = t;
+      if (st.overlay === 'card') openedAt = t;
+      await vi.advanceTimersByTimeAsync(50);
+    }
     await done;
-    const st = useStore.getState();
-    expect(st.overlay).toBe('card');
-    expect(st.chips).toContain('Play the game'); // the reply's own row, not swapped as the card opens
-    await vi.advanceTimersByTimeAsync(1500);
-    expect(useStore.getState().chips).toContain('Play the game');
-    await vi.advanceTimersByTimeAsync(8000);
+    expect(openedAt).toBeGreaterThan(0);
+    expect(openedAt - lastShownAt).toBeGreaterThanOrEqual(3500); // ≥ the 3.6 s floor (50 ms steps)
     expect(useStore.getState().chips.slice(0, 2)).toEqual(projectChips(useStore.getState().project!));
+  });
+
+  it('a tap during that hold opens it at once', async () => {
+    const done = ctl.say('What have you built?');
+    for (let i = 0; i < 400 && !(ctl.pacing() && !useStore.getState().streaming); i++) await vi.advanceTimersByTimeAsync(25);
+    expect(useStore.getState().overlay).toBe('none');
+    ctl.advance();
+    await vi.advanceTimersByTimeAsync(10);
+    await done;
+    expect(useStore.getState().overlay).toBe('card');
   });
 
   it('"How fast is it?" answers without a card', async () => {
