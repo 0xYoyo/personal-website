@@ -1,46 +1,49 @@
-.sc-runi-connector-stage {
-  position: absolute;
-  inset: 0;
-}
 .sc-runi-connector-chat {
   position: absolute;
-  left: 5cqw;
-  top: 5cqw;
-  width: 59.6cqw;
-  height: 52.5cqw;
+  left: 4cqw;
+  top: 12cqw;
+  width: 58cqw;
+  height: 76cqw;
+  padding: 3cqw 2.8cqw;
   border-radius: 1.8cqw;
   border: 1px solid var(--sc-line-2);
   background: var(--sc-raise);
   overflow: hidden;
 }
 .sc-runi-connector-flow {
-  position: absolute;
-  left: 3cqw;
-  right: 3cqw;
-  top: 3cqw;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2.2cqw;
+  gap: 2.4cqw;
 }
 .sc-runi-connector-me {
   align-self: flex-end;
-  max-width: 85%;
+  max-width: 100%;
   padding: 1.3cqw 2.2cqw;
   border-radius: 2.4cqw 2.4cqw 0.6cqw 2.4cqw;
   background: var(--sc-accent);
   color: #f4efe6;
-  font-size: 3cqw;
+  font-size: 2.7cqw;
   font-weight: 500;
   white-space: nowrap;
 }
+.sc-runi-connector-lead {
+  display: grid;
+  font-size: 2.8cqw;
+  font-weight: 600;
+  margin-bottom: -0.8cqw;
+}
+.sc-runi-connector-lead > * {
+  grid-area: 1 / 1;
+  align-self: center;
+}
 .sc-runi-connector-status {
   font-size: 2.2cqw;
+  font-weight: 400;
   color: var(--sc-muted);
-  height: 2.6cqw;
   display: flex;
   align-items: center;
   gap: 1cqw;
-  margin-bottom: -2.2cqw;
 }
 .sc-runi-connector-dots {
   display: inline-flex;
@@ -52,43 +55,35 @@
   border-radius: 50%;
   background: var(--sc-muted);
 }
-.sc-runi-connector-answer {
-  display: flex;
-  flex-direction: column;
-  gap: 1cqw;
-}
-.sc-runi-connector-lead {
-  font-size: 3cqw;
-  font-weight: 600;
-  margin-bottom: 0.3cqw;
-}
 .sc-runi-connector-row {
   display: grid;
-  grid-template-columns: 6cqw 1fr auto;
+  grid-template-columns: 5.4cqw auto 1fr;
   align-items: baseline;
   gap: 1.4cqw;
-  padding: 1cqw 0;
+  padding: 1.1cqw 0 0;
+  margin-top: -0.9cqw;
   border-top: 1px solid var(--sc-line);
-  font-size: 2.7cqw;
+  font-size: 2.6cqw;
 }
 .sc-runi-connector-day {
-  font-size: 2.3cqw;
+  font-size: 2.2cqw;
   color: var(--sc-muted);
 }
 .sc-runi-connector-what {
   white-space: nowrap;
 }
 .sc-runi-connector-item {
+  justify-self: end;
+  font-size: 2.3cqw;
   color: var(--sc-muted);
   white-space: nowrap;
 }
 .sc-runi-connector-files {
   display: flex;
   gap: 1.2cqw;
-  flex-wrap: nowrap;
 }
 .sc-runi-connector-file {
-  font-size: 2.3cqw;
+  font-size: 2.2cqw;
   padding: 0.8cqw 1.2cqw;
   border-radius: 0.8cqw;
   border: 1px solid var(--sc-line-2);
@@ -96,7 +91,7 @@
   transform-origin: 0 50%;
 }
 .sc-runi-connector-saved {
-  font-size: 2.3cqw;
+  font-size: 2.2cqw;
   color: var(--sc-muted);
 }
 .sc-runi-connector-wires {
@@ -104,6 +99,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  overflow: visible;
   pointer-events: none;
 }
 .sc-runi-connector-wire {
@@ -111,34 +107,39 @@
   stroke: var(--sc-line-2);
   stroke-width: 1.5px;
 }
+.sc-runi-connector-hub {
+  fill: var(--sc-line-2);
+}
 .sc-runi-connector-packet {
+  fill: var(--sc-accent);
+}
+.sc-runi-connector-srcs {
   position: absolute;
-  width: 1.5cqw;
-  height: 1.5cqw;
-  margin: -0.75cqw 0 0 -0.75cqw;
-  border-radius: 50%;
-  background: var(--sc-accent);
+  left: 71cqw;
+  width: 25cqw;
+  top: 12cqw;
+  height: 76cqw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4cqw;
 }
 .sc-runi-connector-src {
-  position: absolute;
-  left: 74cqw;
-  width: 21cqw;
-  height: 8cqw;
+  height: 12cqw;
   display: flex;
   align-items: center;
-  gap: 1.4cqw;
-  padding: 0 1.6cqw;
+  gap: 1.6cqw;
+  padding: 0 1.8cqw;
   border-radius: 1.4cqw;
   border: 1px solid var(--sc-line-2);
   background: var(--sc-raise);
-  font-size: 2.5cqw;
 }
 .sc-runi-connector-src.is-lit {
   border-color: var(--sc-accent);
 }
 .sc-runi-connector-src svg {
-  width: 3.6cqw;
-  height: 3.6cqw;
+  width: 3.8cqw;
+  height: 3.8cqw;
   flex: none;
   fill: none;
   stroke: var(--sc-fg);
@@ -150,8 +151,25 @@
   fill: var(--sc-fg);
   stroke: none;
 }
+.sc-runi-connector-src-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4cqw;
+  min-width: 0;
+}
+.sc-runi-connector-label {
+  font-size: 2.6cqw;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sc-runi-connector-brand {
+  font-size: 1.9cqw;
+  color: var(--sc-muted);
+}
 .sc-runi-connector-folder {
   position: absolute;
+  left: 77cqw;
+  top: 77.5cqw;
   width: 13cqw;
   height: 10.5cqw;
   display: grid;
@@ -170,7 +188,7 @@
 .sc-runi-connector-folder span {
   position: relative;
   margin-top: 1.2cqw;
-  font-size: 3cqw;
+  font-size: 2.8cqw;
 }
 .sc-runi-connector-flyer {
   position: absolute;
@@ -191,15 +209,70 @@
   border-top: 1px solid var(--sc-muted);
   border-bottom: 1px solid var(--sc-muted);
 }
-@container (max-width: 520px) {
-  .sc-runi-connector-item {
-    display: none;
-  }
-  .sc-runi-connector-row {
-    grid-template-columns: 7cqw 1fr;
-    font-size: 3.1cqw;
-  }
-  .sc-runi-connector-file {
-    font-size: 2.6cqw;
-  }
+
+/* the phone's 16:10 composition */
+.sc-fit[data-v='wide'] .sc-runi-connector-chat {
+  top: 3cqw;
+  height: 56.5cqw;
+  padding: 2.4cqw 2.4cqw;
+}
+.sc-fit[data-v='wide'] .sc-runi-connector-flow {
+  gap: 1.9cqw;
+}
+.sc-fit[data-v='wide'] .sc-runi-connector-srcs {
+  top: 3cqw;
+  height: 56.5cqw;
+  gap: 2.2cqw;
+}
+.sc-fit[data-v='wide'] .sc-runi-connector-src {
+  height: 9.4cqw;
+  padding: 0 1.4cqw;
+  gap: 1.3cqw;
+}
+.sc-fit[data-v='wide'] .sc-runi-connector-label {
+  font-size: 2.7cqw;
+}
+.sc-fit[data-v='wide'] .sc-runi-connector-brand {
+  font-size: 2.1cqw;
+}
+.sc-fit[data-v='wide'] .sc-runi-connector-folder {
+  left: 78.5cqw;
+  top: 49.5cqw;
+  width: 11cqw;
+  height: 9cqw;
+}
+
+/* the desktop's square composition: the chat has the room, so its words are larger */
+.sc-fit[data-v='tall'] .sc-runi-connector-flow {
+  gap: 3.4cqw;
+}
+.sc-fit[data-v='tall'] .sc-runi-connector-me {
+  font-size: 3.3cqw;
+}
+.sc-fit[data-v='tall'] .sc-runi-connector-lead {
+  font-size: 3.4cqw;
+}
+.sc-fit[data-v='tall'] .sc-runi-connector-status {
+  font-size: 2.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-runi-connector-row {
+  font-size: 3.1cqw;
+  padding-top: 1.6cqw;
+  margin-top: -1.4cqw;
+}
+.sc-fit[data-v='tall'] .sc-runi-connector-day {
+  font-size: 2.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-runi-connector-item {
+  font-size: 2.7cqw;
+}
+.sc-fit[data-v='tall'] .sc-runi-connector-file,
+.sc-fit[data-v='tall'] .sc-runi-connector-saved {
+  font-size: 2.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-runi-connector-label {
+  font-size: 3cqw;
+}
+.sc-fit[data-v='tall'] .sc-runi-connector-brand {
+  font-size: 2.2cqw;
 }
