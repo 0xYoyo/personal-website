@@ -152,7 +152,7 @@ export function createApp(deps: Partial<Deps> = {}) {
       const parsed = parseChatBody(body);
       if (!parsed.ok) return json(parsed.status, { reason: parsed.reason });
       if (!apiKey(env)) return json(503, { reason: 'offline' });
-      const stop = await gate('chat', cap(env.DAILY_CHAT_CAP, 300));
+      const stop = await gate('chat', cap(env.DAILY_CHAT_CAP, 150));
       if (stop) return stop;
       if (provider(env) === 'gemini') {
         const result = await routeGemini({ apiKey: apiKey(env), model: modelName(env), turns: parsed.turns, fetchImpl, signal: req.signal }).catch(
