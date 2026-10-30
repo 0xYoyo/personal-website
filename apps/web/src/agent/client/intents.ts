@@ -185,3 +185,48 @@ export function classify(text: string): Classification {
   }
   return { kind: 'unknown' };
 }
+
+/** Filler a strong local match may carry around its hint words ("what's your github?", "and crypto?"). */
+const FILLER = new Set([
+  'a', 'an', 'the', 'and', 'or', 'so', 'is', 'are', 'am', 'was', 'were', 'be', 'do', 'does', 'did', 'you', 'your', 'yours',
+  'u', 'ur', 'have', 'has', 'had', 'tell', 'me', 'about', 'what', 'whats', 'which', 'can', 'could', 'would', 'will',
+  'please', 'pls', 'of', 'on', 'in', 'to', 'for', 'i', 'im', 'it', 'its', 'this', 'that', 'how', 'at', 'with', 'some', 'any',
+  'more', 'ok', 'okay', 'then', 'now', 'just', 'really', 'yoyo', 'yoav', 'next', 'happened',
+]);
+
+/**
+ * WAVE4 A3: a message the scripted brain answers for sure, with no model call: a name, an emoji,
+ * an easter egg, a chip command, "spell X", one word, or an intent whose hints explain every word
+ * that isn't filler ("And crypto?", "What have you built?", "How do I reach you?"). Anything
+ * else goes to the router.
+ */
+export function strongLocal(text: string): boolean {
+  const raw = text.trim();
+  const c = classify(raw);
+  switch (c.kind) {
+    case 'name':
+    case 'emoji':
+    case 'spell':
+    case 'spell-my-name':
+    case 'command':
+    case 'extra':
+      return true;
+    case 'unknown':
+      return false;
+  }
+  const tokens = tokenize(raw);
+  if (!tokens.length || raw === '?') return true;
+  // builds never wait on the model (A4); the explicit questions classify() pins are scripted
+  if (c.id === 'build') return true;
+  const n = tokens.join(' ');
+  if (/^(who are you|what are you|are you (an? )?(ai|bot|agent|real))$/.test(n)) return true;
+  const intent = FAQ_INTENTS.find((i) => i.id === c.id);
+  if (!intent) return false;
+  const hints = intent.hints.map((h) => tokenize(h)).filter((h) => h.length);
+  if (hints.some((h) => h.join(' ') === n)) return true; // the message is a hint ("what are you like")
+  if (tokens.length === 1) return hints.some((h) => h.length === 1 && h[0] === tokens[0]);
+  const content = tokens.filter((t) => !FILLER.has(t));
+  if (!content.length) return false;
+  const words = new Set(hints.flat());
+  return content.every((t) => words.has(t));
+}

@@ -52,7 +52,7 @@ describe('adapter: turns', () => {
     try {
       const brain = createBrain({ agentUrl: 'https://agent.example', speed: 0.001 });
       const r = record();
-      const reply = await brain.send('crypto?', r.h);
+      const reply = await brain.send('what do you make of memecoins lately?', r.h); // routed (WAVE4 A3)
       expect(reply.source).toBe('live');
       expect(reply.turns).toEqual(['Since 2021.', 'He reads the market.']);
       expect(r.log).toEqual(['Since', '2021.', '|', 'He', 'reads', 'the', 'market.']);

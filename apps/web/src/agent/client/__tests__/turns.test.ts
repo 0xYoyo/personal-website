@@ -146,14 +146,15 @@ describe('brain: turns', () => {
 
   it('live text with || is split the same way', async () => {
     const { brain, rec } = make(() => sseResponse(tokens('[[become:btc]] Since 2021. |', '| He still reads the market.')));
-    await brain.send('crypto?');
+    await brain.send('what do you make of memecoins lately?'); // routed (WAVE4 A3)
     expect(rec.turns()).toEqual(['Since 2021.', 'He still reads the market.']);
-    expect(rec.actions()[0]).toEqual({ type: 'become', shape: { kind: 'glyph', id: 'btc' } });
+    // after the listening ring (and its release when the stream opens)
+    expect(rec.actions().filter((x) => x.type !== 'mood')[0]).toEqual({ type: 'become', shape: { kind: 'glyph', id: 'btc' } });
   });
 
   it('a long live reply without || is paced at sentence boundaries', async () => {
     const { brain, rec } = make(() => sseResponse(tokens(...(LONG.match(/[\s\S]{1,4}/g) ?? []))));
-    await brain.send('agents?');
+    await brain.send('so how does your setup actually work day to day?');
     const turns = rec.turns();
     expect(turns.length).toBeGreaterThan(1);
     for (const t of turns) expect(t.split(/\s+/).length).toBeLessThanOrEqual(TURN_MAX_WORDS);
@@ -165,7 +166,7 @@ describe('brain: turns', () => {
 
   it('a short live reply without || stays one turn', async () => {
     const { brain, rec } = make(() => sseResponse(tokens('[[become:🚀]] obviously.')));
-    await brain.send('🚀');
+    await brain.send('show me something that flies please');
     expect(rec.turns()).toEqual(['obviously.']);
     expect(rec.types()).not.toContain('turn');
   });

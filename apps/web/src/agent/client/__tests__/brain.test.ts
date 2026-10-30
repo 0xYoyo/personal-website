@@ -7,6 +7,10 @@ import { ZERO_TIMING } from '../timing';
 import { MemStorage, hang, json, mockFetch, recorder, sseResponse, tokens, type Handler } from './helpers';
 
 const AGENT = 'https://agent.example';
+/** A message the scripted brain isn't sure of, so it goes to the live router (WAVE4 A3). */
+const Q = "what's your favourite food?";
+const LISTEN = { type: 'action', action: { type: 'mood', mood: 'listening' } } as const;
+const SETTLE = { type: 'mood', mood: 'thinking' } as const;
 
 function make(handlers: Handler[] | Handler, extra: Partial<BrainOptions> = {}) {
   const rec = recorder();
@@ -34,33 +38,41 @@ describe('live path', () => {
   it('streams tokens, parses tags split across tokens, and ends in live mode', async () => {
     const { brain, rec, calls } = make(() => sseResponse(tokens('[[beco', 'me:curls]] Yoav', ' Zrihan. [[chips:Tell me a st', 'ory|What has he built?]]')));
     expect(brain.mode()).toBe('live');
-    await brain.send('who is yoyo?');
+    await brain.send(Q);
     expect(rec.types()[0]).toBe('start');
+    // the swarm listens while the Worker decides, and settles once it answers
+    expect(rec.events[1]).toEqual(LISTEN);
     expect(rec.types().at(-1)).toBe('end');
     expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'live' });
     expect(rec.text()).toBe('Yoav Zrihan.');
     expect(rec.actions()).toEqual([
+      LISTEN.action,
+      SETTLE,
       { type: 'become', shape: { kind: 'glyph', id: 'curls' } },
       { type: 'chips', chips: ['Tell me a story', 'What has he built?'] },
     ]);
     expect(calls[0]).toEqual({
       url: `${AGENT}/chat`,
       body: {
-        messages: [{ role: 'visitor', text: 'who is yoyo?' }],
+        messages: [{ role: 'visitor', text: Q }],
         visitor: { returning: false, device: 'desktop', lang: 'en-US' },
       },
     });
   });
 
   it('sends history (raw, tags included) and the captured name on the next turn', async () => {
-    const { brain, calls } = make(() => sseResponse(tokens('[[become:Dana]] hi Dana.')));
-    await brain.send("I'm Dana");
-    await brain.send('and you?');
+    const { brain, calls } = make(() => sseResponse(tokens('[[become:pizza]] pizza.')));
+    await brain.send("I'm Dana"); // a name: scripted, no call
+    await brain.send(Q);
+    await brain.send('and the second best one?');
+    expect(calls).toHaveLength(2);
     const body = calls[1]!.body as { messages: unknown[]; visitor: { name?: string } };
     expect(body.messages).toEqual([
       { role: 'visitor', text: "I'm Dana" },
-      { role: 'agent', text: '[[become:Dana]] hi Dana.' },
-      { role: 'visitor', text: 'and you?' },
+      { role: 'agent', text: 'nice to meet you, Dana. [[become:Dana]]' },
+      { role: 'visitor', text: Q },
+      { role: 'agent', text: '[[become:pizza]] pizza.' },
+      { role: 'visitor', text: 'and the second best one?' },
     ]);
     expect(body.visitor.name).toBe('Dana');
     expect(brain.memory.name).toBe('Dana');
@@ -68,7 +80,7 @@ describe('live path', () => {
 
   it('caps the message at 600 chars and history at 12 messages', async () => {
     const { brain, calls } = make(() => sseResponse(tokens('ok.')));
-    for (let i = 0; i < 8; i++) await brain.send(`q${i}`);
+    for (let i = 0; i < 8; i++) await brain.send(`question number ${i} for you`);
     await brain.send('x'.repeat(700));
     const body = calls.at(-1)!.body as { messages: { text: string }[] };
     expect(body.messages.length).toBeLessThanOrEqual(13);
@@ -81,7 +93,7 @@ describe('live path', () => {
       [() => Promise.reject(new TypeError('network')), () => json(500, { reason: 'upstream' }), () => sseResponse(tokens('fine.'))],
       { firstTokenTimeoutMs: 5_000 },
     );
-    await brain.send('hi');
+    await brain.send(Q);
     expect(calls).toHaveLength(3);
     expect(rec.text()).toBe('fine.');
     expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'live' });
@@ -89,28 +101,33 @@ describe('live path', () => {
 });
 
 describe('fallback state machine', () => {
-  it('first-token timeout → scripted for that turn, with the resting line once', async () => {
+  it('router timeout → the scripted best match for that turn, silently (no resting line)', async () => {
     const { brain, rec } = make(hang);
-    await brain.send('who is yoyo?');
+    await brain.send('how old are you, yoyo?'); // the scripted best match is `who`
     expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
-    // the resting line is a turn of its own, then the reply's own turns, with the `||` stripped
     const turns = rec.turns();
-    expect(turns[0]).toBe(RESTING_LINE);
-    expect(turns[1]).toBe("I'm Yoyo, a software engineer who builds products with AI agents.");
-    expect(turns[2]).toBe('Computer Science and Entrepreneurship at Reichman. Self-taught before that.');
-    expect(turns).toHaveLength(3);
-    expect(rec.text()).not.toContain('|');
-    expect(rec.types().filter((t) => t === 'turn')).toHaveLength(2);
-    expect(rec.actions()[0]).toEqual({ type: 'become', shape: { kind: 'glyph', id: 'curls' } });
+    expect(turns[0]).toBe("I'm Yoyo, a software engineer who builds products with AI agents.");
+    expect(turns[1]).toBe('Computer Science and Entrepreneurship at Reichman. Self-taught before that.');
+    expect(turns).toHaveLength(2);
+    expect(rec.text()).not.toContain(RESTING_LINE);
+    expect(rec.actions().slice(0, 3)).toEqual([LISTEN.action, SETTLE, { type: 'become', shape: { kind: 'glyph', id: 'curls' } }]);
     // still live for the next turn (only one failure)
     expect(brain.mode()).toBe('live');
   });
 
+  it('worker unreachable → scripted, with the resting line once, as before', async () => {
+    const { brain, rec } = make(() => Promise.reject(new TypeError('network')), { retries: 0 });
+    await brain.send('how old are you, yoyo?');
+    const turns = rec.turns();
+    expect(turns[0]).toBe(RESTING_LINE);
+    expect(turns[1]).toBe("I'm Yoyo, a software engineer who builds products with AI agents.");
+  });
+
   it('after 2 live failures, scripted for the rest of the session (no more fetches)', async () => {
     const { brain, rec, calls } = make(() => json(502, { reason: 'upstream' }), { retries: 0 });
-    await brain.send('hi');
+    await brain.send(Q);
     expect(brain.mode()).toBe('live');
-    await brain.send('hello');
+    await brain.send(Q);
     expect(brain.mode()).toBe('scripted');
     const n = calls.length;
     rec.clear();
@@ -125,7 +142,7 @@ describe('fallback state machine', () => {
     let t = new Date(2026, 9, 23, 10, 0).getTime();
     const storage = new MemStorage();
     const { brain, rec } = make(() => json(429, { reason: 'quota' }), { storage, now: () => t });
-    await brain.send('hi');
+    await brain.send(Q);
     expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
     expect(brain.mode()).toBe('scripted');
     expect(storage.getItem('yoyo.v3.scriptedDay')).toBe('2026-10-23');
@@ -134,32 +151,32 @@ describe('fallback state machine', () => {
     expect(again.brain.mode()).toBe('scripted');
     t = new Date(2026, 9, 24, 0, 5).getTime();
     expect(again.brain.mode()).toBe('live');
-    await again.brain.send('hi');
+    await again.brain.send(Q);
     expect(again.rec.text()).toBe('live again.');
   });
 
   it('429 rate → scripted for that turn only and does not count as a failure', async () => {
     const { brain, rec } = make([() => json(429, { reason: 'rate' }), () => json(429, { reason: 'rate' }), () => sseResponse(tokens('ok.'))]);
-    await brain.send('hi');
-    await brain.send('hi');
+    await brain.send(Q);
+    await brain.send(Q);
     expect(brain.mode()).toBe('live');
     rec.clear();
-    await brain.send('hi');
+    await brain.send(Q);
     expect(rec.text()).toBe('ok.');
   });
 
   it('a stream that breaks after the first token keeps what was said and counts as a failure', async () => {
     const { brain, rec } = make([() => sseResponse([{ type: 'token', text: 'half a' }, { type: 'error', reason: 'upstream' }]), () => json(502, {})], { retries: 0 });
-    await brain.send('hi');
+    await brain.send(Q);
     expect(rec.text()).toBe('half a');
     expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'live' });
-    await brain.send('hi');
+    await brain.send(Q);
     expect(brain.mode()).toBe('scripted');
   });
 
   it('an empty live reply (e.g. a safety block) falls back to scripted', async () => {
     const { brain, rec } = make(() => sseResponse([{ type: 'done' }]));
-    await brain.send('gm');
+    await brain.send('gm frens, what is up today');
     expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
     expect(rec.text()).toContain('gm.');
   });
@@ -208,7 +225,7 @@ describe('fallback state machine', () => {
 
 describe('build', () => {
   it('live: streams chunks then buildDone, and remembers the build', async () => {
-    const { brain, rec, calls } = make(() => sseResponse([{ type: 'chunk', html: '<!doctype html><html>' }, { type: 'chunk', html: '<body>hi</body></html>' }, { type: 'done', bytes: 40 }]));
+    const { brain, rec, calls } = make(() => sseResponse([{ type: 'chunk', html: '<!doctype html><html>' }, { type: 'chunk', html: '<body>hi</body></html>' }, { type: 'done', bytes: 40 }]), { liveBuilds: true });
     await brain.build('a timer', '<html>old</html>');
     expect(calls[0]).toEqual({ url: `${AGENT}/build`, body: { instruction: 'a timer', previousHtml: '<html>old</html>' } });
     const chunks = rec.events.filter((e) => e.type === 'buildChunk');
@@ -219,7 +236,7 @@ describe('build', () => {
   });
 
   it('per-visitor build limit → honest error, no fallback', async () => {
-    const { brain, rec } = make(() => json(429, { reason: 'rate', retryAfter: 600 }));
+    const { brain, rec } = make(() => json(429, { reason: 'rate', retryAfter: 600 }), { liveBuilds: true });
     await brain.build('a timer');
     expect(rec.events.at(-1)).toEqual({ type: 'error', reason: 'rate' });
   });

@@ -1,13 +1,16 @@
 // Live path: POST to the Worker and stream SSE, with a first-token deadline,
 // fast retries inside that deadline, and an idle timeout once streaming.
+// /chat on the Gemini router (WAVE4 A1) answers one JSON route instead of a stream: it has to
+// arrive whole inside the same deadline.
 
+import { parseRoute, type Route } from './route';
 import { parseWire, readSse } from './sse';
 import { sleep } from './timing';
 
 export type LiveFailure = 'quota' | 'rate' | 'timeout' | 'network' | 'upstream' | 'offline' | 'too_long' | 'empty' | 'aborted';
 
 export type LiveOutcome =
-  | { ok: true; raw: string }
+  | { ok: true; raw: string; /** the router's answer (a JSON /chat reply); `raw` is then empty */ route?: Route }
   | { ok: false; reason: LiveFailure; /** true when some text already streamed */ partial: boolean; raw: string };
 
 export interface LiveRequest {
@@ -86,6 +89,17 @@ export async function streamLive(req: LiveRequest): Promise<LiveOutcome> {
       if (!res.ok || !res.body) {
         lastReason = 'upstream';
         continue;
+      }
+      if (/application\/json/i.test(res.headers.get('content-type') ?? '')) {
+        // the router: one JSON object, read under the same deadline
+        const route = parseRoute(await res.json().catch(() => null));
+        if (req.signal.aborted) return fail('aborted');
+        if (timedOut) return fail('timeout');
+        if (!route) {
+          lastReason = 'upstream';
+          continue;
+        }
+        return { ok: true, raw: '', route };
       }
       if (!opened) {
         opened = true;

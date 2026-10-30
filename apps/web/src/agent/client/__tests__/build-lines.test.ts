@@ -27,6 +27,8 @@ function make(handlers: Handler[] | Handler, extra: Partial<BrainOptions> = {}) 
     device: 'desktop',
     firstTokenTimeoutMs: 120,
     retries: 0,
+    // these tests drive the live builder; the site leaves it off (WAVE4 A4)
+    liveBuilds: true,
     now: () => (t += 1000),
     ...extra,
   });

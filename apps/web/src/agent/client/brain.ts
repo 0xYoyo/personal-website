@@ -1,7 +1,8 @@
 // createBrain — chooses live vs scripted per turn, streams replies through the
 // tag parser, dispatches actions as events, and keeps visitor memory.
 
-import { captureName } from './intents';
+import { captureName, strongLocal } from './intents';
+import { ROUTE_TIMEOUT_MS, routedReply } from './route';
 import { streamLive, type LiveFailure } from './live';
 import { createBrainState, createMemory, defaultStorage, localDay, safeStorage, type Memory, type StorageLike } from './memory';
 import type { Action, BuildRequest, ChatMessage, ChatRequest, GlyphId, ProjectId } from '@yoyo/protocol';
@@ -74,8 +75,10 @@ export interface BrainOptions {
   siteUrl?: string;
   device?: 'desktop' | 'mobile';
   lang?: string;
-  /** default 8000 (SPEC §7) */
+  /** budget for the live reply to start (the router's whole answer); default 2500 (WAVE4 A3) */
   firstTokenTimeoutMs?: number;
+  /** let `build()` call the Worker's model; default false: builds stream the prebuilt examples (WAVE4 A4) */
+  liveBuilds?: boolean;
   /** default 2 */
   retries?: number;
   /** first-chunk budget for live builds; default 20000 */
@@ -205,11 +208,12 @@ export function createBrain(opts: BrainOptions): Brain {
     };
   }
 
-  async function streamScripted(raw: string, signal: AbortSignal, temit: (e: BrainEvent) => void) {
+  async function streamScripted(raw: string, signal: AbortSignal, temit: (e: BrainEvent) => void, lead = true) {
     const sink = makeSink(temit, true);
     // the copy is paced with `||` already; this only splits a turn that runs long (pace.ts)
     const pieces = wordPieces(paceReply(raw));
-    await sleep(jittered(timing.firstTokenMs, timing.jitter, random), signal);
+    // `lead` false: a routed reply, whose wait was the router call itself
+    if (lead) await sleep(jittered(timing.firstTokenMs, timing.jitter, random), signal);
     for (let i = 0; i < pieces.length; i++) {
       const p = pieces[i]!;
       sink.push(p);
@@ -258,19 +262,39 @@ export function createBrain(opts: BrainOptions): Brain {
     memory.noteVisitorLine(text);
 
     let resting = false;
-    if (turn.mode === 'live') {
+    // WAVE4 A3: what the scripted brain answers for sure never waits on the model
+    if (turn.mode === 'live' && !strongLocal(text)) {
+      // something to watch while the router decides: the swarm gathers into its listening ring
+      temit({ type: 'action', action: { type: 'mood', mood: 'listening' } });
+      const settle = () => temit({ type: 'action', action: { type: 'mood', mood: 'thinking' } });
       const sink = makeSink(temit);
       const outcome = await streamLive({
         url: `${agentUrl}/chat`,
         body: { messages: [...history, { role: 'visitor', text }], visitor: visitor() } satisfies ChatRequest,
         fetchImpl,
         signal: ctrl.signal,
-        firstTokenMs: opts.firstTokenTimeoutMs ?? 8_000,
+        firstTokenMs: opts.firstTokenTimeoutMs ?? ROUTE_TIMEOUT_MS,
         retries: opts.retries ?? 2,
         idleMs: 15_000,
+        onOpen: settle,
         onText: (t) => sink.push(t),
         now,
       });
+      if (outcome.ok && outcome.route) {
+        // a scripted intent plays its exact copy; a gap plays the model's clamped turns
+        settle();
+        const raw = routedReply(outcome.route, text, { name: memory.name, lastShown, random });
+        try {
+          await streamScripted(raw, ctrl.signal, temit, false);
+          remember(text, raw);
+        } catch (e) {
+          if (!(e instanceof AbortedError)) throw e;
+        } finally {
+          finish('live');
+        }
+        return;
+      }
+      if (!outcome.ok && outcome.reason !== 'aborted' && !outcome.partial) settle();
       if (outcome.ok || outcome.partial || outcome.reason === 'aborted') {
         sink.end();
         if (!outcome.ok) noteFailure(outcome.reason);
@@ -279,7 +303,8 @@ export function createBrain(opts: BrainOptions): Brain {
         return;
       }
       noteFailure(outcome.reason);
-      resting = outcome.reason !== 'too_long';
+      // a slow router falls back silently to the scripted best match; an unreachable Worker says so once, as before
+      resting = outcome.reason !== 'too_long' && outcome.reason !== 'timeout';
       turn.mode = 'scripted';
     } else if (agentUrl && (sessionScripted || state.scriptedDay() === localDay(now()) || !online())) {
       resting = true;
@@ -318,7 +343,7 @@ export function createBrain(opts: BrainOptions): Brain {
     }
     const handedOff = scriptedHandoffs.delete(instruction);
     try {
-      if (instruction !== 'example' && !handedOff && turn.mode === 'live') {
+      if (instruction !== 'example' && !handedOff && turn.mode === 'live' && opts.liveBuilds === true) {
         let html = '';
         const expected = Math.max(MIN_EXPECTED_BUILD_BYTES, memory.builds[0]?.bytes ?? 0);
         const outcome = await streamLive({

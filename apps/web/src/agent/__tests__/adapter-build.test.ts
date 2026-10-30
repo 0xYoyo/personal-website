@@ -57,7 +57,7 @@ describe('adapter: builds', () => {
       const brain = createBrain({ agentUrl: 'https://agent.example', speed: 0.001 });
       const words: string[] = [];
       const actions: Action[] = [];
-      const r = await brain.send('build me a pomodoro timer', { onWord: (w) => words.push(w), onAction: (a) => actions.push(a) });
+      const r = await brain.send('could you put together a pomodoro timer', { // routed: the live stream hands off (WAVE4 A3) onWord: (w) => words.push(w), onAction: (a) => actions.push(a) });
       expect(r.source).toBe('live');
       expect(actions).toEqual([{ type: 'build', instruction: 'a pomodoro timer' }]);
       expect(words).toEqual([]);
@@ -73,7 +73,7 @@ describe('adapter: builds', () => {
     try {
       const brain = createBrain({ agentUrl: 'https://agent.example', speed: 0.001 });
       const words: string[] = [];
-      const r = await brain.send('build me a timer', { onWord: (w) => words.push(w) });
+      const r = await brain.send('could you put together a timer', { onWord: (w) => words.push(w) });
       expect(r.text).toBe('sure, a timer it is.');
       expect(words.join(' ')).toBe(r.text);
     } finally {
