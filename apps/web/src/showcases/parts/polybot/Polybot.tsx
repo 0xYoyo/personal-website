@@ -4,27 +4,28 @@ import { Fit, useVariant, type Variant, CANVAS_H } from '../../lib/fit';
 import { accel, hash, lerp, out, prog, spring } from '../../lib/ease';
 import './polybot.css';
 
-const D = 11;
-const KEY = 10;
+const D = 10;
+const KEY = 9;
 const N = 160;
 
 /** The bookmaker's price jumps at JUMP; Polymarket lags and only catches up at CATCH. */
 const JUMP = 0.5;
 const CATCH = 0.62;
-const END = 0.93;
-const J = 0.075;
-const LO = 0.43;
-const HI = 0.62;
+const END = 1;
+const J = 0.08;
+const LO = 0.455;
+const HI = 0.615;
 
-// time → how far the lines are drawn: quick to the jump, slow through the gap, quick after
-const T_START = 0.5;
-const T_JUMP = 2.9;
-const T_CATCH = 5.1;
-const T_END = 6.9;
-const T_BET = 4.3;
-const T_STAMP = 7.4;
+// time → how far the lines are drawn. Frame 1 already shows history (H0); the gap stays open
+// T_JUMP..T_CATCH (2.4 s) and snaps shut right after.
+const H0 = 0.42;
+const T_JUMP = 1.3;
+const T_CATCH = 3.9;
+const T_END = 5.7;
+const T_BET = 2.5;
+const T_STAMP = 6.1;
 function headAt(t: number): number {
-  if (t < T_JUMP) return lerp(0, JUMP, prog(t, T_START, T_JUMP));
+  if (t < T_JUMP) return lerp(H0, JUMP, prog(t, 0, T_JUMP));
   if (t < T_CATCH) return lerp(JUMP, CATCH, prog(t, T_JUMP, T_CATCH));
   return lerp(CATCH, END, out(prog(t, T_CATCH, T_END)));
 }
@@ -36,10 +37,10 @@ const step = (x: number, at: number) => {
 /** Illustrative prices, not real data. */
 function base(i: number): number {
   const x = i / (N - 1);
-  return 0.49 + 0.018 * Math.sin(x * 3.4 + 2.4) + 0.005 * Math.sin(x * 15 + 1.3) + (hash(i + 7) - 0.5) * 0.0025;
+  return 0.5 + 0.016 * Math.sin(x * 3.4 + 2.4) + 0.005 * Math.sin(x * 15 + 1.3) + (hash(i + 7) - 0.5) * 0.0025;
 }
-const BOOK = Array.from({ length: N }, (_, i) => base(i) + J * step(i / (N - 1), JUMP));
-const POLY = Array.from({ length: N }, (_, i) => base(i) - 0.007 + J * step(i / (N - 1), CATCH) + (hash(i * 3 + 1) - 0.5) * 0.0015);
+const BOOK = Array.from({ length: N }, (_, i) => base(i) + 0.006 + J * step(i / (N - 1), JUMP));
+const POLY = Array.from({ length: N }, (_, i) => base(i) - 0.012 + J * step(i / (N - 1), CATCH) + (hash(i * 3 + 1) - 0.5) * 0.0015);
 
 function valueAt(vals: number[], x: number): number {
   const f = Math.max(0, Math.min(1, x)) * (N - 1);
@@ -47,12 +48,13 @@ function valueAt(vals: number[], x: number): number {
   return lerp(vals[i]!, vals[Math.min(N - 1, i + 1)]!, f - i);
 }
 
-const L: Record<Variant, { legendY: number; y0: number; y1: number }> = {
-  tall: { legendY: 8, y0: 24, y1: 80 },
-  wide: { legendY: 3.6, y0: 13, y1: 52 },
+const L: Record<Variant, { y0: number; y1: number }> = {
+  tall: { y0: 10, y1: 76 },
+  wide: { y0: 7, y1: 50 },
 };
-const X0 = 6;
-const X1 = 94;
+// the lines end at X1 so their name labels fit to the right of the line ends
+const X0 = 4;
+const X1 = 74;
 
 export function Polybot(props: ShowcaseProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -62,8 +64,8 @@ export function Polybot(props: ShowcaseProps) {
   const sx = (x: number) => lerp(X0, X1, x);
   const sy = (val: number) => lerp(lay.y1, lay.y0, (val - LO) / (HI - LO));
 
-  const stage = Math.min(out(prog(t, 0, 0.4)), 1 - accel(prog(t, D - 0.6, D - 0.1)));
-  const axes = out(prog(t, 0.05, 0.6));
+  const stage = Math.min(out(prog(t, 0, 0.2)), 1 - accel(prog(t, D - 0.45, D - 0.05)));
+  const axes = 1;
   const head = headAt(t);
 
   const line = (vals: number[]) => {
@@ -91,12 +93,13 @@ export function Polybot(props: ShowcaseProps) {
   }
   const caught = t >= T_CATCH + 0.05;
   const gapOp = head > JUMP ? (caught ? lerp(1, 0.45, prog(t, T_CATCH + 0.6, T_CATCH + 1.2)) : 1) : 0;
-  const midX = (JUMP + CATCH) / 2;
-  const label1 = out(prog(t, T_JUMP + 0.6, T_JUMP + 1.0)) * (1 - prog(t, T_CATCH, T_CATCH + 0.15));
+  const label1 = out(prog(t, T_JUMP + 0.15, T_JUMP + 0.45)) * (1 - prog(t, T_CATCH, T_CATCH + 0.15));
   const label2 = out(prog(t, T_CATCH + 0.05, T_CATCH + 0.35));
-  const labelY = sy(valueAt(BOOK, midX)) - 2.2;
+  // the labels sit in the empty space left of the jump, centred on the gap's height
+  const labelX = sx(JUMP) - 1.6;
+  const labelY = (sy(valueAt(BOOK, JUMP + 0.02)) + sy(valueAt(POLY, JUMP + 0.02))) / 2;
   const bet = spring(prog(t, T_BET, T_BET + 0.5));
-  const betX = 0.598;
+  const betX = 0.56;
   const betMissed = caught;
   const stamp = prog(t, T_STAMP, T_STAMP + 0.7);
   const h = CANVAS_H[v];
@@ -109,14 +112,7 @@ export function Polybot(props: ShowcaseProps) {
       </p>
       <Fit v={v} style={{ opacity: stage }}>
         <div aria-hidden="true">
-          <div className="sc-polybot-legend" style={{ top: `${lay.legendY}cqw`, opacity: axes }}>
-            <span>
-              <i className="is-poly" /> Polymarket
-            </span>
-            <span>
-              <i className="is-ref" /> Bookmaker
-            </span>
-          </div>
+          
 
           <svg className="sc-polybot-chart" viewBox={`0 0 100 ${h}`}>
             {[0, 1, 2, 3].map((k) => {
@@ -128,17 +124,26 @@ export function Polybot(props: ShowcaseProps) {
             <path d={line(POLY)} className="sc-polybot-poly" vectorEffect="non-scaling-stroke" />
           </svg>
 
-          {head > 0 && head < END && (
+          <span className="sc-polybot-name is-ref" style={{ left: `${sx(head) + 2}cqw`, top: `${sy(valueAt(BOOK, head)) - 1.2}cqw` }}>
+            Bookmaker
+          </span>
+          <span className="sc-polybot-name" style={{ left: `${sx(head) + 2}cqw`, top: `${sy(valueAt(POLY, head)) + 1.2}cqw` }}>
+            Polymarket
+          </span>
+          {head > 0 && (
             <>
               <span className="sc-polybot-head is-ref" style={{ left: `${sx(head)}cqw`, top: `${sy(valueAt(BOOK, head))}cqw` }} />
               <span className="sc-polybot-head" style={{ left: `${sx(head)}cqw`, top: `${sy(valueAt(POLY, head))}cqw` }} />
             </>
           )}
 
-          <span className="sc-polybot-gap sc-mono" style={{ left: `${sx(midX)}cqw`, top: `${labelY}cqw`, opacity: label1 }}>
+          <span className="sc-polybot-gap sc-mono" style={{ left: `${labelX}cqw`, top: `${labelY}cqw`, opacity: label1 }}>
             mispriced
           </span>
-          <span className="sc-polybot-gap is-late sc-mono" style={{ left: `${sx(midX)}cqw`, top: `${labelY}cqw`, opacity: label2 }}>
+          <span
+            className="sc-polybot-gap is-late sc-mono"
+            style={{ left: `${sx(JUMP)}cqw`, top: `${sy(valueAt(BOOK, JUMP + 0.02)) - 2.4}cqw`, opacity: label2, transform: 'translate(-50%, -100%)' }}
+          >
             too fast to catch
           </span>
 
@@ -159,9 +164,9 @@ export function Polybot(props: ShowcaseProps) {
           <div
             className="sc-polybot-stamp sc-mono"
             style={{
-              // on the phone the stamp sits low on the right, clear of the "bet?" marker
-              left: v === 'tall' ? '50%' : '81%',
-              top: `${v === 'tall' ? lay.y1 + 10 : lay.y1 + 1}cqw`,
+              // the stamp sits centred under the chart, clear of the lines and the "bet?" marker
+              left: '50%',
+              top: `${v === 'tall' ? lay.y1 + 11 : lay.y1 + 6.5}cqw`,
               opacity: Math.min(1, stamp * 4),
               transform: `translate(-50%,-50%) rotate(-5deg) scale(${lerp(1.7, 1, spring(stamp, 8, 11))})`,
             }}

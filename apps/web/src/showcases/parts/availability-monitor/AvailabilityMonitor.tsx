@@ -36,9 +36,8 @@ export function AvailabilityMonitor(props: ShowcaseProps) {
 
   const view = inOut(prog(t, VIEW, VIEW + VIEW_IN));
   const end = 1 - accel(prog(t, D - 0.6, D - 0.1));
-  const stage = Math.min(out(prog(t, 0, 0.4)), 1 - view);
+  const stage = Math.min(out(prog(t, 0, 0.2)), 1 - view);
   const caption = out(prog(t, VIEW + VIEW_IN - 0.1, VIEW + VIEW_IN + 0.4));
-  const cal = out(prog(t, 0.1, 0.8));
   const ping = spring(prog(t, PING, PING + 0.9));
   const pingOp = Math.min(1, prog(t, PING, PING + 0.25) * 1.2);
   const sweepIdx = SWEEPS.findIndex((s) => t >= s && t < s + SWEEP_LEN);
@@ -53,7 +52,6 @@ export function AvailabilityMonitor(props: ShowcaseProps) {
     const isOpen = OPEN.includes(d);
     const flip = isOpen ? prog(t, FLIP + OPEN.indexOf(d) * 0.12, FLIP + 0.55 + OPEN.indexOf(d) * 0.12) : 0;
     const flipped = flip >= 0.5;
-    const appear = out(prog(t, 0.25 + i * 0.012, 0.75 + i * 0.012));
     cells.push(
       <div
         key={i}
@@ -65,7 +63,6 @@ export function AvailabilityMonitor(props: ShowcaseProps) {
           (flipped ? ' is-open' : '')
         }
         style={{
-          opacity: appear,
           transform: `perspective(40cqw) rotateY(${(flipped ? 1 - flip : flip) * 90}deg) scale(${flipped ? 1 + 0.08 * Math.sin(prog(t, FLIP + 0.55, FLIP + 1.1) * Math.PI) : 1})`,
         }}
       >
@@ -88,7 +85,8 @@ export function AvailabilityMonitor(props: ShowcaseProps) {
       </p>
       <Fit v={v} className="sc-availability-monitor-stage" style={{ opacity: stage }}>
         <div aria-hidden="true">
-        <div className="sc-availability-monitor-cal" style={{ opacity: cal, transform: `translateY(${(1 - cal) * 2}cqw)` }}>
+        {/* the calendar is whole from frame 1 */}
+        <div className="sc-availability-monitor-cal">
           <div className="sc-availability-monitor-head">
             <span className="sc-availability-monitor-hotel">Metzoke Dragot</span>
             <span className="sc-mono sc-availability-monitor-month">April</span>

@@ -1,52 +1,110 @@
 import { useRef } from 'react';
 import { useLoop, type ShowcaseProps } from '../../lib/clock';
-import { accel, out, prog } from '../../lib/ease';
+import { Fit, useVariant } from '../../lib/fit';
+import { accel, out, prog, spring } from '../../lib/ease';
 import './vortex.css';
 
 const D = 9;
-const KEY = 6.4;
+const KEY = 7.6;
 
-/** Illustrative: an applicant signs in with X, members vote in Discord, an admin sees the tally and lets them in. */
-const VOTES = 7;
+/** Illustrative: one applicant signs in with X, members vote in Discord, an admin approves and the role is granted. */
+const YES = 9;
+const NO = 1;
+
+// timeline (s)
+const T_SIGN = 0.9; // the X sign-in goes through
+const T_VOTE0 = 1.5; // votes start counting
+const T_VOTE1 = 4.0;
+const T_PRESS = 4.7; // the admin presses Approve
+const T_ROLE = 5.3; // the role pill pops in
 
 export function Vortex(props: ShowcaseProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const v = useVariant(ref);
   const { t } = useLoop(ref, D, KEY, props);
 
-  const stage = Math.min(out(prog(t, 0, 0.4)), 1 - accel(prog(t, D - 0.6, D - 0.1)));
-  const step = (i: number) => out(prog(t, 0.4 + i * 1.6, 0.9 + i * 1.6));
-  const votes = Math.round(VOTES * prog(t, 2.2, 4.6));
-  const approved = t >= 5.2;
+  const stage = Math.min(out(prog(t, 0, 0.2)), 1 - accel(prog(t, D - 0.5, D - 0.05)));
+  const signed = t >= T_SIGN;
+  const vp = prog(t, T_VOTE0, T_VOTE1);
+  const yes = Math.round(YES * vp);
+  const no = vp > 0.55 ? NO : 0;
+  const pressed = t >= T_PRESS;
+  const press = t >= T_PRESS - 0.15 && t < T_PRESS + 0.1 ? 0.94 : 1;
+  const role = spring(prog(t, T_ROLE, T_ROLE + 0.6));
+  const active = t < T_VOTE0 - 0.1 ? 0 : t < T_PRESS - 0.3 ? 1 : 2;
+  const done = (i: number) => (i === 0 ? signed : i === 1 ? vp >= 1 : pressed);
+
+  const cards = [
+    {
+      title: 'Apply with X',
+      sub: 'the applicant signs in',
+      body: (
+        <div className="sc-vx-profile">
+          <span className="sc-vx-av">M</span>
+          <span className="sc-vx-who">
+            <span className="sc-vx-name">Maya Levi</span>
+            <span className="sc-vx-handle sc-mono">@maya_onchain</span>
+          </span>
+          <span className={'sc-vx-chip' + (signed ? ' is-ok' : '')}>
+            <span className="sc-vx-x">X</span> {signed ? 'connected' : 'Sign in'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      title: 'Members vote in Discord',
+      sub: '#applications',
+      body: (
+        <div className="sc-vx-tally">
+          <span className="sc-vx-count is-yes">
+            <b className="sc-mono">{yes}</b> yes
+          </span>
+          <span className="sc-vx-bar">
+            <i style={{ width: `${(yes / (YES + NO)) * 100}%` }} />
+            <i className="is-no" style={{ width: `${(no / (YES + NO)) * 100}%` }} />
+          </span>
+          <span className="sc-vx-count">
+            <b className="sc-mono">{no}</b> no
+          </span>
+        </div>
+      ),
+    },
+    {
+      title: 'Admin approves',
+      sub: 'role given automatically',
+      body: (
+        <div className="sc-vx-admin">
+          <span className={'sc-vx-btn' + (pressed ? ' is-on' : '')} style={{ transform: `scale(${press})` }}>
+            {pressed ? 'Approved' : 'Approve'}
+          </span>
+          <span className="sc-vx-role" style={{ opacity: Math.min(1, role * 1.5), transform: `scale(${0.7 + 0.3 * role})` }}>
+            Member role granted
+          </span>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div ref={ref} className="sc-root sc-vortex">
       <p className="sc-sr">
-        Vortex application system: an applicant signs in with X, community members vote in Discord, and an admin dashboard shows the
-        tally and lets them in.
+        Vortex membership system: an applicant applies by signing in with X, community members vote in Discord, and an admin approves.
+        The member role is then granted automatically.
       </p>
-      <div className="sc-vx-stage" style={{ opacity: stage }} aria-hidden="true">
-        <div className="sc-vx-col" style={{ opacity: step(0) }}>
-          <span className="sc-mono sc-vx-label">apply</span>
-          <span className="sc-vx-box">
-            <span className="sc-vx-x">X</span> Sign in with X
-          </span>
-          <span className="sc-mono sc-vx-small">@applicant · connected</span>
+      <Fit v={v} style={{ opacity: stage }}>
+        <div className="sc-vx-stack" aria-hidden="true">
+          {cards.map((c, i) => (
+            <div key={c.title} className={'sc-vx-card' + (active === i ? ' is-active' : '')}>
+              <span className={'sc-vx-num sc-mono' + (done(i) ? ' is-done' : '')}>{done(i) ? '✓' : i + 1}</span>
+              <span className="sc-vx-head">
+                <span className="sc-vx-title">{c.title}</span>
+                <span className="sc-vx-sub sc-mono">{c.sub}</span>
+              </span>
+              {c.body}
+            </div>
+          ))}
         </div>
-        <div className="sc-vx-col" style={{ opacity: step(1) }}>
-          <span className="sc-mono sc-vx-label">discord vote</span>
-          <span className="sc-vx-box sc-vx-votes">
-            {Array.from({ length: VOTES }, (_, i) => (
-              <i key={i} className={i < votes ? 'is-on' : ''} />
-            ))}
-          </span>
-          <span className="sc-mono sc-vx-small">{votes} yes</span>
-        </div>
-        <div className="sc-vx-col" style={{ opacity: step(2) }}>
-          <span className="sc-mono sc-vx-label">admin</span>
-          <span className={'sc-vx-box sc-vx-admin' + (approved ? ' is-on' : '')}>{approved ? 'approved' : 'review'}</span>
-          <span className="sc-mono sc-vx-small">role granted on approve</span>
-        </div>
-      </div>
+      </Fit>
     </div>
   );
 }

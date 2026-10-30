@@ -1,28 +1,21 @@
-.sc-polybot-legend {
+.sc-polybot-chart,
+.sc-polybot-name {
+  --pb-ref: #7d93ff;
+}
+[data-scene='light'] .sc-polybot-chart,
+[data-scene='light'] .sc-polybot-name {
+  --pb-ref: var(--sc-accent);
+}
+/* each line's name sits just right of its moving end */
+.sc-polybot-name {
   position: absolute;
-  left: 6cqw;
-  top: 4.4cqw;
-  display: flex;
-  gap: 3cqw;
-  font-size: 2.6cqw;
+  transform: translateY(-50%);
+  font-size: 3.2cqw;
   white-space: nowrap;
+  color: var(--sc-fg);
 }
-.sc-polybot-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 1cqw;
-}
-.sc-polybot-legend i {
-  display: inline-block;
-  width: 3.6cqw;
-  height: 0;
-  border-top: 0.42cqw solid var(--sc-fg);
-}
-.sc-polybot-legend i.is-ref {
-  border-top: 0.32cqw solid var(--sc-accent);
-}
-.sc-polybot-legend span:last-child {
-  color: var(--sc-muted);
+.sc-polybot-name.is-ref {
+  color: var(--pb-ref);
 }
 .sc-polybot-chart {
   position: absolute;
@@ -46,8 +39,8 @@
   stroke-linecap: round;
 }
 .sc-polybot-ref {
-  stroke: var(--sc-accent);
-  stroke-width: 2px;
+  stroke: var(--pb-ref);
+  stroke-width: 2.4px;
 }
 .sc-polybot-poly {
   stroke: var(--sc-fg);
@@ -71,11 +64,11 @@
   width: 1.2cqw;
   height: 1.2cqw;
   margin: -0.6cqw 0 0 -0.6cqw;
-  background: var(--sc-accent);
+  background: var(--pb-ref, #7d93ff);
 }
 .sc-polybot-gap {
   position: absolute;
-  transform: translate(-50%, -100%);
+  transform: translate(-100%, -50%);
   font-size: 2.3cqw;
   padding: 0.3cqw 1cqw;
   border-radius: 0.6cqw;
@@ -116,23 +109,20 @@
   border-color: var(--sc-line-2);
   text-decoration: line-through;
 }
-.sc-fit[data-v='wide'] .sc-polybot-legend {
-  font-size: 3cqw;
-}
 .sc-fit[data-v='wide'] .sc-polybot-gap,
 .sc-fit[data-v='wide'] .sc-polybot-bet {
-  font-size: 2.7cqw;
+  font-size: 3cqw;
 }
 .sc-fit[data-v='wide'] .sc-polybot-stamp {
   font-size: 4.2cqw;
   padding: 1cqw 2.6cqw;
 }
-.sc-fit[data-v='tall'] .sc-polybot-legend {
-  font-size: 3cqw;
-}
 .sc-fit[data-v='tall'] .sc-polybot-gap,
 .sc-fit[data-v='tall'] .sc-polybot-bet {
-  font-size: 2.7cqw;
+  font-size: 2.8cqw;
+}
+.sc-fit[data-v='tall'] .sc-polybot-name {
+  font-size: 3.1cqw;
 }
 .sc-fit[data-v='tall'] .sc-polybot-stamp {
   font-size: 5cqw;

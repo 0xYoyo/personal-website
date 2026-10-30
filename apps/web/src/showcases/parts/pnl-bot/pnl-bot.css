@@ -229,13 +229,33 @@
   font-weight: 600;
 }
 .sc-fit[data-v='wide'] .sc-pnl-bot-row {
-  font-size: 2.3cqw;
+  font-size: 2.85cqw;
 }
 .sc-fit[data-v='wide'] .sc-pnl-bot-row.is-roi {
-  font-size: 2.6cqw;
+  font-size: 3cqw;
+}
+/* phone: every label ≥ 2.85cqw (≈ 10 px); the card takes the full width */
+.sc-fit[data-v='wide'] .sc-pnl-bot-slot {
+  left: 4cqw;
+  right: 4cqw;
+}
+.sc-fit[data-v='wide'] .sc-pnl-bot-card {
+  grid-template-columns: 33% 1fr;
+  gap: 2.6cqw;
+  padding: 2.2cqw 2.6cqw;
+}
+.sc-fit[data-v='wide'] .sc-pnl-bot-time,
+.sc-fit[data-v='wide'] .sc-pnl-bot-tag,
+.sc-fit[data-v='wide'] .sc-pnl-bot-chain,
+.sc-fit[data-v='wide'] .sc-pnl-bot-total-k,
+.sc-fit[data-v='wide'] .sc-pnl-bot-who {
+  font-size: 2.85cqw;
+}
+.sc-fit[data-v='wide'] .sc-pnl-bot-cmd {
+  font-size: 3cqw;
 }
 .sc-fit[data-v='wide'] .sc-pnl-bot-name {
-  font-size: 2.6cqw;
+  font-size: 3.1cqw;
 }
 .sc-fit[data-v='wide'] .sc-pnl-bot-av:not(.is-small) {
   width: 5.4cqw;

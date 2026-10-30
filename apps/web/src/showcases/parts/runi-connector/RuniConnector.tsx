@@ -4,8 +4,8 @@ import { Fit, offsetIn, useVariant } from '../../lib/fit';
 import { accel, inOut, lerp, out, prog, typed } from '../../lib/ease';
 import './runi-connector.css';
 
-const D = 11;
-const KEY = 10.2;
+const D = 10;
+const KEY = 9.3;
 const ASK1 = "what's due this week?";
 const ASK2 = "download this week's slides";
 
@@ -22,10 +22,11 @@ const SOURCES = [
   { label: 'Lectures', brand: 'Panopto' },
   { label: 'Q&A forum', brand: 'Piazza' },
 ] as const;
-const PULL = [1.55, 1.85, 2.15];
-const ANSWER = 3.2;
-const ASK2_AT = 5.2;
-const FLY = (i: number) => 6.85 + i * 0.22;
+// frame 1 already shows the question and the three sources; the answer rows land by ~1.3 s
+const PULL = [0.25, 0.4, 0.55];
+const ANSWER = 1.0;
+const ASK2_AT = 4.0;
+const FLY = (i: number) => 5.65 + i * 0.22;
 const FLY_LEN = 0.62;
 
 function SourceMark({ i }: { i: number }) {
@@ -121,16 +122,14 @@ export function RuniConnector(props: ShowcaseProps) {
     return () => ro.disconnect();
   }, [v]);
 
-  const stage = Math.min(out(prog(t, 0, 0.4)), 1 - accel(prog(t, D - 0.6, D - 0.1)));
-  const b1 = out(prog(t, 0.35, 0.8));
-  const q1 = typed(ASK1, t, 0.4, 34);
-  const checking = out(prog(t, 1.35, 1.65)) * (1 - prog(t, ANSWER - 0.2, ANSWER));
+  const stage = Math.min(out(prog(t, 0, 0.2)), 1 - accel(prog(t, D - 0.5, D - 0.05)));
+  const checking = out(prog(t, 0.2, 0.4)) * (1 - prog(t, ANSWER - 0.15, ANSWER));
   const lead = out(prog(t, ANSWER, ANSWER + 0.4));
   const row = (i: number) => out(prog(t, ANSWER + 0.15 + i * 0.16, ANSWER + 0.75 + i * 0.16));
   const b2 = out(prog(t, ASK2_AT, ASK2_AT + 0.4));
   const q2 = typed(ASK2, t, ASK2_AT + 0.05, 38);
   const scroll = inOut(prog(t, ASK2_AT - 0.2, ASK2_AT + 0.4));
-  const fileIn = (i: number) => out(prog(t, 6.0 + i * 0.12, 6.5 + i * 0.12));
+  const fileIn = (i: number) => out(prog(t, 4.8 + i * 0.12, 5.3 + i * 0.12));
   const landed = FILES.filter((_, i) => t >= FLY(i) + FLY_LEN).length;
   const bump = Math.max(
     ...FILES.map((_, i) => {
@@ -138,8 +137,8 @@ export function RuniConnector(props: ShowcaseProps) {
       return k > 0 && k < 1 ? Math.sin(k * Math.PI) : 0;
     }),
   );
-  const saved = out(prog(t, 7.95, 8.4));
-  const folderIn = out(prog(t, 5.9, 6.4));
+  const saved = out(prog(t, 6.75, 7.2));
+  const folderIn = out(prog(t, 4.7, 5.2));
   const lit = (i: number) => prog(t, PULL[i]!, PULL[i]! + 0.25) * (1 - prog(t, ANSWER + 0.1, ANSWER + 0.5));
   const scrollPx = geo ? geo.overflow * scroll : 0;
 
@@ -153,8 +152,8 @@ export function RuniConnector(props: ShowcaseProps) {
         <div aria-hidden="true">
           <div ref={chat} className="sc-runi-connector-chat">
             <div ref={flow} className="sc-runi-connector-flow" style={{ transform: `translateY(${-scrollPx}px)` }}>
-              <div className="sc-runi-connector-me" style={{ opacity: b1, transform: `translateY(${(1 - b1) * 2}cqw)` }}>
-                {q1 || ' '}
+              <div className="sc-runi-connector-me">
+                {ASK1}
               </div>
               <div className="sc-runi-connector-lead">
                 <span className="sc-mono sc-runi-connector-status" style={{ opacity: checking }}>
@@ -229,13 +228,11 @@ export function RuniConnector(props: ShowcaseProps) {
 
           <div className="sc-runi-connector-srcs">
             {SOURCES.map((s, i) => {
-              const k = out(prog(t, 0.5 + i * 0.12, 1.0 + i * 0.12));
               return (
                 <div
                   key={s.label}
                   ref={(el) => (srcs.current[i] = el)}
                   className={'sc-runi-connector-src' + (lit(i) > 0.5 ? ' is-lit' : '')}
-                  style={{ opacity: k }}
                 >
                   <SourceMark i={i} />
                   <span className="sc-runi-connector-src-txt">

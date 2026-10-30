@@ -4,8 +4,8 @@ import { Fit, useVariant, type Variant } from '../../lib/fit';
 import { accel, inOut, out, prog } from '../../lib/ease';
 import './pnl-bot.css';
 
-const D = 12;
-const KEY = 10.5;
+const D = 10;
+const KEY = 9;
 
 /** Fictional positions. The card is the image the bot posts: one per token or NFT. */
 const CARDS = [
@@ -38,7 +38,8 @@ const CARDS = [
     total: -1210,
   },
 ];
-const CARD_IN = [1.6, 5.2];
+// the first card's frame is there from frame 1; its numbers count up right after
+const CARD_IN = [0, 4.6];
 const COUNT_LEN = 1.1;
 
 /** `neg` is the sign of the final value, so a number counting up from zero already carries it. */
@@ -88,7 +89,7 @@ function AssetMark({ kind }: { kind: 'coin' | 'nft' }) {
 }
 
 function Card({ c, t, at, member }: { c: (typeof CARDS)[number]; t: number; at: number; member: string }) {
-  const n = (i: number) => out(prog(t, at + 0.35 + i * 0.12, at + 0.35 + i * 0.12 + COUNT_LEN));
+  const n = (i: number) => out(prog(t, at + 0.4 + i * 0.12, at + 0.4 + i * 0.12 + COUNT_LEN));
   const up = c.roi >= 0;
   return (
     <div className={'sc-pnl-bot-card' + (up ? ' is-up' : ' is-down')}>
@@ -136,10 +137,7 @@ export function PnlBot(props: ShowcaseProps) {
   const { t } = useLoop(ref, D, KEY, props);
   const lay = L[v];
 
-  const stage = Math.min(out(prog(t, 0, 0.4)), 1 - accel(prog(t, D - 0.6, D - 0.1)));
-  const user = out(prog(t, 0.25, 0.7));
-  const bot = out(prog(t, 0.95, 1.35));
-  const typing = t >= 1.0 && t < CARD_IN[0]!;
+  const stage = Math.min(out(prog(t, 0, 0.2)), 1 - accel(prog(t, D - 0.5, D - 0.05)));
 
   return (
     <div ref={ref} className="sc-root sc-pnl-bot">
@@ -148,8 +146,9 @@ export function PnlBot(props: ShowcaseProps) {
         unrealized profit, current value and ROI, plus 190 percent. Then a second card for an NFT on Solana, down 23 percent.
       </p>
       <Fit v={v} style={{ opacity: stage }}>
+        {/* the /pnl message and the bot's reply are on screen from frame 1 */}
         <div aria-hidden="true">
-          <div className="sc-pnl-bot-msg" style={{ top: `${lay.msgY}cqw`, opacity: user, transform: `translateY(${(1 - user) * 1.5}cqw)` }}>
+          <div className="sc-pnl-bot-msg" style={{ top: `${lay.msgY}cqw` }}>
             <span className="sc-pnl-bot-av is-user" />
             <span className="sc-pnl-bot-lines">
               <span className="sc-pnl-bot-name">
@@ -158,7 +157,7 @@ export function PnlBot(props: ShowcaseProps) {
               <span className="sc-mono sc-pnl-bot-cmd">/pnl</span>
             </span>
           </div>
-          <div className="sc-pnl-bot-msg is-bot" style={{ top: `${lay.botY}cqw`, opacity: bot, transform: `translateY(${(1 - bot) * 1.5}cqw)` }}>
+          <div className="sc-pnl-bot-msg is-bot" style={{ top: `${lay.botY}cqw` }}>
             <span className="sc-pnl-bot-av is-bot">
               <svg viewBox="0 0 20 20" aria-hidden="true">
                 <path d="M4 15 V9 M8.5 15 V5 M13 15 V11 M16.5 15 V7" />
@@ -166,19 +165,12 @@ export function PnlBot(props: ShowcaseProps) {
             </span>
             <span className="sc-pnl-bot-name">
               PnL bot <span className="sc-mono sc-pnl-bot-tag">BOT</span>
-              {typing && (
-                <span className="sc-pnl-bot-typing">
-                  {[0, 1, 2].map((d) => (
-                    <i key={d} style={{ opacity: 0.3 + 0.7 * Math.max(0, Math.sin((t * 7 - d) * 1.3)) }} />
-                  ))}
-                </span>
-              )}
             </span>
           </div>
 
           {CARDS.map((c, i) => {
             const at = CARD_IN[i]!;
-            const k = inOut(prog(t, at, at + 0.55));
+            const k = i === 0 ? 1 : inOut(prog(t, at, at + 0.55));
             if (k <= 0) return null;
             // the phone has room for one card: the first slides away, then the second slides in (never both at once)
             const leave = v === 'wide' && i === 0 ? inOut(prog(t, CARD_IN[1]! - 0.5, CARD_IN[1]! - 0.05)) : 0;

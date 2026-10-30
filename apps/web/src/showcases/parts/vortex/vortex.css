@@ -1,60 +1,231 @@
-.sc-vx-stage {
+/* Three stacked step cards filling the canvas: Apply with X, Members vote in Discord, Admin approves.
+   Sizes are in cqw of the canvas (wide: 1cqw ≈ 3.55 px on a phone, so text stays ≥ 2.85cqw ≈ 10 px). */
+.sc-vx-stack {
   position: absolute;
   inset: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  align-items: center;
-  gap: 3cqw;
-  padding: 6cqw 5cqw;
-}
-.sc-vx-col {
   display: flex;
   flex-direction: column;
-  gap: 1.4cqw;
-}
-.sc-vx-label {
-  font-size: 1.8cqw;
-  color: var(--sc-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.sc-vx-box {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 1cqw;
-  min-height: 10cqw;
-  padding: 1.6cqw;
-  border-radius: 1.4cqw;
+  gap: 1.8cqw;
+  padding: 2.4cqw 3cqw;
+}
+.sc-vx-card {
+  flex: 1 1 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
+  column-gap: 2.4cqw;
+  row-gap: 1cqw;
+  align-items: center;
+  padding: 1.6cqw 2.6cqw;
+  border-radius: 1.8cqw;
   border: 1px solid var(--sc-line);
   background: var(--sc-soft);
-  font-size: 2.3cqw;
-  font-weight: 600;
+  transition: border-color 0.2s;
 }
-.sc-vx-x {
-  font-family: var(--sc-display);
-  font-weight: 800;
+.sc-vx-card.is-active {
+  border-color: var(--sc-accent);
+  background: var(--sc-accent-soft);
 }
-.sc-vx-votes {
-  flex-wrap: wrap;
-  gap: 0.8cqw;
-}
-.sc-vx-votes i {
-  width: 2.6cqw;
-  height: 2.6cqw;
+.sc-vx-num {
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 6cqw;
+  height: 6cqw;
   border-radius: 50%;
   border: 1px solid var(--sc-line-2);
+  font-size: 3cqw;
+  color: var(--sc-muted);
 }
-.sc-vx-votes i.is-on {
-  background: var(--sc-accent);
+.sc-vx-num.is-done {
   border-color: var(--sc-accent);
-}
-.sc-vx-admin.is-on {
   background: var(--sc-accent);
-  border-color: var(--sc-accent);
   color: var(--sc-on-accent);
 }
-.sc-vx-small {
-  font-size: 1.6cqw;
+.sc-vx-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2cqw;
+  min-width: 0;
+}
+.sc-vx-title {
+  font-size: 3.7cqw;
+  white-space: nowrap;
+}
+.sc-vx-sub {
+  font-size: 2.9cqw;
   color: var(--sc-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 1: the applicant */
+.sc-vx-profile {
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+  min-width: 0;
+}
+.sc-vx-av {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 6.4cqw;
+  height: 6.4cqw;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f0a27a, #c76b9a);
+  color: #1a1412;
+  font-size: 3.2cqw;
+  font-weight: 700;
+}
+.sc-vx-who {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sc-vx-name {
+  font-size: 3.3cqw;
+}
+.sc-vx-handle {
+  font-size: 2.9cqw;
+  color: var(--sc-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-vx-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 1.2cqw;
+  padding: 1cqw 2.2cqw;
+  border-radius: 99px;
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-raise);
+  font-size: 3cqw;
+  white-space: nowrap;
+}
+.sc-vx-chip.is-ok {
+  border-color: var(--sc-up);
+  color: var(--sc-up);
+  background: var(--sc-up-soft);
+}
+.sc-vx-x {
+  font-weight: 800;
+}
+
+/* 2: the vote tally */
+.sc-vx-tally {
+  display: flex;
+  align-items: center;
+  gap: 2.4cqw;
+}
+.sc-vx-count {
+  flex: none;
+  font-size: 3cqw;
+  color: var(--sc-muted);
+  white-space: nowrap;
+}
+.sc-vx-count b {
+  font-size: 4.6cqw;
+  font-weight: 500;
+  color: var(--sc-fg);
+}
+.sc-vx-count.is-yes b {
+  color: var(--sc-up);
+}
+.sc-vx-bar {
+  flex: 1;
+  display: flex;
+  height: 1.8cqw;
+  border-radius: 99px;
+  background: var(--sc-line);
+  overflow: hidden;
+}
+.sc-vx-bar i {
+  display: block;
+  height: 100%;
+  background: var(--sc-up);
+}
+.sc-vx-bar i.is-no {
+  background: var(--sc-down);
+}
+
+/* 3: the admin */
+.sc-vx-admin {
+  display: flex;
+  align-items: center;
+  gap: 2.4cqw;
+}
+.sc-vx-btn {
+  flex: none;
+  padding: 1.1cqw 3.4cqw;
+  border-radius: 1.2cqw;
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-raise);
+  font-size: 3.2cqw;
+  white-space: nowrap;
+}
+.sc-vx-btn.is-on {
+  border-color: var(--sc-accent);
+  background: var(--sc-accent);
+  color: var(--sc-on-accent);
+}
+.sc-vx-role {
+  flex: none;
+  padding: 0.9cqw 2.2cqw;
+  border-radius: 99px;
+  background: var(--sc-up-soft);
+  border: 1px solid var(--sc-up);
+  color: var(--sc-up);
+  font-size: 3cqw;
+  white-space: nowrap;
+  transform-origin: 0 50%;
+}
+
+/* tall (desktop, square): roomier cards, a bit larger type */
+.sc-fit[data-v='tall'] .sc-vx-stack {
+  gap: 3cqw;
+  padding: 6cqw 4cqw;
+}
+.sc-fit[data-v='tall'] .sc-vx-card {
+  padding: 3cqw 3.6cqw;
+  row-gap: 2.4cqw;
+  border-radius: 2.4cqw;
+}
+.sc-fit[data-v='tall'] .sc-vx-head {
+  flex-direction: column;
+  gap: 0.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-vx-num {
+  width: 7.4cqw;
+  height: 7.4cqw;
+  font-size: 3.4cqw;
+  align-self: start;
+}
+.sc-fit[data-v='tall'] .sc-vx-title {
+  font-size: 4.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-vx-av {
+  width: 8.6cqw;
+  height: 8.6cqw;
+  font-size: 4cqw;
+}
+.sc-fit[data-v='tall'] .sc-vx-name {
+  font-size: 3.8cqw;
+}
+.sc-fit[data-v='tall'] .sc-vx-count b {
+  font-size: 6cqw;
+}
+.sc-fit[data-v='tall'] .sc-vx-bar {
+  height: 2.2cqw;
+}
+.sc-fit[data-v='tall'] .sc-vx-btn {
+  font-size: 3.6cqw;
+  padding: 1.6cqw 4cqw;
 }

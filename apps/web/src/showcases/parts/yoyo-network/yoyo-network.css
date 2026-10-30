@@ -1,111 +1,191 @@
+/* A profile page: header with a follow button over a 2 × 2 feed of posts. Sizes in cqw of the canvas
+   (wide on a phone: 1cqw ≈ 3.55 px, so text stays ≥ 2.85cqw ≈ 10 px). */
 .sc-yn-stage {
   position: absolute;
   inset: 0;
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  align-content: center;
-  gap: 3cqw;
-  padding: 5cqw;
-}
-.sc-yn-feed {
   display: flex;
   flex-direction: column;
-  gap: 1.6cqw;
+  gap: 2cqw;
+  padding: 2.6cqw 3cqw;
 }
-.sc-yn-head {
+.sc-yn-profile {
+  flex: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-bottom: 1.4cqw;
+  gap: 2.2cqw;
+  padding-bottom: 2cqw;
   border-bottom: 1px solid var(--sc-line);
 }
-.sc-yn-logo {
-  font-family: var(--sc-display);
+.sc-yn-av {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 4.4cqw;
+  height: 4.4cqw;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f0a27a, #c76b9a);
+  color: #1a1412;
+  font-size: 2.4cqw;
   font-weight: 700;
-  font-size: 3cqw;
+}
+.sc-yn-av.is-big {
+  width: 8cqw;
+  height: 8cqw;
+  font-size: 4cqw;
+}
+.sc-yn-id {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4cqw;
+}
+.sc-yn-name {
+  font-size: 4cqw;
+  font-weight: 700;
+}
+.sc-yn-meta {
+  font-size: 2.9cqw;
+  color: var(--sc-muted);
+  white-space: nowrap;
 }
 .sc-yn-follow {
   flex: none;
-  font-size: 1.9cqw;
-  padding: 0.5cqw 1.4cqw;
+  font-size: 3.1cqw;
+  padding: 1cqw 3cqw;
   border-radius: 99px;
   border: 1px solid var(--sc-line-2);
-  color: var(--sc-muted);
+  color: var(--sc-fg);
+  background: var(--sc-raise);
 }
 .sc-yn-follow.is-on {
   background: var(--sc-accent);
   border-color: var(--sc-accent);
   color: var(--sc-on-accent);
 }
+
+.sc-yn-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1.8cqw;
+}
 .sc-yn-post {
-  display: flex;
-  align-items: center;
-  gap: 1.6cqw;
-  padding: 1.6cqw;
-  border-radius: 1.4cqw;
-  background: var(--sc-soft);
-  border: 1px solid var(--sc-line);
-}
-.sc-yn-av {
-  width: 4.6cqw;
-  height: 4.6cqw;
-  border-radius: 50%;
-  flex: none;
-  background: var(--sc-line-2);
-}
-.sc-yn-av.is-yoyo {
-  background: var(--sc-accent);
-}
-.sc-yn-body {
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  gap: 0.8cqw;
+  padding: 1.6cqw 2cqw;
+  border-radius: 1.6cqw;
+  border: 1px solid var(--sc-line);
+  background: var(--sc-soft);
+  overflow: hidden;
+}
+/* the photo post: text on the left, the photo on the right, full height */
+.sc-yn-post.has-photo {
+  display: grid;
+  grid-template-columns: 1fr 42%;
+  grid-template-rows: auto 1fr auto;
+  column-gap: 1.6cqw;
+}
+.sc-yn-post.has-photo > :not(.sc-yn-photo) {
+  grid-column: 1;
+}
+.sc-yn-photo {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: stretch;
+  border-radius: 1cqw;
+  overflow: hidden;
+  min-height: 0;
+}
+.sc-yn-photo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sc-yn-line {
+  display: flex;
+  align-items: center;
+  gap: 1.2cqw;
   min-width: 0;
-  flex: 1;
 }
 .sc-yn-who {
-  font-size: 1.8cqw;
+  font-size: 2.9cqw;
+  color: var(--sc-fg);
+}
+.sc-yn-when {
+  font-size: 2.9cqw;
   color: var(--sc-muted);
+  margin-left: auto;
 }
 .sc-yn-text {
-  font-size: 2.3cqw;
+  font-size: 3.1cqw;
+  line-height: 1.25;
+}
+.sc-yn-acts {
+  display: flex;
+  gap: 2cqw;
+  font-size: 2.9cqw;
+  color: var(--sc-muted);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .sc-yn-like {
-  font-size: 2cqw;
-  color: var(--sc-muted);
-  flex: none;
+  position: relative;
+  display: inline-block;
+  transform-origin: 30% 50%;
 }
 .sc-yn-like.is-on {
-  color: var(--sc-accent);
+  color: var(--sc-down);
 }
-.sc-yn-tab {
-  font-size: 1.9cqw;
-  color: var(--sc-muted);
+.sc-yn-burst {
+  position: absolute;
+  left: -1.4cqw;
+  top: 50%;
+  width: 5cqw;
+  height: 5cqw;
+  margin-top: -2.5cqw;
+  border-radius: 50%;
+  border: 0.5cqw solid var(--sc-down);
 }
-.sc-yn-people {
-  align-self: start;
-  display: flex;
-  flex-direction: column;
-  gap: 1.4cqw;
-  padding-top: 0.6cqw;
+.sc-yn-com.is-on {
+  color: var(--sc-fg);
 }
-.sc-yn-label {
-  font-size: 1.8cqw;
-  color: var(--sc-muted);
-  padding-bottom: 1.4cqw;
-  border-bottom: 1px solid var(--sc-line);
+
+/* tall (desktop, square): more room, slightly larger type */
+.sc-fit[data-v='tall'] .sc-yn-stage {
+  gap: 3cqw;
+  padding: 5cqw 4cqw;
 }
-.sc-yn-person {
-  display: flex;
-  align-items: center;
-  gap: 1.4cqw;
+.sc-fit[data-v='tall'] .sc-yn-av.is-big {
+  width: 11cqw;
+  height: 11cqw;
+  font-size: 5cqw;
 }
-.sc-yn-name {
-  font-size: 2.2cqw;
+.sc-fit[data-v='tall'] .sc-yn-name {
+  font-size: 4.8cqw;
 }
-.sc-yn-av.is-noa {
-  background: var(--sc-line);
-  border: 1px solid var(--sc-line-2);
+.sc-fit[data-v='tall'] .sc-yn-av {
+  width: 5.4cqw;
+  height: 5.4cqw;
+}
+.sc-fit[data-v='tall'] .sc-yn-post {
+  padding: 2.6cqw;
+  border-radius: 2cqw;
+}
+.sc-fit[data-v='tall'] .sc-yn-post.has-photo {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto 1fr auto;
+  row-gap: 1.2cqw;
+}
+.sc-fit[data-v='tall'] .sc-yn-photo {
+  grid-column: 1;
+  grid-row: 3;
+}
+.sc-fit[data-v='tall'] .sc-yn-text {
+  font-size: 3.5cqw;
 }
