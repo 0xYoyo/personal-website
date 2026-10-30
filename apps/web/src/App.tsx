@@ -338,15 +338,16 @@ export function App() {
   }, [overlay]);
 
   // ---- the show starts by itself 2.5 s after the greeting has landed (wave 3 SHOW); any input before then
-  // cancels it, and returning visitors are offered "watch again" instead
+  // cancels it
   useEffect(() => {
     if (phase !== 'ready') return;
     let greetAt = 0;
     const iv = setInterval(() => {
       const s = useStore.getState();
       if (s.idleSpent) return;
-      // returning visitors, and a reload in a visit that already saw it (FIX4 W10), get "watch again" instead
-      if (s.visitor.returning || showSeen()) return s.spendIdle();
+      // it plays on every new visit, returning visitors too (WAVE4 U4); only a tab session that already saw it
+      // (a reload, FIX4 W10) gets "watch again" instead
+      if (showSeen()) return s.spendIdle();
       if (!greetAt) {
         // the greeting has landed once its line is on screen and done streaming (the boot touches the clock then)
         if (s.streaming || !s.lines.some((l) => l.role === 'agent')) return;
@@ -411,7 +412,9 @@ export function App() {
         return;
       }
       if (typing) return;
-      if (e.key === 'Enter' && s.overlay === 'none' && ctl.pacing() && !(e.target instanceof HTMLButtonElement)) {
+      // Enter, and Space / → while the bar is empty (and not focused): the turn on screen has been read (WAVE4 U3)
+      const skipKey = e.key === 'Enter' || ((e.key === ' ' || e.key === 'ArrowRight') && !(document.getElementById('y-input') as HTMLInputElement | null)?.value);
+      if (skipKey && s.overlay === 'none' && ctl.pacing() && !(e.target instanceof HTMLButtonElement)) {
         e.preventDefault();
         ctl.advance();
       } else if (e.key === '/' && s.overlay === 'none') {
