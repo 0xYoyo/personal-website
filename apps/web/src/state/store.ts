@@ -3,11 +3,14 @@
 import { create } from 'zustand';
 import type { Mood, ProjectId, StoryId } from '@yoyo/protocol';
 import { ENTRY_CHIPS, clampChips } from '../content/chips';
+import { moveChipsOn, withAnswered } from './answered';
 
 export type Overlay = 'none' | 'card' | 'build' | 'contact' | 'game' | 'stories' | 'tour' | 'history';
 export type Phase = 'boot' | 'entry' | 'ready';
 export type Scene = 'dark' | 'light';
 export type Settling = '' | 'chips' | 'all';
+/** The Work overlay's two shelves (WAVE4 U8). */
+export type Era = 'ai' | 'hand';
 
 export interface Line {
   id: number;
@@ -85,6 +88,12 @@ export interface State {
   settling: Settling;
   entryName: string | null; // the quiet mono line under the entry letters
   reducedMotion: boolean;
+  /** what the visitor has asked this session, by meaning (WAVE4 U5: chips never go backwards) */
+  answered: string[];
+  /** the Work overlay's active shelf (WAVE4 U8) */
+  era: Era;
+  /** the once-a-visit "tap to skip" hint is up (WAVE4 U3) */
+  skipHint: boolean;
 }
 
 export const emptyBuild: BuildState = {
@@ -119,6 +128,10 @@ export interface Actions {
   spendIdle(): void;
   setEntryName(s: string | null): void;
   setReducedMotion(r: boolean): void;
+  /** the visitor asked this: its chip (and any chip meaning the same) gives way to the next question */
+  markAnswered(text: string): void;
+  setEra(e: Era): void;
+  setSkipHint(on: boolean): void;
   reset(): void;
 }
 
@@ -146,6 +159,9 @@ const initial = (): State => ({
   settling: '',
   entryName: null,
   reducedMotion: false,
+  answered: [],
+  era: 'ai',
+  skipHint: false,
 });
 
 export const useStore = create<State & Actions>()((set, get) => ({
@@ -194,7 +210,8 @@ export const useStore = create<State & Actions>()((set, get) => ({
     set((s) => ({ lines: [...s.lines, line].slice(-MAX_LINES) }));
     return id;
   },
-  setChips: (chips) => set((s) => ({ chips: clampChips(chips), chipsKey: s.chipsKey + 1 })),
+  setChips: (chips) =>
+    set((s) => ({ chips: moveChipsOn(clampChips(chips), s.answered, { contactOpen: s.overlay === 'contact' }), chipsKey: s.chipsKey + 1 })),
   openOverlay: (overlay) => set({ overlay }),
   closeOverlay: () => set((s) => ({ overlay: 'none', project: s.overlay === 'card' ? null : s.project, barMode: s.overlay === 'build' ? 'chat' : s.barMode })),
   showProject: (project) => set({ project, overlay: 'card' }),
@@ -211,6 +228,9 @@ export const useStore = create<State & Actions>()((set, get) => ({
   spendIdle: () => set({ idleSpent: true }),
   setEntryName: (entryName) => set({ entryName }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
+  markAnswered: (text) => set((s) => ({ answered: withAnswered(s.answered, text) })),
+  setEra: (era) => set({ era }),
+  setSkipHint: (skipHint) => set({ skipHint }),
   reset: () => set({ ...initial(), phase: get().phase }),
 }));
 
