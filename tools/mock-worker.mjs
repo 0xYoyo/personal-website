@@ -6,7 +6,9 @@
 //   PORT=9000 node tools/mock-worker.mjs
 //
 // Same endpoints and wire format as apps/worker (the @yoyo/protocol ChatEvent / BuildEvent framing):
-//   POST /chat  → SSE data: {"type":"token","text":"..."} … data: {"type":"done"}   (the scripted brain's replies, as a live model would give them; live-like timing)
+//   POST /chat  → JSON {type:'route', intent, turns, shape, chips}: the Gemini router (WAVE4 A1), mocked: the scripted
+//                 classifier picks the intent, ~700 ms like gemini-3.1-flash-lite; anything it can't place is `unknown`
+//                 (mode `stream`: the old SSE data: {"type":"token",…} … {"type":"done"}, as PROVIDER=anthropic answers)
 //   POST /build → SSE data: {"type":"chunk","html":"<html>"} … data: {"type":"done","bytes":N}  (6 prebuilt apps, ~15 s;
 //                 with previousHtml — "Change it" — the page being changed, really changed: dark/light,
 //                 an accent color, else a visible note; tools/lib/change-html.mjs)
@@ -15,8 +17,8 @@
 // Failure modes for QA (the client's fallback paths):
 //   prefix the path:   /__fail/<mode>/chat   e.g. VITE_AGENT_URL=http://localhost:8787/__fail/slow
 //   or env:            MOCK_FAIL=<mode>
-//   modes: slow (no first token for 12 s) · down (502) · offline (503) · quota (429 quota)
-//          rate (429 rate) · drop (3 tokens then the connection dies) · empty (done, no text)
+//   modes: slow (no answer for 12 s: the site's 2.5 s router timeout) · down (502) · offline (503) · quota (429 quota)
+//          rate (429 rate) · drop (the connection dies) · empty (a route with nothing in it) · stream (SSE, see /chat)
 //
 // Timing: first token 600 ms, then ~40 tokens/s (4-char tokens); builds stream for ~15 s.
 // Set MOCK_FAST=1 to divide all delays by 10 (for automated tests).
@@ -95,6 +97,16 @@ export function mockReply(text, visitor = {}, history = []) {
   const reply = AGENT.scriptedReply(raw, { name, lastShown: lastShownIn(history), random: () => 0 }).raw;
   if (c.kind === 'spell' || (c.kind === 'spell-my-name' && name)) return `${reply} [[chips:Now a rocket|Build me something|Who are you?]]`;
   return reply;
+}
+
+/**
+ * What the router would answer (WAVE4 A1), mocked with the scripted classifier: a known intent, an easter egg's id,
+ * else `unknown`. The site only asks the router for messages it isn't sure of itself.
+ */
+export function mockRoute(text) {
+  const c = AGENT.classify(String(text ?? '').trim());
+  const intent = c.kind === 'intent' ? c.id : c.kind === 'extra' ? c.id : 'unknown';
+  return { type: 'route', intent, turns: [], shape: null, chips: [] };
 }
 
 const titleOf = (html) => /<title>([^<]*)<\/title>/i.exec(html ?? '')?.[1]?.trim() ?? '';
@@ -186,6 +198,11 @@ async function failMaybe(mode, req, res) {
       sendJson(req, res, 429, { reason: 'rate', retryAfter: 30 });
       return true;
     case 'slow':
+      if (req.url?.endsWith('/chat')) {
+        await sleep(12_000);
+        sendJson(req, res, 200, { type: 'route', intent: 'unknown', turns: [], shape: null, chips: [] });
+        return true;
+      }
       sseHead(req, res);
       await sleep(12_000);
       frame(res, { type: 'token', text: 'too late.' });
@@ -193,6 +210,7 @@ async function failMaybe(mode, req, res) {
       res.end();
       return true;
     case 'empty':
+      if (req.url?.endsWith('/chat')) return false; // the router's empty answer (handleChat)
       sseHead(req, res);
       await sleep(600);
       frame(res, { type: 'done' });
@@ -211,6 +229,11 @@ async function handleChat(req, res, fail) {
   if (!content.trim()) return sendJson(req, res, 400, { reason: 'bad_request' });
   if ([...content].length > 600) return sendJson(req, res, 400, { reason: 'too_long' });
   if (await failMaybe(fail, req, res)) return;
+  if (fail !== 'stream') {
+    await sleep(jitter(700));
+    if (fail === 'drop') return res.destroy();
+    return sendJson(req, res, 200, fail === 'empty' ? { type: 'route', intent: null, turns: [], shape: null, chips: [] } : mockRoute(content));
+  }
   const reply = mockReply(content, body?.visitor ?? {}, messages.slice(0, -1));
   sseHead(req, res);
   let closed = false;

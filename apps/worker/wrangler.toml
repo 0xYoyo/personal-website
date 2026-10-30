@@ -8,6 +8,11 @@ workers_dev = true
 # Optional: serve from your own domain instead of *.workers.dev (README step 9).
 # routes = [{ pattern = "agent.example.com", custom_domain = true }]
 
+# `wrangler dev` (npm run dev:live): the address apps/web/.env.development calls
+[dev]
+ip = "127.0.0.1"
+port = 8787
+
 [vars]
 # Comma-separated list of site origins allowed to call /chat, /build and /share.
 # A `*` matches any run of characters except "/" (so "http://localhost:*" covers every local port).

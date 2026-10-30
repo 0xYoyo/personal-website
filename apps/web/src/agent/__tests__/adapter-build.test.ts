@@ -57,9 +57,11 @@ describe('adapter: builds', () => {
       const brain = createBrain({ agentUrl: 'https://agent.example', speed: 0.001 });
       const words: string[] = [];
       const actions: Action[] = [];
-      const r = await brain.send('could you put together a pomodoro timer', { // routed: the live stream hands off (WAVE4 A3) onWord: (w) => words.push(w), onAction: (a) => actions.push(a) });
+      // routed (not a sure local match), so the live stream hands off the build (WAVE4 A3)
+      const r = await brain.send('could you put together a pomodoro timer', { onWord: (w) => words.push(w), onAction: (a) => actions.push(a) });
       expect(r.source).toBe('live');
-      expect(actions).toEqual([{ type: 'build', instruction: 'a pomodoro timer' }]);
+      // the listening ring while the Worker decides, its release when the stream opens, then the hand-off
+      expect(actions).toEqual([{ type: 'mood', mood: 'listening' }, { type: 'mood', mood: 'thinking' }, { type: 'build', instruction: 'a pomodoro timer' }]);
       expect(words).toEqual([]);
       expect(r.text).toBe('');
     } finally {

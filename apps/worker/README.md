@@ -1,11 +1,11 @@
 # yoyo-agent Worker
 
-The mind behind the site: a Cloudflare Worker that streams model replies in Yoyo's agent's voice (Gemini 2.5 Flash by default, or Claude via `PROVIDER=anthropic`; see [Switching the model](#switching-the-model)), builds small HTML apps on request, and stores shared builds.
+The mind behind the site: a Cloudflare Worker that routes each visitor message (Gemini 3.1 Flash-Lite by default: it picks one of the site's scripted replies, or writes a two-turn answer from the facts when none fits; or Claude via `PROVIDER=anthropic`, which streams its replies; see [Switching the model](#switching-the-model)) and stores shared builds. Builds stream the site's prebuilt examples; `LIVE_BUILDS=on` lets `/build` call the model again.
 
 | Route | What it does |
 |---|---|
-| `POST /chat` | body `ChatRequest` `{messages:[{role:'visitor'\|'agent', text}], visitor:{name?, returning, device:'desktop'\|'mobile', lang?}}` → SSE `data: {"type":"token","text":"..."}` … `data: {"type":"done"}`. Replies are paced into turns with `\|\|` (`src/pace.ts`): a reply over 32 words that the model didn't pace gets them at sentence boundaries, and a turn over 22 words is split at its sentences |
-| `POST /build` | body `BuildRequest` `{instruction, previousHtml?}` → SSE of raw HTML chunks `data: {"type":"chunk","html":"<html…"}` … `data: {"type":"done","bytes":N}` |
+| `POST /chat` | Gemini (the router): body `ChatRequest` → `application/json` `{type:'route', intent: <faq.md intent id>\|'unknown'\|null, turns: string[] (≤ 2, ≤ 22 words each), shape: <glyph id or one word or emoji>\|null, chips: string[] (≤ 3, from the site's list)}`. A known intent: the site plays that scripted reply word for word; null: it plays `turns` with `shape`. One `generateContent` call with `responseMimeType: application/json` + `responseSchema`, temperature 0.3, `maxOutputTokens` 200, thinking at its lowest (3.x `thinkingLevel: minimal`, Pro `low`; 2.5 `thinkingBudget: 0`, Pro 128; on a 400 that blames thinking: the next lower setting, then none). Everything is clamped in `src/router-core.mjs`. The prompt: persona.md's Voice and Truth sections + facts.md + every faq.md intent id with one line (`npm run gen`). With `PROVIDER=anthropic`: body `ChatRequest` `{messages:[{role:'visitor'\|'agent', text}], visitor:{name?, returning, device:'desktop'\|'mobile', lang?}}` → SSE `data: {"type":"token","text":"..."}` … `data: {"type":"done"}`. Replies are paced into turns with `\|\|` (`src/pace.ts`): a reply over 32 words that the model didn't pace gets them at sentence boundaries, and a turn over 22 words is split at its sentences |
+| `POST /build` | `503 offline` unless `LIVE_BUILDS=on`; then body `BuildRequest` `{instruction, previousHtml?}` → SSE of raw HTML chunks `data: {"type":"chunk","html":"<html…"}` … `data: {"type":"done","bytes":N}` |
 | `POST /share` | body `{html}` (≤ 60 kB) → `{id, url}`; stored in KV `SHARES` for 30 days |
 | `GET /s/:id` | the shared HTML, under `Content-Security-Policy: sandbox allow-scripts; default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:` |
 | `GET /health` | `{ok, live, provider, model, time}`; `live` is false until the selected provider's API key is set |
@@ -16,8 +16,8 @@ The client (`apps/web/src/agent/client/`) treats `429 quota` as "scripted brain 
 
 ## Limits
 
-- Per IP (salted SHA-256 hash, never the raw address): chat 20 per 10 minutes, build 5 per hour, share 20 per hour. Token buckets in KV `LIMITS`.
-- Global per UTC day: `DAILY_CHAT_CAP` (default 2000), `DAILY_BUILD_CAP` (default 300), `DAILY_SHARE_CAP` (default 1000). Each isolate batches its counter writes (at most one write every 2 s), so the caps are approximate.
+- Per IP (salted SHA-256 hash, never the raw address): 20 live replies per UTC day (`CHAT_PER_IP_DAY`), then `429 quota` (the site is scripted for the day); build 5 per hour, share 20 per hour (token buckets). All in KV `LIMITS`, or in memory when there is no binding (local dev).
+- Global per UTC day: `DAILY_CHAT_CAP` (default 300), `DAILY_BUILD_CAP` (default 300), `DAILY_SHARE_CAP` (default 1000). Each isolate batches its counter writes (at most one write every 2 s), so the caps are approximate.
 - Input: chat message ≤ 600 characters, history trimmed to the last 12 messages, build instruction ≤ 400 characters, `previousHtml` and shared HTML ≤ 60 kB, request body ≤ 80 kB.
 - Upstream: if Gemini answers 429 with a per-day quota, the Worker returns `429 {reason:'quota'}`; a per-minute 429 becomes `429 {reason:'rate'}`.
 
@@ -78,13 +78,13 @@ You need Node 22+, a Cloudflare account (the free plan works) and a Google AI St
 8. **Check it.**
    ```sh
    curl https://yoyo-agent.<your-subdomain>.workers.dev/health
-   # {"ok":true,"live":true,"model":"gemini-2.5-flash",...}
+   # {"ok":true,"live":true,"model":"gemini-3.1-flash-lite",...}
 
    curl -N https://yoyo-agent.<your-subdomain>.workers.dev/chat \
      -H 'origin: https://yoyo.dev' -H 'content-type: application/json' \
      -d '{"messages":[{"role":"visitor","text":"who is yoyo?"}],"visitor":{"returning":false,"device":"desktop"}}'
    ```
-   Use an origin from step 6. You should see `data: {"type":"token","text":"..."}` lines, then `data: {"type":"done"}`. If `live` is false, the secret from step 5 is missing.
+   Use an origin from step 6. You should see one JSON route, e.g. `{"type":"route","intent":"who","turns":[],...}` (with `PROVIDER=anthropic`: `data: {"type":"token",...}` lines, then `data: {"type":"done"}`). If `live` is false, the secret from step 5 is missing.
 
 9. **Optional: your own domain.** Either give the Worker its own hostname (in `wrangler.toml`, uncomment `routes = [{ pattern = "agent.example.com", custom_domain = true }]`, put in a hostname on a zone you have in Cloudflare, and run `npm run deploy` again), or, better for share links, put it under the site's domain at `/api/*`: see [Share links on your domain](#share-links-on-your-domain).
 
@@ -125,7 +125,7 @@ Two variables pick the model. Everything else (the SSE the site receives, the pr
 | Variable | Values | Default |
 |---|---|---|
 | `PROVIDER` | `gemini` or `anthropic` | `gemini` |
-| `MODEL` | any model id of that provider | `gemini-2.5-flash` for Gemini, `claude-sonnet-4-5` for Anthropic |
+| `MODEL` | any model id of that provider | `gemini-3.1-flash-lite` for Gemini, `claude-sonnet-4-5` for Anthropic |
 
 To switch to Claude:
 
@@ -137,15 +137,15 @@ then in `wrangler.toml` set `PROVIDER = "anthropic"` (and optionally `MODEL = "c
 
 How each is called:
 
-- **Gemini**: `POST https://generativelanguage.googleapis.com/v1beta/models/<MODEL>:streamGenerateContent?alt=sse`, key in `x-goog-api-key`, system prompt in `systemInstruction`, thinking off by default (`GEMINI_THINKING_BUDGET`).
+- **Gemini**: chat: `POST https://generativelanguage.googleapis.com/v1beta/models/<MODEL>:generateContent` (the router, see `/chat` above); live builds: `:streamGenerateContent?alt=sse` with `GEMINI_THINKING_BUDGET` (default 0). Key in `x-goog-api-key`, system prompt in `systemInstruction`.
 - **Anthropic**: `POST https://api.anthropic.com/v1/messages` with `stream: true`, headers `x-api-key` and `anthropic-version: 2023-06-01`, the system prompt in `system`, the conversation in `messages`; `content_block_delta` text deltas are forwarded as the same `token` / `chunk` events. Chat uses temperature 0.8 and `max_tokens` 512; builds 0.4 and 16,384.
 - Upstream `429` → `429 {reason:'rate'}`. Gemini's per-day quota, or Anthropic's "credit balance is too low", → `429 {reason:'quota'}` (the site goes scripted for the day). Anthropic `529 overloaded` and other errors → `502 upstream`.
 
-**Rough cost.** Gemini 2.5 Flash on the free tier costs nothing until its per-day request limit (check AI Studio). Claude has no free tier; Claude Sonnet 4.5 is $3 per million input tokens and $15 per million output tokens (Claude Haiku 4.5: $1 / $5; current prices at https://platform.claude.com/docs/en/about-claude/pricing). The chat system prompt (persona + facts + rules) is about 4–5k tokens, so a chat turn on Sonnet 4.5 is roughly 5k in + 100 out ≈ $0.017, and a build (≈ 1k in + 5–8k out, more with `previousHtml`) roughly $0.08–0.12. At the default daily caps (2,000 chats, 300 builds) the worst case is about $34 + $36 ≈ $70 a day, so lower `DAILY_CHAT_CAP` / `DAILY_BUILD_CAP` to match your budget; at a realistic 200 chats and 20 builds a day it is about $6. Haiku 4.5 is a third of that.
+**Rough cost.** Gemini 3.1 Flash-Lite on the free tier costs nothing until its per-day request limit (check AI Studio). Claude has no free tier; Claude Sonnet 4.5 is $3 per million input tokens and $15 per million output tokens (Claude Haiku 4.5: $1 / $5; current prices at https://platform.claude.com/docs/en/about-claude/pricing). The chat system prompt (persona + facts + rules) is about 4–5k tokens, so a chat turn on Sonnet 4.5 is roughly 5k in + 100 out ≈ $0.017, and a build (≈ 1k in + 5–8k out, more with `previousHtml`) roughly $0.08–0.12. At the default caps (300 live replies a day, live builds off) the worst case is about $5 a day; with `LIVE_BUILDS=on` add up to `DAILY_BUILD_CAP` builds. Haiku 4.5 is a third of that.
 
 ## Local development
 
-- `npm run dev` runs the real Worker locally (`wrangler dev`, port 8787) with local KV. Put `GEMINI_API_KEY=...` in a `.dev.vars` file (git-ignored) to talk to Gemini.
+- `npm run dev` runs the real Worker locally (`wrangler dev`, 127.0.0.1:8787) with local KV. Put `GEMINI_API_KEY=...` in a `.dev.vars` file (git-ignored) to talk to Gemini. From the repo root, `npm run dev:live` runs it next to the site, and `npm run live:check` sends 15 fixed questions straight to Gemini with the production prompt (≤ 20 calls, once per 10 minutes) and writes `tools/live-check.out.json`.
 - Most of the time, use the mock instead, which needs no key and no network: from the repo root, `npm run mock` (`tools/mock-worker.mjs`, port 8787) serves the same endpoints with canned replies from the scripted FAQ (`apps/web/src/content/faq.md`) and six prebuilt apps, at realistic speed. The root `npm run dev` starts it for you and points the site at it. To test the fallbacks, use `VITE_AGENT_URL=http://localhost:8787/__fail/<mode>` with `slow`, `down`, `offline`, `quota`, `rate`, `drop` or `empty`.
 
 ## Scripts

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 process.env.MOCK_FAST = '1';
-const { createMockServer, mockReply } = await import('./mock-worker.mjs');
+const { createMockServer, mockReply, mockRoute } = await import('./mock-worker.mjs');
 
 const server = createMockServer();
 await new Promise((r) => server.listen(0, r));
@@ -24,14 +24,23 @@ test('health', async () => {
   assert.equal((await r.json()).ok, true);
 });
 
-test('/chat streams 4-char tokens of a faq reply, then done', async () => {
-  const r = await post('/chat', { messages: [{ role: 'visitor', text: 'who is yoyo?' }], visitor: {} });
+test('/chat answers like the Gemini router: one JSON route, the intent from the scripted classifier (WAVE4 A1)', async () => {
+  const r = await post('/chat', { messages: [{ role: 'visitor', text: 'what languages do you code in, java?' }], visitor: {} });
+  assert.equal(r.headers.get('access-control-allow-origin'), 'http://localhost:5173');
+  assert.match(r.headers.get('content-type'), /application\/json/);
+  assert.deepEqual(await r.json(), { type: 'route', intent: 'stack', turns: [], shape: null, chips: [] });
+  assert.deepEqual(mockRoute('qwertyuiop asdfgh zxcvb'), { type: 'route', intent: 'unknown', turns: [], shape: null, chips: [] });
+  assert.equal(mockRoute('do you play fortnite').intent, 'fortnite');
+});
+
+test('/chat in stream mode streams 4-char tokens of a faq reply, then done (PROVIDER=anthropic)', async () => {
+  const r = await post('/__fail/stream/chat', { messages: [{ role: 'visitor', text: 'who is yoyo?' }], visitor: {} });
   assert.equal(r.headers.get('access-control-allow-origin'), 'http://localhost:5173');
   const ev = await sse(r);
   assert.deepEqual(ev.at(-1), { type: 'done' });
   const toks = ev.filter((e) => e.type === 'token');
   const text = toks.map((e) => e.text).join('');
-  assert.ok(text.startsWith("[[become:curls]] I'm Yoyo."));
+  assert.ok(text.startsWith("[[become:curls]] I'm Yoyo"));
   assert.ok(toks.every((e) => e.text.length <= 4));
 });
 
@@ -89,7 +98,7 @@ test('failure modes via /__fail/<mode>/', async () => {
   assert.deepEqual(await q.json(), { reason: 'quota' });
   const rt = await post('/__fail/rate/chat', body);
   assert.equal((await rt.json()).reason, 'rate');
-  assert.deepEqual(await sse(await post('/__fail/empty/chat', body)), [{ type: 'done' }]);
+  assert.deepEqual(await (await post('/__fail/empty/chat', body)).json(), { type: 'route', intent: null, turns: [], shape: null, chips: [] });
   await assert.rejects(async () => (await post('/__fail/drop/chat', { messages: [{ role: 'visitor', text: 'who is yoyo' }] })).text());
 });
 

@@ -22,18 +22,26 @@ npm install
 npm run dev          # mock worker on :8787 + the site on http://127.0.0.1:5173
 ```
 
-`npm run dev` starts the mock worker (`tools/mock-worker.mjs`) next to Vite, and `apps/web/.env.development` points the site at it. The mock needs no key and no network. It streams canned replies and six prebuilt apps at realistic speed. To try the fallbacks, set `VITE_AGENT_URL=http://127.0.0.1:8787/__fail/<mode>` (`slow`, `down`, `offline`, `quota`, `rate`, `drop`, `empty`). To run the site on the scripted brain only, empty that variable.
+`npm run dev` starts the mock worker (`tools/mock-worker.mjs`) next to Vite, and `apps/web/.env.development` points the site at it. The mock needs no key and no network. It answers `/chat` like the live router (a JSON route picked by the scripted classifier, ~700 ms) and streams six prebuilt apps at realistic speed. To try the fallbacks, set `VITE_AGENT_URL=http://127.0.0.1:8787/__fail/<mode>` (`slow`, `down`, `offline`, `quota`, `rate`, `drop`, `empty`; `stream` answers with the old SSE stream). To run the site on the scripted brain only, empty that variable.
 
 | Script | What it does |
 |---|---|
 | `npm run dev` | mock + site (`dev:web` runs the site alone, `mock` runs the mock alone) |
 | `npm run dev:worker` | the real Worker locally (`wrangler dev`, :8787; put `GEMINI_API_KEY` in `apps/worker/.dev.vars`) |
+| `npm run dev:live` | the real Worker + the site: the live router with your key (see "Live brain locally") |
+| `npm run live:check` | one real check of the router against Gemini (≤ 20 calls, once per 10 min) → `tools/live-check.out.json` |
 | `npm run build` | protocol typecheck, then web typecheck + `vite build` (→ `apps/web/dist`), then a Worker dry-run |
 | `npm run typecheck` / `lint` / `test` | all workspaces (Vitest workspace: protocol, web, worker; plus the mock's `node --test`) |
 | `npm run gen` | regenerates `agent/client/faq.ts` + `examples.ts` from `faq.md` / `examples/*.html`, and the Worker's prompt |
 | `npm run shots` | Playwright QA → `tools/out/` (see the header of `tools/shots.mjs`) |
 | `npm run og` | re-renders `apps/web/public/og.png` and `og-square.png` from the real swarm |
 | `npm run deploy:worker` | deploys the Worker |
+
+**Live brain locally.** Put `GEMINI_API_KEY=...` in `apps/worker/.dev.vars` (git-ignored; `#` comments and blank values are fine, `MODEL=` overrides `gemini-3.1-flash-lite`).
+`npm run dev:live` runs `wrangler dev` on 127.0.0.1:8787 (it reads `.dev.vars`; limits live in memory) and Vite on :5173.
+The site already calls `VITE_AGENT_URL=http://127.0.0.1:8787` (`apps/web/.env.development`) directly, CORS-allowed by `ALLOWED_ORIGINS`, so no proxy is needed.
+Chips and messages the scripted brain is sure of never reach the Worker; anything else is routed (`POST /chat` → one JSON route).
+`npm run live:check` checks the key, the model and latency first (`OPENROUTER_API_KEY=` in the same file adds a comparison).
 
 QA query parameters: `?skipEntry=1`, `?speed=0.2` (scripted timings 5× faster), `?scene=light`, `?tier=0..3` (force a swarm tier, no adaptive drop), `?qa=1` (exposes `window.__yoyo` on a production build).
 

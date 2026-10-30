@@ -260,7 +260,7 @@ export function cutWords(s, max = ROUTER_LIMITS.turnWords) {
   for (let i = head.length - 1; i >= 0; i--) {
     if (/[.!?]["'’”)]*$/.test(head[i]) && i >= 2) return head.slice(0, i + 1).join(' ');
   }
-  return `${head.join(' ').replace(/[,;:\-]+$/, '')}.`;
+  return `${head.join(' ').replace(/[,;:-]+$/, '')}.`;
 }
 
 /**
