@@ -37,7 +37,7 @@ id = "REPLACE_WITH_SHARES_NAMESPACE_ID"
 
 [[kv_namespaces]]
 binding = "LIMITS"
-id = "REPLACE_WITH_LIMITS_NAMESPACE_ID"
+id = "34b14af3115b46218299844c9cde032a"
 
 # Secrets (never in this file):
 #   npx wrangler secret put GEMINI_API_KEY      (PROVIDER = "gemini")

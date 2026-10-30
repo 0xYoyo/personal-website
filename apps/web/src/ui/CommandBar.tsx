@@ -13,6 +13,8 @@ const TAP_MS = 260;
 export function CommandBar() {
   const phase = useStore((s) => s.phase);
   const streaming = useStore((s) => s.streaming);
+  // the loading line shows only while the reply hasn't started (a visitor line is last), never while words are on screen
+  const waiting = useStore((s) => s.streaming && s.lines[s.lines.length - 1]?.role === 'visitor');
   const barMode = useStore((s) => s.barMode);
   const build = useStore((s) => s.build);
   const lines = useStore((s) => s.lines);
@@ -148,7 +150,7 @@ export function CommandBar() {
           void submit();
         }}
       >
-        <span className="y-bar-progress" data-on={streaming || building} data-determinate={building && build.status === 'streaming'} aria-hidden="true">
+        <span className="y-bar-progress" data-on={waiting || building} data-determinate={building && build.status === 'streaming'} aria-hidden="true">
           <span style={building && build.status === 'streaming' ? { transform: `scaleX(${build.progress})` } : undefined} />
         </span>
         <label htmlFor="y-input" className="y-sr">
