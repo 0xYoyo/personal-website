@@ -1,240 +1,259 @@
-.sc-pnl-bot-stage {
-  position: absolute;
-  inset: 0;
-}
 .sc-pnl-bot-msg {
   position: absolute;
   left: 5cqw;
-  top: 4.6cqw;
+  right: 5cqw;
   display: flex;
-  align-items: center;
-  gap: 1.4cqw;
-  font-size: 2.6cqw;
-  font-weight: 600;
-  white-space: nowrap;
+  align-items: flex-start;
+  gap: 2cqw;
 }
 .sc-pnl-bot-msg.is-bot {
-  top: 12.4cqw;
+  align-items: center;
 }
 .sc-pnl-bot-av {
-  width: 5cqw;
-  height: 5cqw;
-  border-radius: 50%;
   flex: none;
+  width: 6cqw;
+  height: 6cqw;
+  border-radius: 50%;
   display: grid;
   place-items: center;
 }
 .sc-pnl-bot-av.is-user {
-  background: var(--sc-line-2);
+  background: linear-gradient(135deg, #f2b880, #c9748f);
 }
 .sc-pnl-bot-av.is-bot {
   background: var(--sc-accent);
 }
+.sc-pnl-bot-av.is-small {
+  width: 3.2cqw;
+  height: 3.2cqw;
+}
 .sc-pnl-bot-av svg {
-  width: 2.8cqw;
-  height: 2.8cqw;
+  width: 3.4cqw;
+  height: 3.4cqw;
   fill: none;
   stroke: #f4efe6;
-  stroke-width: 2.2;
+  stroke-width: 2;
   stroke-linecap: round;
 }
-.sc-pnl-bot-cmd {
+.sc-pnl-bot-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6cqw;
+}
+.sc-pnl-bot-name {
+  display: flex;
+  align-items: center;
+  gap: 1.2cqw;
+  font-size: 2.8cqw;
+  font-weight: 600;
+}
+.sc-pnl-bot-time {
+  font-size: 2cqw;
   font-weight: 400;
-  padding: 0.4cqw 1.1cqw;
-  border-radius: 0.8cqw;
-  background: var(--sc-soft);
-  border: 1px solid var(--sc-line);
+  color: var(--sc-muted);
+}
+.sc-pnl-bot-cmd {
+  align-self: flex-start;
+  font-size: 2.6cqw;
+  padding: 0.3cqw 1cqw;
+  border-radius: 0.7cqw;
+  background: var(--sc-accent-soft);
+  color: var(--sc-fg);
 }
 .sc-pnl-bot-tag {
-  font-size: 1.8cqw;
+  font-size: 1.7cqw;
   font-weight: 400;
-  padding: 0.15cqw 0.8cqw;
+  padding: 0.25cqw 0.8cqw;
   border-radius: 0.6cqw;
   background: var(--sc-accent);
   color: #f4efe6;
 }
 .sc-pnl-bot-typing {
   display: inline-flex;
-  gap: 0.5cqw;
+  gap: 0.6cqw;
   margin-left: 0.6cqw;
 }
 .sc-pnl-bot-typing i {
-  width: 0.8cqw;
-  height: 0.8cqw;
+  width: 0.9cqw;
+  height: 0.9cqw;
   border-radius: 50%;
   background: var(--sc-muted);
 }
-.sc-pnl-bot-embed {
+
+/* the profit card: an image the bot posts, so it is dark in both scenes */
+.sc-pnl-bot-slot {
   position: absolute;
-  left: 11.4cqw;
+  left: 13cqw;
   right: 5cqw;
-  top: 19.2cqw;
-  bottom: 4.4cqw;
-  border-radius: 1cqw;
-  border: 1px solid var(--sc-line);
-  background: var(--sc-raise);
+}
+.sc-pnl-bot-card {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 40% 1fr;
+  gap: 3cqw;
+  padding: 2.8cqw 3cqw;
+  border-radius: 1.8cqw;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(43, 75, 255, 0.34), transparent 55%),
+    #0d0e15;
+  border: 1px solid rgba(120, 140, 255, 0.35);
+  color: #f4efe6;
   overflow: hidden;
+  --up: #3ccf7f;
+  --down: #ff6b5e;
 }
-.sc-pnl-bot-bar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0.7cqw;
-  background: var(--sc-accent);
-  transform-origin: 50% 0;
-}
-.sc-pnl-bot-title {
-  position: absolute;
-  left: 3cqw;
-  top: 2.2cqw;
-  font-size: 3cqw;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.sc-pnl-bot-wallets {
-  position: absolute;
-  left: 3cqw;
-  top: 8.4cqw;
-  width: 32cqw;
+.sc-pnl-bot-side {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
 }
-.sc-pnl-bot-row {
+.sc-pnl-bot-asset {
   display: flex;
   align-items: center;
-  gap: 1.6cqw;
-  padding: 1.05cqw 0;
-  border-top: 1px solid var(--sc-line);
-  white-space: nowrap;
+  gap: 1.4cqw;
+  min-width: 0;
+}
+.sc-pnl-bot-coin,
+.sc-pnl-bot-nft {
+  flex: none;
+  width: 5.2cqw;
+  height: 5.2cqw;
+  display: grid;
+  place-items: center;
+}
+.sc-pnl-bot-coin {
+  border-radius: 50%;
+  background: #4c9a52;
+  font-size: 2.8cqw;
+  font-weight: 700;
+  color: #f4efe6;
+}
+.sc-pnl-bot-nft {
+  border-radius: 1.1cqw;
+  background: linear-gradient(135deg, #ff9a52, #c74f2f);
+}
+.sc-pnl-bot-nft svg {
+  width: 3.8cqw;
+  height: 3.8cqw;
+  fill: #fde7d4;
+}
+.sc-pnl-bot-nft svg circle {
+  fill: #2a1a14;
+}
+.sc-pnl-bot-asset-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4cqw;
+  min-width: 0;
+}
+.sc-pnl-bot-asset-name {
+  font-size: 2.9cqw;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
 }
 .sc-pnl-bot-chain {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.8cqw;
-  width: 10cqw;
-  font-size: 2.2cqw;
+  gap: 0.6cqw;
+  font-size: 1.9cqw;
+  color: rgba(244, 239, 230, 0.62);
 }
 .sc-pnl-bot-chain svg {
-  width: 2.8cqw;
-  height: 2.8cqw;
+  width: 2.2cqw;
+  height: 2.2cqw;
   fill: none;
-  stroke: var(--sc-fg);
-  stroke-width: 1.3;
+  stroke: currentColor;
+  stroke-width: 1.5;
   stroke-linejoin: round;
-}
-.sc-pnl-bot-addr {
-  font-size: 2.2cqw;
-  color: var(--sc-muted);
-}
-.sc-pnl-bot-chart {
-  position: absolute;
-  left: 39cqw;
-  right: 3cqw;
-  top: 3cqw;
-  height: 25cqw;
-}
-.sc-pnl-bot-zero {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 30%;
-  border-top: 1px solid var(--sc-line-2);
-}
-.sc-pnl-bot-group {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 33.3%;
-}
-.sc-pnl-bot-col {
-  position: absolute;
-  width: 30%;
-  bottom: 30%;
-  border-radius: 0.5cqw 0.5cqw 0 0;
-}
-.sc-pnl-bot-col.is-neg {
-  bottom: auto;
-  top: 70%;
-  border-radius: 0 0 0.5cqw 0.5cqw;
-}
-.sc-pnl-bot-col.is-realized,
-.sc-pnl-bot-key i.is-realized {
-  background: var(--sc-fg);
-}
-.sc-pnl-bot-col.is-unrealized,
-.sc-pnl-bot-key i.is-unrealized {
-  background: transparent;
-  border: 0.3cqw solid var(--sc-accent);
-}
-.sc-pnl-bot-col.is-unrealized.is-neg {
-  border-top: 0;
-}
-.sc-pnl-bot-col.is-unrealized:not(.is-neg) {
-  border-bottom: 0;
-}
-.sc-pnl-bot-lab {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  text-align: center;
-  font-size: 1.9cqw;
-  color: var(--sc-muted);
-}
-.sc-pnl-bot-totals {
-  position: absolute;
-  left: 3cqw;
-  right: 3cqw;
-  bottom: 2.2cqw;
-  display: flex;
-  gap: 5cqw;
-  padding-top: 1.6cqw;
-  border-top: 1px solid var(--sc-line);
 }
 .sc-pnl-bot-total {
   display: flex;
   flex-direction: column;
   gap: 0.4cqw;
 }
-.sc-pnl-bot-key {
-  display: inline-flex;
+.sc-pnl-bot-total-k {
+  font-size: 1.9cqw;
+  color: rgba(244, 239, 230, 0.62);
+}
+.sc-pnl-bot-total-v {
+  font-size: 4.4cqw;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sc-pnl-bot-card.is-up .sc-pnl-bot-total-v {
+  color: var(--up);
+}
+.sc-pnl-bot-card.is-down .sc-pnl-bot-total-v {
+  color: var(--down);
+}
+.sc-pnl-bot-who {
+  display: flex;
   align-items: center;
-  gap: 0.8cqw;
-  font-size: 2cqw;
-  color: var(--sc-muted);
+  gap: 1cqw;
+  font-size: 2.1cqw;
+  color: rgba(244, 239, 230, 0.8);
 }
-.sc-pnl-bot-key i {
-  display: inline-block;
-  width: 1.6cqw;
-  height: 1.6cqw;
-  border-radius: 0.3cqw;
+.sc-pnl-bot-rows {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
 }
-.sc-pnl-bot-num {
-  font-size: 3.6cqw;
+.sc-pnl-bot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1cqw;
+  font-size: 2.1cqw;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-@container (max-width: 520px) {
-  .sc-pnl-bot-addr {
-    display: none;
-  }
-  .sc-pnl-bot-wallets {
-    width: 14cqw;
-  }
-  .sc-pnl-bot-chain {
-    font-size: 2.6cqw;
-  }
-  .sc-pnl-bot-chart {
-    left: 22cqw;
-    height: 21cqw;
-  }
-  .sc-pnl-bot-lab {
-    font-size: 2.4cqw;
-  }
-  .sc-pnl-bot-key {
-    font-size: 2.5cqw;
-  }
-  .sc-pnl-bot-msg {
-    font-size: 3cqw;
-  }
+.sc-pnl-bot-k {
+  color: rgba(244, 239, 230, 0.62);
+}
+.sc-pnl-bot-v.is-up {
+  color: var(--up);
+}
+.sc-pnl-bot-v.is-down {
+  color: var(--down);
+}
+.sc-pnl-bot-row.is-roi {
+  padding-top: 0.9cqw;
+  border-top: 1px solid rgba(244, 239, 230, 0.16);
+  font-size: 2.4cqw;
+  font-weight: 600;
+}
+.sc-fit[data-v='wide'] .sc-pnl-bot-row {
+  font-size: 2.3cqw;
+}
+.sc-fit[data-v='wide'] .sc-pnl-bot-row.is-roi {
+  font-size: 2.6cqw;
+}
+.sc-fit[data-v='wide'] .sc-pnl-bot-name {
+  font-size: 2.6cqw;
+}
+.sc-fit[data-v='wide'] .sc-pnl-bot-av:not(.is-small) {
+  width: 5.4cqw;
+  height: 5.4cqw;
+}
+.sc-fit[data-v='tall'] .sc-pnl-bot-row {
+  font-size: 2.4cqw;
+}
+.sc-fit[data-v='tall'] .sc-pnl-bot-row.is-roi {
+  font-size: 2.7cqw;
+}
+.sc-fit[data-v='tall'] .sc-pnl-bot-chain,
+.sc-fit[data-v='tall'] .sc-pnl-bot-total-k {
+  font-size: 2.1cqw;
+}
+.sc-fit[data-v='tall'] .sc-pnl-bot-asset-name {
+  font-size: 3.1cqw;
+}
+.sc-fit[data-v='tall'] .sc-pnl-bot-total-v {
+  font-size: 4.8cqw;
 }
