@@ -1,7 +1,3 @@
-.sc-availability-monitor-stage {
-  position: absolute;
-  inset: 0;
-}
 .sc-availability-monitor-cal {
   position: absolute;
   left: 5cqw;
@@ -170,22 +166,97 @@
   border-top: 1px solid var(--sc-line);
   color: var(--sc-muted);
 }
-@container (max-width: 520px) {
-  .sc-availability-monitor-from {
-    display: none;
-  }
-  .sc-availability-monitor-text {
-    font-size: 3.1cqw;
-    white-space: normal;
-    line-height: 1.15;
-  }
-  .sc-availability-monitor-log {
-    font-size: 2.7cqw;
-  }
-  .sc-availability-monitor-dow {
-    font-size: 2.4cqw;
-  }
-  .sc-availability-monitor-cell {
-    font-size: 2.8cqw;
-  }
+/* the phone's 16:10 composition: calendar left, the message and the checks right */
+.sc-fit[data-v='wide'] .sc-availability-monitor-from {
+  display: none;
+}
+.sc-fit[data-v='wide'] .sc-availability-monitor-text {
+  font-size: 3.1cqw;
+  white-space: normal;
+  line-height: 1.15;
+}
+.sc-fit[data-v='wide'] .sc-availability-monitor-log {
+  font-size: 2.7cqw;
+}
+.sc-fit[data-v='wide'] .sc-availability-monitor-dow {
+  font-size: 2.4cqw;
+}
+.sc-fit[data-v='wide'] .sc-availability-monitor-cell {
+  font-size: 2.8cqw;
+}
+
+/* the desktop's square composition: a large calendar on top, the message and the checks under it */
+.sc-fit[data-v='tall'] .sc-availability-monitor-cal {
+  left: 5cqw;
+  top: 5cqw;
+  width: 90cqw;
+  height: auto;
+  padding: 3.4cqw 4cqw 3.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-head {
+  margin-bottom: 3cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-hotel {
+  font-size: 4.4cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-month {
+  font-size: 3cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-dow {
+  font-size: 2.4cqw;
+  gap: 1.2cqw;
+  margin-bottom: 1.4cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-grid {
+  gap: 1.2cqw;
+  grid-auto-rows: 7.6cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-cell {
+  font-size: 3cqw;
+  border-radius: 1.1cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-ping {
+  left: 5cqw;
+  right: auto;
+  width: 50cqw;
+  top: 74cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-text {
+  font-size: 3.2cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-from {
+  font-size: 2.2cqw;
+}
+.sc-fit[data-v='tall'] .sc-availability-monitor-log {
+  left: 60cqw;
+  right: 5cqw;
+  top: 73cqw;
+  font-size: 2.5cqw;
+}
+
+/* the payoff: the room's own view, filling the panel */
+.sc-availability-monitor-view {
+  position: absolute;
+  inset: 2.4cqw;
+  border-radius: 1.8cqw;
+  overflow: hidden;
+  background: var(--sc-raise);
+}
+.sc-availability-monitor-view img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 72%;
+}
+.sc-availability-monitor-caption {
+  position: absolute;
+  left: 3cqw;
+  bottom: 2.6cqw;
+  padding: 0.6cqw 1.4cqw;
+  border-radius: 1cqw;
+  background: rgba(11, 10, 9, 0.55);
+  color: #f4efe6;
+  font-size: 2.6cqw;
 }

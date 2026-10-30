@@ -6,3 +6,6 @@ export function configureShowcases(opts: { footageBase?: string }): void {
 }
 
 export const footageUrl = (file: string) => `${footageBase}${file}`;
+
+/** Still images the showcases show (this package's public/img). */
+export const imageUrl = (file: string) => `${import.meta.env.BASE_URL ?? '/'}img/${file}`;
