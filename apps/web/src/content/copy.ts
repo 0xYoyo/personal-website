@@ -59,8 +59,8 @@ export const copy = {
   build: {
     /** SPEC §2.6 */
     onIt: 'on it.',
-    /** SPEC §2.6: `14 seconds. Want changes?` */
-    done: (seconds: number) => `${seconds} seconds. Want changes?`,
+    /** SPEC §2.6 (no "Want changes?": changes aren't on here yet, WAVE4 U7) */
+    done: (seconds: number) => `${seconds} second${seconds === 1 ? '' : 's'}.`,
     /** SPEC §2.6 / faq.md build (scripted) */
     resting: "the live builder is resting. here's one I made earlier. same speed, same idea.",
     /** ui: cap reached (SPEC §2.6 asks for an honest message) */

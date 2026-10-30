@@ -142,7 +142,7 @@ describe('live builds', () => {
     expect(chunk.expected).toBe(8_000);
     const done = last(rec.events, 'buildDone')!;
     expect(done.line).toBe(liveDoneLine(done.ms));
-    expect(done.line).toMatch(/^\d+ seconds\. Want changes\?$/);
+    expect(done.line).toMatch(/^\d+ seconds?\.$/);
 
     rec.clear();
     await brain.build('a bigger synth');
@@ -162,7 +162,7 @@ describe('live builds', () => {
 
 describe('liveDoneLine', () => {
   it('rounds to whole seconds, at least 1', () => {
-    expect(liveDoneLine(14_400)).toBe('14 seconds. Want changes?');
-    expect(liveDoneLine(200)).toBe('1 seconds. Want changes?');
+    expect(liveDoneLine(14_400)).toBe('14 seconds.');
+    expect(liveDoneLine(200)).toBe('1 second.');
   });
 });
