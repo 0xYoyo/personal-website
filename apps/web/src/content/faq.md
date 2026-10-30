@@ -8,7 +8,7 @@ hints: who, yoyo, yoav, about, you, yourself, introduce, guy
 
 ## built
 hints: built, shipped, projects, work, portfolio, made, show me
-→ `[[become:magnifier]] A search engine, a 3D game, my own AI software team, a tool for my university. Start with the search engine. [[show:unfiltered]]`
+→ `[[become:magnifier]] Start with my favorite: a search engine for online stores. [[show:unfiltered]]`
 
 ## hire
 hints: hire, why, should we, reasons, pitch, sell, convince, good at
@@ -36,15 +36,15 @@ hints: crypto, bitcoin, btc, web3, trading, degen, solana, eth, defi, airdrop, c
 
 ## agents
 hints: agent, agents, ai, claude, codex, cursor, llm, automation, factory, loop, how do you work
-→ `[[become:loop]] I write the spec. Agents build it and open pull requests. Another agent reviews. I merge. || Most of my commits this year were written with an agent. Every one was merged by me. [[show:yoyo-loop]] [[chips:How fast is it?|What have you built?]]`
+→ `[[become:loop]] I describe what to build. AI agents write it, another one checks it, and I approve what ships. || Most of my code this year was written that way. [[show:yoyo-loop]] [[chips:How fast is it?|What have you built?]]`
 
 ## why_agents
 hints: why agents, stop coding, stopped writing code, switch, when did you
-→ `The day the code it wrote was better than mine and took a hundredth of the time. || That's not a story. It's a decision. [[chips:How do you work?|What have you built?]]`
+→ `When the code it wrote got better than mine, in a fraction of the time. || So I stopped typing and started directing. [[chips:How do you work?|What have you built?]]`
 
 ## fast
 hints: fast, how fast, speed, quick, velocity, burst
-→ `About fifteen minutes from pull request to merge, usually. || 245 merged on Unfiltered, most of them built by my agents. I still merge every one. [[chips:Build me something|What have you built?]]`
+→ `Fast. In four days this October, one product got 44 finished updates. || Each took about fifteen minutes from ready to approved. [[chips:Build me something|What have you built?]]`
 
 ## game
 hints: game, play, kart, racing, racers, prompt racers
@@ -64,7 +64,7 @@ hints: monitor, hotel, telegram, availability, passover, booking
 
 ## pnl
 hints: pnl, p&l, discord bot, wallet, profit
-→ `[[become:chart]] A Discord bot that shows crypto traders what they really made or lost. || Coins and NFTs across Ethereum, Solana and Bitcoin. Written by hand in 2023. [[show:pnl-bot]]`
+→ `[[become:chart]] A Discord bot that shows crypto traders what they really made or lost. || Coins and NFTs across Ethereum, Solana and Bitcoin, turned into a profit card in seconds. [[show:pnl-bot]]`
 
 ## sentiment
 hints: sentiment, sentiment gauge, gauge, mood of crypto, sentiment dashboard
@@ -76,7 +76,7 @@ hints: show me those, hand-written projects, hand-written work, older projects
 
 ## network
 hints: yoyo-network, social network, rest api, jwt, hand-written, by hand, odin
-→ `[[become:keyboard]] A social network I built from scratch, written by hand in 2023. || Profiles, posts, photos, likes and follows, with its own server and login. Still live today. [[show:yoyo-network]] [[chips:What have you built?|How do you work now?]]`
+→ `[[become:keyboard]] A social network I built from scratch in 2023, before AI tools. || Profiles, posts, photos, likes and follows, with its own server and login. Still live today. [[show:yoyo-network]] [[chips:What have you built?|How do you work now?]]`
 
 ## polybot
 hints: polybot, polymarket, prediction, odds, stopped, failed, failure, didn't work
@@ -112,7 +112,7 @@ hints: hobby, hobbies, fun, free time, bored, weekend, like to do, games, music,
 
 ## travel
 hints: travel, travelling, southeast asia, trip, 2024, gap, backpacking, thailand, cambodia
-→ `[[become:route]] 2024: most of the year alone in Southeast Asia. Twenty-one commits all year. || Best decision I've made. Also why the gap. [[chips:What happened after?|What have you built?]]`
+→ `[[become:route]] Most of 2024 I travelled Southeast Asia alone, and barely coded. || That's the gap on my GitHub. I don't regret a day of it. [[chips:What happened after?|What have you built?]]`
 
 ## after_travel
 hints: after, came back, then what, 2025
@@ -140,7 +140,7 @@ hints: stack, languages, skills, technologies, typescript, react, node, python, 
 
 ## this_site
 hints: this site, who made, built this, website, how was this made, swarm, particles
-→ `[[become:yoyo]] I wrote the brief. One model planned it. A swarm of agents built the particles, the showcases and the builder. I merged. || The dots are a GPU simulation. Forty thousand of them. [[chips:Build me something|Who are you?]]`
+→ `[[become:yoyo]] I wrote the brief. AI agents built it, and I reviewed every change. || The dots are forty thousand particles moving on your graphics card. [[chips:Build me something|Who are you?]]`
 
 ## build
 hints: build me, make me, create, generate, app, page, website, tool
