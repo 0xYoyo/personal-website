@@ -206,9 +206,6 @@ export function BuildFrame() {
           </div>
         </div>
         <div className="y-build-controls" data-on={locked} aria-hidden={!locked}>
-          <button className="y-textbtn" onClick={() => ctl.beginChange()} disabled={!locked}>
-            {c.change}
-          </button>
           <button className="y-textbtn" onClick={() => void copyHtml()} disabled={!locked}>
             {note?.k === 'copy' ? note.t : c.copy}
           </button>

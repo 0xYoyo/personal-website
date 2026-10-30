@@ -10,8 +10,8 @@ export type ChipContext = 'entry' | 'who' | 'project' | 'build' | 'story' | 'idl
 /** WAVE3: three at the door, in the second person (the site speaks as Yoyo). */
 export const ENTRY_CHIPS = ['Who are you?', 'What have you built?', 'Spell my name'];
 export const WHO_CHIPS = ['What are you like?', 'What are you bad at?', 'Why should we hire you?', 'How do I reach you?'];
-/** "Change it" lives in the frame's controls row only (POLISH2 A4). */
-export const BUILD_CHIPS = ['Share it', 'Build another', 'How was this made?'];
+/** The build's row (WAVE4 U7): no "Change it" (changes aren't on here yet), no "How was this made?". */
+export const BUILD_CHIPS = ['Share it', 'Build another', 'Close'];
 export const STORY_CHIPS = ['Next story', 'What have you built?', 'How do I reach you?'];
 /** The tour's end chips (WAVE3 V3). */
 export const TOUR_END_CHIPS = ['Who are you?', 'What have you built?', 'Play the game'];

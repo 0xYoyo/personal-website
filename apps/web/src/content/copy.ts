@@ -50,6 +50,10 @@ export const copy = {
     prev: 'Previous',
     next: 'Next',
     showcase: 'showcase',
+    /** WAVE4 U8: the Work overlay's toggle and the end-of-shelf link */
+    eras: { ai: 'AI-assisted', hand: 'Hand-written' },
+    erasLabel: 'Which projects',
+    more: '50+ more on GitHub',
     status: (status: string, period: string, note?: string) => (note ? `${status}: ${note}. ${period}` : `${status}, ${period}`),
   },
   build: {
@@ -65,6 +69,8 @@ export const copy = {
     writing: 'writing…',
     /** ui */
     stopped: 'stopped.',
+    /** WAVE4 U7: a typed change request while a build is open */
+    noChanges: 'changes aren\'t on here yet. try "build another".',
     failed: 'that one fell over. once more?',
     controls: {
       fullscreen: 'Open full screen',
@@ -73,7 +79,6 @@ export const copy = {
       download: 'Download',
       share: 'Share',
       shared: 'Link copied',
-      change: 'Change it',
       close: 'Close (Esc)',
     },
     frameTitle: 'Your build',
@@ -104,6 +109,8 @@ export const copy = {
     prev: 'Back',
     stepHint: 'click for the next one',
     stepHintTouch: 'tap for the next one',
+    /** WAVE4 U3: once a visit, on the first reply that runs to a second turn */
+    skipHint: 'tap to skip',
   },
   history: {
     open: 'History',
