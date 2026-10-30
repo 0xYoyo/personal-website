@@ -98,6 +98,8 @@ export type ChipCommand =
   | { kind: 'build'; instruction: string }
   | { kind: 'change-build' }
   | { kind: 'share-build' }
+  /** the build's "Close" chip (WAVE4 U7): closes the open overlay */
+  | { kind: 'close' }
   | { kind: 'story-next' }
   | { kind: 'sound-on' }
   | { kind: 'open-build' }
@@ -131,6 +133,8 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
       return st.project ? { kind: 'build', instruction: BUILD_SEEDS[st.project] } : { kind: 'say', text: 'Build me something' };
     case 'change it':
       return st.hasBuild ? { kind: 'change-build' } : { kind: 'say', text: 'Build me something' };
+    case 'close':
+      return { kind: 'close' };
     case 'share it':
       return st.hasBuild ? { kind: 'share-build' } : { kind: 'say', text: 'Build me something' };
     case 'build another':
