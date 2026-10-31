@@ -9,4 +9,5 @@ tools/out/
 .env*
 !.env.example
 !apps/web/.env.development
+!apps/web/.env.production
 .DS_Store

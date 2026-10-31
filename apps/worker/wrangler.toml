@@ -17,7 +17,7 @@ port = 8787
 [vars]
 # Comma-separated list of site origins allowed to call /chat, /build and /share.
 # A `*` matches any run of characters except "/" (so "http://localhost:*" covers every local port).
-ALLOWED_ORIGINS = "http://localhost:*,http://127.0.0.1:*"
+ALLOWED_ORIGINS = "http://localhost:*,http://127.0.0.1:*,https://yoavzrihan.com,https://www.yoavzrihan.com,https://yoavzrihan.pages.dev,https://*.yoavzrihan.pages.dev"
 # Which model answers (README "Switching the model"): "gemini" (default) or "anthropic".
 PROVIDER = "gemini"
 # MODEL = "gemini-2.5-flash"   # optional; default gemini-3.1-flash-lite, or claude-sonnet-4-5 with PROVIDER = "anthropic"
