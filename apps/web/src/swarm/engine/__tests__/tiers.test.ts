@@ -46,9 +46,13 @@ describe('AdaptiveMonitor (time-based, POSTFIX4 E1)', () => {
   });
   it('ignores a warm-up of 3 s (by time) after a reset', () => {
     const m = new AdaptiveMonitor();
-    const r = feed(m, 40, 10000);
+    const r = feed(m, 60, 10000);
     expect(r.at).toBeGreaterThanOrEqual(3000 + 1200);
-    expect(r.at).toBeLessThan(3000 + 1200 + 81);
+    expect(r.at).toBeLessThan(3000 + 1200 + 121);
+  });
+  it('a steady 30 fps (a browser cap on battery, Energy Saver) never drops a tier', () => {
+    const m = new AdaptiveMonitor();
+    expect(feed(m, 33.4, 60000).drop).toBeFalsy();
   });
   it('under 10 fps for 1 s it goes straight to tier 0', () => {
     const m = new AdaptiveMonitor(20, 1200, 0);

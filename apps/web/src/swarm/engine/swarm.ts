@@ -202,7 +202,7 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     tick(clockStep(ms));
     const drop = adaptive && !rebuilding ? monitor.frame(ms) : false;
     if (adaptive && !rebuilding && !drop && !recoveredOnce && monitor.dropped > 0 && tier < firstTier) {
-      fastFor = ms < 1000 / 50 ? fastFor + ms : 0;
+      fastFor = ms < 45 ? fastFor + ms : 0;
       if (fastFor >= 5000) {
         recoveredOnce = true; fastFor = 0;
         console.info('[swarm] adaptive: back to tier', firstTier);

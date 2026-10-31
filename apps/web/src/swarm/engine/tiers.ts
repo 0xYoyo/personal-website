@@ -84,7 +84,11 @@ export function startTier(caps: Caps, s: DeviceSignals, weak = false): Tier {
 export type Drop = false | 'one' | 'floor';
 
 /**
- * Adaptive quality (POSTFIX4 E1), measured in time rather than frames, so a phone at 3 fps decides as fast as a
+ * Adaptive quality (POSTFIX4 E1), measured in time rather than frames,
+ * The budget is 45 ms (~22 fps): browsers cap a page at 30 fps on battery (Chrome's Energy Saver, Low Power Mode),
+ * and a steady 33 ms frame is that cap, not an overloaded device — at 20 ms a MacBook on battery dropped to the
+ * 1x-resolution tier within 10 s.
+ * so a phone at 3 fps decides as fast as a
  * laptop at 50: after a warm-up of `warmupMs` (shader compiles, the first uploads), it drops one tier once
  * `slowMs` of frames have run over `budgetMs`, and straight to tier 0 once `floorMs` of frames have run under
  * `floorFps`. A fast frame takes back four times its own length from the slow tally (one good frame among slow
@@ -95,7 +99,7 @@ export class AdaptiveMonitor {
   private crawl = 0;
   private warm: number;
   dropped = 0;
-  constructor(private budgetMs = 20, private slowMs = 1200, private warmupMs = 3000, private floorFps = 10, private floorMs = 1000) { this.warm = warmupMs; }
+  constructor(private budgetMs = 45, private slowMs = 1200, private warmupMs = 3000, private floorFps = 10, private floorMs = 1000) { this.warm = warmupMs; }
   reset(): void { this.slow = 0; this.crawl = 0; this.warm = this.warmupMs; }
   /** Feed one frame's length (ms). Returns what the caller should do. */
   frame(ms: number): Drop {
