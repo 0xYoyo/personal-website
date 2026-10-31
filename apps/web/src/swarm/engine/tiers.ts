@@ -95,11 +95,14 @@ export class AdaptiveMonitor {
   private crawl = 0;
   private warm: number;
   dropped = 0;
-  constructor(private budgetMs = 20, private slowMs = 1200, private warmupMs = 1500, private floorFps = 10, private floorMs = 1000) { this.warm = warmupMs; }
+  constructor(private budgetMs = 20, private slowMs = 1200, private warmupMs = 3000, private floorFps = 10, private floorMs = 1000) { this.warm = warmupMs; }
   reset(): void { this.slow = 0; this.crawl = 0; this.warm = this.warmupMs; }
   /** Feed one frame's length (ms). Returns what the caller should do. */
   frame(ms: number): Drop {
     if (ms > 5000) { this.slow = 0; this.crawl = 0; return false; }
+    // a frame over 400 ms is a hitch (a background / throttled tab, a long load task), not the device's pace:
+    // counting those dropped a fast machine to tier 0 for good when the site first loaded behind another tab
+    if (ms > 400) return false;
     if (this.warm > 0) { this.warm -= ms; return false; }
     if (ms > this.budgetMs) this.slow += ms; else this.slow = Math.max(0, this.slow - 4 * ms);
     if (ms > 1000 / this.floorFps) this.crawl += ms; else this.crawl = Math.max(0, this.crawl - 4 * ms);

@@ -86,6 +86,10 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
   let reduced = opts.reducedMotion ?? !!reducedQuery?.matches;
 
   let tier: Tier = opts.tier ?? startTier(capsTier, caps.signals, caps.weak);
+  const firstTier: Tier = tier;
+  /** a drop gets one way back (to the starting tier) when the lower tier then runs fast for 5 s: a drop caused by a
+   * throttled / loading tab is undone instead of leaving a fast machine on big 2D dots for the session */
+  let recoveredOnce = false, fastFor = 0;
   let cfg = tierConfig(tier, capsTier, opts.backend);
   let engine: Engine | null = null;
   let ctrl: Controller;
@@ -197,6 +201,16 @@ export async function createSwarm(canvasIn: HTMLCanvasElement, opts: SwarmOption
     // the clock follows real time (up to half a second a frame), the physics integrates at most 1/15 s a step
     tick(clockStep(ms));
     const drop = adaptive && !rebuilding ? monitor.frame(ms) : false;
+    if (adaptive && !rebuilding && !drop && !recoveredOnce && monitor.dropped > 0 && tier < firstTier) {
+      fastFor = ms < 1000 / 50 ? fastFor + ms : 0;
+      if (fastFor >= 5000) {
+        recoveredOnce = true; fastFor = 0;
+        console.info('[swarm] adaptive: back to tier', firstTier);
+        const up = tierConfig(firstTier, capsTier, opts.backend);
+        rebuilding = true;
+        switching = switching.then(() => build(up, 'scatter')).finally(() => { rebuilding = false; monitor.reset(); });
+      }
+    }
     if (drop) {
       const lower = drop === 'floor' && tier > 0 ? 0 : nextLowerTier(tier);
       if (lower !== null) {

@@ -44,22 +44,20 @@ describe('AdaptiveMonitor (time-based, POSTFIX4 E1)', () => {
       expect(r.at).toBeLessThan(1200 + ms + 1);
     }
   });
-  it('ignores a warm-up of 1.5 s (by time) after a reset', () => {
+  it('ignores a warm-up of 3 s (by time) after a reset', () => {
     const m = new AdaptiveMonitor();
     const r = feed(m, 40, 10000);
-    expect(r.at).toBeGreaterThanOrEqual(1500 + 1200);
-    expect(r.at).toBeLessThan(1500 + 1200 + 81);
+    expect(r.at).toBeGreaterThanOrEqual(3000 + 1200);
+    expect(r.at).toBeLessThan(3000 + 1200 + 81);
   });
   it('under 10 fps for 1 s it goes straight to tier 0', () => {
     const m = new AdaptiveMonitor(20, 1200, 0);
     const r = feed(m, 300, 5000);
     expect(r.drop).toBe('floor');
     expect(r.at).toBeLessThanOrEqual(1200);
-    // at 1 fps: warm-up (1.5 s) + 1 s → the second frame after the warm-up
-    const slow = new AdaptiveMonitor();
-    const s = feed(slow, 1000, 10000);
-    expect(s.drop).toBe('floor');
-    expect(s.at).toBeLessThanOrEqual(3000);
+    // frames over 400 ms are hitches (a throttled background tab, a long load task), never a reason to drop
+    const hitch = new AdaptiveMonitor(20, 1200, 0);
+    expect(feed(hitch, 1000, 10000).drop).toBeFalsy();
   });
   it('a fast stretch takes the slow tally back; an odd fast frame does not', () => {
     const m = new AdaptiveMonitor(20, 1200, 0);
