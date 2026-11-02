@@ -66,7 +66,8 @@ test('"Next one" walks on from the last card in the conversation', () => {
 
 test('every chip the site can show resolves to the right intent through the mock', async () => {
   const { evalChips } = await import('./eval-brain.mjs');
-  const rows = evalChips((t) => mockReply(t, {}, []), 'mock');
+  // a card's chips are asked with that card open (WAVE5 U3)
+  const rows = evalChips((t, project) => mockReply(t, {}, [], { project }), 'mock');
   assert.ok(rows.length >= 20);
   assert.deepEqual(rows.filter((r) => !r.ok), []);
 });
