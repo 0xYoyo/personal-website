@@ -47,6 +47,8 @@ export const copy = {
   card: {
     play: 'Play',
     close: 'Close (Esc)',
+    /** a touch device has no Esc key */
+    closeTouch: 'Close',
     prev: 'Previous',
     next: 'Next',
     showcase: 'showcase',
@@ -78,6 +80,8 @@ export const copy = {
       share: 'Share',
       shared: 'Link copied',
       close: 'Close (Esc)',
+      /** a touch device has no Esc key */
+      closeTouch: 'Close',
     },
     frameTitle: 'Your build',
   },

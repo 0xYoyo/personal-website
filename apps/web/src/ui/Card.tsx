@@ -6,6 +6,7 @@ import { projectById } from '../content/projects';
 import { ctl, lastOfShelf, MORE_ON_GITHUB, shelfPosition } from '../controller';
 import { getShowcase } from '../showcases';
 import { useStore } from '../state/store';
+import { useTouch } from './touch';
 import { useDialog } from './useDialog';
 
 function useOutline(ref: React.RefObject<HTMLElement>, key: string) {
@@ -37,6 +38,7 @@ function useOutline(ref: React.RefObject<HTMLElement>, key: string) {
 export function Card() {
   const id = useStore((s) => s.project);
   const reducedMotion = useStore((s) => s.reducedMotion);
+  const touch = useTouch();
   const ref = useRef<HTMLElement>(null);
   const swipe = useRef<{ x: number; y: number; t: number } | null>(null);
   useDialog(ref, { initial: ref });
@@ -153,7 +155,7 @@ export function Card() {
           </button>
 
           <button className="y-textbtn y-card-close" onClick={() => ctl.closeOverlay()}>
-            {copy.card.close}
+            {touch ? copy.card.closeTouch : copy.card.close}
           </button>
         </nav>
       </section>

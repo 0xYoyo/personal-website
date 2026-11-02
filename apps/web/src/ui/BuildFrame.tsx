@@ -6,6 +6,7 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 
 import { copy } from '../content/copy';
 import { ctl } from '../controller';
 import { useStore } from '../state/store';
+import { useTouch } from './touch';
 import { useDialog } from './useDialog';
 
 const streamedTitle = (html: string) => /<title>([^<]{1,60})<\/title>/i.exec(html)?.[1]?.trim() ?? '';
@@ -46,6 +47,7 @@ export function codeRuns(html: string): { tag: boolean; text: string }[] {
 export function BuildFrame() {
   const build = useStore((s) => s.build);
   const lines = useStore((s) => s.lines);
+  const touch = useTouch();
   const ref = useRef<HTMLElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const codeRef = useRef<HTMLPreElement>(null);
@@ -175,6 +177,7 @@ export function BuildFrame() {
   const srcDoc = useMemo(() => (locked ? withEscRelay(build.html) : ''), [locked, build.html]);
   const visible = build.status !== 'ring' && build.status !== 'idle';
   const c = copy.build.controls;
+  const close = touch ? c.closeTouch : c.close;
 
   return (
     <div className="y-build-wrap">
@@ -192,7 +195,7 @@ export function BuildFrame() {
             </span>
             {maxed && (
               <button className="y-textbtn" onClick={() => setMaxed(false)}>
-                {c.close}
+                {close}
               </button>
             )}
           </div>
@@ -222,7 +225,7 @@ export function BuildFrame() {
             {c.fullscreen}
           </button>
           <button ref={closeRef} className="y-textbtn" onClick={() => ctl.closeOverlay()}>
-            {c.close}
+            {close}
           </button>
         </div>
       </section>
