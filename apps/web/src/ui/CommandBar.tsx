@@ -12,7 +12,6 @@ const TAP_MS = 260;
 
 export function CommandBar() {
   const phase = useStore((s) => s.phase);
-  const streaming = useStore((s) => s.streaming);
   // the loading line shows only while the reply hasn't started (a visitor line is last), never while words are on screen
   const waiting = useStore((s) => s.streaming && s.lines[s.lines.length - 1]?.role === 'visitor');
   const barMode = useStore((s) => s.barMode);

@@ -1041,7 +1041,8 @@
 .y-game-close {
   position: absolute;
   top: 14px;
-  right: 14px;
+  /* left of the game's own settings gear (top-right corner, ~50 px) */
+  right: 72px;
   padding: 10px 14px;
   border-radius: var(--radius-pill);
   background: rgba(11, 10, 9, 0.86);
@@ -1074,6 +1075,7 @@
 @media (max-width: 720px) {
   .y-game-close {
     top: auto;
+    right: 14px;
     bottom: calc(14px + env(safe-area-inset-bottom));
   }
 }
