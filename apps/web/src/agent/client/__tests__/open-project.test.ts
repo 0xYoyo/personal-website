@@ -91,3 +91,13 @@ describe('open project (WAVE5 U3)', () => {
     expect((calls[1]!.body as { context?: unknown }).context).toBeUndefined();
   });
 });
+
+describe('answered chips per card (WAVE5 U3)', () => {
+  it('"What did you do on this?" asked on one card is still open on another', async () => {
+    const { moveChipsOn, withAnswered } = await import('../../../state/answered');
+    const row = ['Next one', 'What did you do on this?', 'Who are you?'];
+    const answered = withAnswered([], 'What did you do on this?', 'polybot');
+    expect(moveChipsOn(row, answered, { project: 'vortex' })).toEqual(row);
+    expect(moveChipsOn(row, answered, { project: 'polybot' })).not.toContain('What did you do on this?');
+  });
+});

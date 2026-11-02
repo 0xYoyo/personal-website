@@ -2,7 +2,7 @@
 // voice. UI components call `ctl.*`; state lives in the zustand store.
 import type { Action, ProjectId, Rect, ShapeSpec, StoryId, WorkEra } from '@yoyo/protocol';
 import { BrainError, type Brain, type ReplyHandlers } from './agent';
-import { BUILD_CHIPS, ENTRY_CHIPS, ROCKET_CHIP, WHO_CHIPS, STORY_CHIPS, changeIntent, projectChips, resolveChip, rocketChips } from './content/chips';
+import { BUILD_CHIPS, WATCH_BUILD_CHIP, ENTRY_CHIPS, ROCKET_CHIP, WHO_CHIPS, STORY_CHIPS, changeIntent, projectChips, resolveChip, rocketChips } from './content/chips';
 import { copy } from './content/copy';
 import { projectById, projectsOf } from './content/projects';
 import { nextStory, stories, storyById } from './content/stories';
@@ -39,10 +39,21 @@ let lockTimer: ReturnType<typeof setTimeout> | null = null;
 export const CONTACT_CHIPS = ['Copy my email', 'What have you built?', 'Why should we hire you?'];
 const COPIED_CHIP = 'Email copied';
 /** After a build closes (WAVE4 U7). */
-const AFTER_BUILD_CHIPS = ['Another build', 'What have you built?', 'How do I reach you?'];
+const AFTER_BUILD_CHIPS = BUILD_CHIPS;
 /** The Work overlay's end-of-shelf link (WAVE4 U8). */
 export const MORE_ON_GITHUB = 'https://github.com/0xYoyo?tab=repositories';
 const K_SKIP_HINT = 'yoyo.v3.skipHint';
+/**
+ * The chips row a card put up, and the card (WAVE5 U3). A question asked from the card closes it, but its
+ * row stays until something sets new chips: the next chip pressed from that row is still about that card.
+ */
+let cardRow: { project: ProjectId; key: number } | null = null;
+/** The project a message is about: the open card, else the card whose row is still up. */
+function contextProject(): ProjectId | null {
+  const st = S();
+  if (st.overlay === 'card') return st.project;
+  return st.overlay === 'none' && cardRow && cardRow.key === st.chipsKey ? cardRow.project : null;
+}
 /** "Now a rocket" has been offered this visit (FIX4 U6). */
 let rocketOffered = false;
 /** Bumped by every turn; a pending "let the shape go" from an older turn checks it. */
@@ -200,6 +211,12 @@ const shelf = (era: WorkEra): ProjectId[] => projectsOf(era).map((p) => p.id);
 export const shelfPosition = (id: ProjectId): { at: number; of: number } => {
   const ids = shelf(eraOf(id));
   return { at: ids.indexOf(id) + 1, of: ids.length };
+};
+/** The card `dir` steps from `id`, round its shelf. */
+const stepShelf = (id: ProjectId, dir: 1 | -1): ProjectId => {
+  const ids = shelf(eraOf(id));
+  const n = ids.length;
+  return ids[(((ids.indexOf(id) + dir) % n) + n) % n]!;
 };
 /** Whether `id` is the last card of its shelf (the "50+ more on GitHub" link sits there). */
 export const lastOfShelf = (id: ProjectId): boolean => {
@@ -425,9 +442,9 @@ export const ctl = {
       await speakLine(copy.build.noChanges);
       return;
     }
-    st.markAnswered(clean);
-    // the card open when they asked is what "this" means (WAVE5 U3); the answer closes it below
-    const open = st.overlay === 'card' ? st.project : null;
+    // the card open when they asked (or whose row is still up) is what "this" means (WAVE5 U3); the answer closes it below
+    const open = contextProject();
+    st.markAnswered(clean, open);
     // typed with a card or contact open (the bar stays up over them, FIX4 U2): the answer needs the words
     if (st.overlay === 'card' || st.overlay === 'contact') closeAll();
     skipForAnswer();
@@ -521,6 +538,11 @@ export const ctl = {
       if (!chipsSet) {
         if (opened) S().setChips(projectChips(opened));
         else if (/who/i.test(clean) && !deferred.length) S().setChips(WHO_CHIPS);
+        else if (open && !deferred.length) {
+          // a follow-up from a card: its row stays, the question just answered moves on, and it stays about that card
+          S().setChips(projectChips(open), { project: open });
+          cardRow = { project: open, key: S().chipsKey };
+        }
       }
       const queue = deferred;
       deferred = [];
@@ -564,8 +586,9 @@ export const ctl = {
     const low = label.trim().toLowerCase();
     if (low === 'copy my email' || low === COPIED_CHIP.toLowerCase()) return void ctl.copyEmail();
     if (low === 'close' && st.overlay !== 'none') return ctl.closeOverlay();
-    if (low !== 'what have you built?') st.markAnswered(label);
-    const cmd = resolveChip(label, { project: st.project, name: st.visitor.name ?? rt.brain?.memory.name(), hasBuild: !!st.build.html, hasStoredBuild: !!rt.brain?.memory.builds().some((b) => b.html) });
+    if (low !== 'what have you built?') st.markAnswered(label, contextProject());
+    const about = contextProject();
+    const cmd = resolveChip(label, { project: about, name: st.visitor.name ?? rt.brain?.memory.name(), hasBuild: !!st.build.html, hasStoredBuild: !!rt.brain?.memory.builds().some((b) => b.html) });
     switch (cmd.kind) {
       case 'say':
         void ctl.say(cmd.text);
@@ -574,7 +597,9 @@ export const ctl = {
         ctl.play();
         break;
       case 'next-project':
-        ctl.nextProject(1);
+        // from a card's row that outlived its card: the one after that card
+        if (st.overlay !== 'card' && about) ctl.openProject(stepShelf(about, 1));
+        else ctl.nextProject(1);
         break;
       case 'build':
         void ctl.startBuild(cmd.instruction, { announce: true });
@@ -628,21 +653,22 @@ export const ctl = {
     closeAll('card');
     S().setEra(eraOf(id));
     S().showProject(id);
-    if (opts.chipsAfter === undefined) return S().setChips(projectChips(id));
+    const row = () => {
+      S().setChips(projectChips(id));
+      cardRow = { project: id, key: S().chipsKey };
+    };
+    if (opts.chipsAfter === undefined) return row();
     const key = S().chipsKey;
     setTimeout(() => {
       const s = S();
       // unless something else has set the chips (or the card moved on / closed) in the meantime
-      if (s.chipsKey === key && s.overlay === 'card' && s.project === id) s.setChips(projectChips(id));
+      if (s.chipsKey === key && s.overlay === 'card' && s.project === id) row();
     }, opts.chipsAfter);
   },
   /** ←/→ and "Next one": round the active shelf (WAVE4 U8); no card open yet, its first card. */
   nextProject(dir: 1 | -1) {
     const cur = S().project;
-    const ids = shelf(cur ? eraOf(cur) : S().era);
-    const i = cur ? ids.indexOf(cur) : -1;
-    const n = ids.length;
-    ctl.openProject(i < 0 ? ids[0]! : ids[(((i + dir) % n) + n) % n]!);
+    ctl.openProject(cur ? stepShelf(cur, dir) : shelf(S().era)[0]!);
   },
   /** The Work overlay on a shelf, at its first card (the toggle; `[[work:hand]]`). */
   openWork(era: WorkEra) {
@@ -826,7 +852,7 @@ export const ctl = {
         S().closeOverlay();
         await speakLine(reason === 'cap' ? copy.build.capped : copy.build.failed);
       }
-      S().setChips(['Watch me build', 'Who are you?', 'What have you built?']);
+      S().setChips([WATCH_BUILD_CHIP, 'Who are you?', 'What have you built?']);
     } finally {
       if (buildAbort === ac) buildAbort = null;
     }

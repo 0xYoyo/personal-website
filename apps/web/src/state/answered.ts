@@ -3,6 +3,7 @@
 // answers "Who are you?" too). A chip whose meaning was already answered gives its place to the next
 // unanswered one from PRIORITY; "What have you built?" may always stay. Contact (U6) never offers
 // "How do I reach you?" while it is open.
+import type { ProjectId } from '@yoyo/protocol';
 import { classify } from '../agent/client/intents';
 
 /** The order replacements are taken in. */
@@ -28,21 +29,26 @@ const norm = (s: string) => s.trim().toLowerCase().replace(/[?.!…]+$/, '');
 const MOVES = new Set(['copy my email', 'email copied', 'next one', 'build me something', 'build another', 'share it', 'close', 'play it', 'show me those']);
 
 const keys = new Map<string, string | null>();
-/** What a question means (`i:who`, `c:play-it`, `spell-my-name`), or null for a move with no answer of its own. */
-export function meaningOf(text: string): string | null {
+/**
+ * What a question means (`i:who`, `c:play-it`, `spell-my-name`), or null for a move with no answer of its own.
+ * `project`: the card open when it was asked (WAVE5 U3), so "What did you do on this?" on Polybot is
+ * `i:my_part_polybot` and still open on Vortex.
+ */
+export function meaningOf(text: string, project: ProjectId | null = null): string | null {
   const n = norm(text);
   if (!n || MOVES.has(n)) return null;
-  if (keys.has(n)) return keys.get(n)!;
-  const c = classify(text);
+  const ck = `${project ?? ''}|${n}`;
+  if (keys.has(ck)) return keys.get(ck)!;
+  const c = classify(text, { project });
   const k =
     c.kind === 'intent' ? `i:${c.id}` : c.kind === 'command' && c.id === 'play-it' ? 'c:play-it' : c.kind === 'spell-my-name' ? 'spell-my-name' : null;
-  keys.set(n, k);
+  keys.set(ck, k);
   return k;
 }
 
 /** Remember that `text` has been asked (and so answered) this session. Returns the new set. */
-export function withAnswered(answered: readonly string[], text: string): string[] {
-  const k = meaningOf(text);
+export function withAnswered(answered: readonly string[], text: string, project: ProjectId | null = null): string[] {
+  const k = meaningOf(text, project);
   return k && !answered.includes(k) ? [...answered, k] : [...answered];
 }
 
@@ -50,13 +56,17 @@ export function withAnswered(answered: readonly string[], text: string): string[
  * The row with every answered chip replaced by the next unanswered one from PRIORITY (or dropped when
  * none is left). `contactOpen`: "How do I reach you?" never shows.
  */
-export function moveChipsOn(chips: readonly string[], answered: readonly string[], opts: { contactOpen?: boolean } = {}): string[] {
+export function moveChipsOn(
+  chips: readonly string[],
+  answered: readonly string[],
+  opts: { contactOpen?: boolean; project?: ProjectId | null } = {},
+): string[] {
   const done = new Set(answered);
   const stale = (c: string) => {
     const n = norm(c);
     if (opts.contactOpen && n === REACH) return true;
     if (ALWAYS.has(n)) return false;
-    const k = meaningOf(c);
+    const k = meaningOf(c, opts.project ?? null);
     return !!k && done.has(k);
   };
   const out: string[] = [];

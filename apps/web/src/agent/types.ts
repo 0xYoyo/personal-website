@@ -76,8 +76,8 @@ export interface BuildResult {
   title: string;
   source: 'live' | 'example';
   /**
-   * What the agent says when the build locks. Examples: `made earlier. the live builder does this
-   * in about 15 seconds.` (never claims seconds); live: the real elapsed time, `14 seconds. Want changes?`.
+   * What the agent says when the build locks. A prebuilt example (a build replay): `There. Try it.`
+   * (never claims a time); live: the real elapsed time.
    */
   line: string;
   /**

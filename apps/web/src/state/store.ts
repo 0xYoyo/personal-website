@@ -113,7 +113,8 @@ export interface Actions {
   setStreaming(on: boolean): void;
   setSettling(s: Settling): void;
   agentLine(text: string, opts?: { quiet?: boolean; show?: boolean }): number;
-  setChips(chips: string[]): void;
+  /** `opts.project`: the card the row is about, when it is no longer open (WAVE5 U3) */
+  setChips(chips: string[], opts?: { project?: ProjectId | null }): void;
   openOverlay(o: Overlay): void;
   closeOverlay(): void;
   showProject(id: ProjectId): void;
@@ -131,7 +132,8 @@ export interface Actions {
   setEntryName(s: string | null): void;
   setReducedMotion(r: boolean): void;
   /** the visitor asked this: its chip (and any chip meaning the same) gives way to the next question */
-  markAnswered(text: string): void;
+  /** `project`: the card open when it was asked (WAVE5 U3: per-project follow-ups stay open on other cards) */
+  markAnswered(text: string, project?: ProjectId | null): void;
   setEra(e: Era): void;
   setSkipHint(on: boolean): void;
   reset(): void;
@@ -212,8 +214,14 @@ export const useStore = create<State & Actions>()((set, get) => ({
     set((s) => ({ lines: [...s.lines, line].slice(-MAX_LINES) }));
     return id;
   },
-  setChips: (chips) =>
-    set((s) => ({ chips: moveChipsOn(clampChips(chips), s.answered, { contactOpen: s.overlay === 'contact' }), chipsKey: s.chipsKey + 1 })),
+  setChips: (chips, opts = {}) =>
+    set((s) => ({
+      chips: moveChipsOn(clampChips(chips), s.answered, {
+        contactOpen: s.overlay === 'contact',
+        project: opts.project !== undefined ? opts.project : s.overlay === 'card' ? s.project : null,
+      }),
+      chipsKey: s.chipsKey + 1,
+    })),
   openOverlay: (overlay) => set({ overlay }),
   closeOverlay: () => set((s) => ({ overlay: 'none', project: s.overlay === 'card' ? null : s.project, barMode: s.overlay === 'build' ? 'chat' : s.barMode })),
   showProject: (project) => set({ project, overlay: 'card' }),
@@ -230,7 +238,7 @@ export const useStore = create<State & Actions>()((set, get) => ({
   spendIdle: () => set({ idleSpent: true }),
   setEntryName: (entryName) => set({ entryName }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
-  markAnswered: (text) => set((s) => ({ answered: withAnswered(s.answered, text) })),
+  markAnswered: (text, project = null) => set((s) => ({ answered: withAnswered(s.answered, text, project) })),
   setEra: (era) => set({ era }),
   setSkipHint: (skipHint) => set({ skipHint }),
   reset: () => set({ ...initial(), phase: get().phase }),
