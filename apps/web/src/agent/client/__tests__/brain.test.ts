@@ -43,7 +43,7 @@ describe('live path', () => {
     // the swarm listens while the Worker decides, and settles once it answers
     expect(rec.events[1]).toEqual(LISTEN);
     expect(rec.types().at(-1)).toBe('end');
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'live' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'live' });
     expect(rec.text()).toBe('Yoav Zrihan.');
     expect(rec.actions()).toEqual([
       LISTEN.action,
@@ -96,7 +96,7 @@ describe('live path', () => {
     await brain.send(Q);
     expect(calls).toHaveLength(3);
     expect(rec.text()).toBe('fine.');
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'live' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'live' });
   });
 });
 
@@ -104,7 +104,7 @@ describe('fallback state machine', () => {
   it('router timeout → the scripted best match for that turn, silently (no resting line)', async () => {
     const { brain, rec } = make(hang);
     await brain.send('how old are you, yoyo?'); // the scripted best match is `who`
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'scripted' });
     const turns = rec.turns();
     expect(turns[0]).toBe("I'm Yoyo, a software engineer who builds products with AI agents.");
     expect(turns[1]).toBe('Computer Science and Entrepreneurship at Reichman. Self-taught before that.');
@@ -133,7 +133,7 @@ describe('fallback state machine', () => {
     rec.clear();
     await brain.send('who is yoyo?');
     expect(calls.length).toBe(n);
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'scripted' });
     // the resting line appears only on the first scripted turn
     expect(rec.text()).not.toContain(RESTING_LINE);
   });
@@ -143,7 +143,7 @@ describe('fallback state machine', () => {
     const storage = new MemStorage();
     const { brain, rec } = make(() => json(429, { reason: 'quota' }), { storage, now: () => t });
     await brain.send(Q);
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'scripted' });
     expect(brain.mode()).toBe('scripted');
     expect(storage.getItem('yoyo.v3.scriptedDay')).toBe('2026-10-23');
 
@@ -169,7 +169,7 @@ describe('fallback state machine', () => {
     const { brain, rec } = make([() => sseResponse([{ type: 'token', text: 'half a' }, { type: 'error', reason: 'upstream' }]), () => json(502, {})], { retries: 0 });
     await brain.send(Q);
     expect(rec.text()).toBe('half a');
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'live' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'live' });
     await brain.send(Q);
     expect(brain.mode()).toBe('scripted');
   });
@@ -177,7 +177,7 @@ describe('fallback state machine', () => {
   it('an empty live reply (e.g. a safety block) falls back to scripted', async () => {
     const { brain, rec } = make(() => sseResponse([{ type: 'done' }]));
     await brain.send('gm frens, what is up today');
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'scripted' });
     expect(rec.text()).toContain('gm.');
   });
 

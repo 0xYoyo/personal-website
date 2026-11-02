@@ -58,6 +58,8 @@ export function createBrain(opts: BrainOptions = {}): Brain {
     mode: 'live' | 'scripted';
     /** words (and turn breaks) after a [[build:…]] tag, held until the reply ends (see ON_IT) */
     held: (string | typeof TURN)[] | null;
+    /** the scripted intent the reply played, if any */
+    intent?: string;
     /** a turn boundary, reported right before the next word (so never after the last one) */
     turnBreak(): void;
     /** a pending boundary, reported now: an action follows it, and belongs to the next turn (WAVE4 U10) */
@@ -103,7 +105,10 @@ export function createBrain(opts: BrainOptions = {}): Brain {
         break;
       case 'end':
         // the client also ends a superseded turn; only the started one counts
-        if (chat?.started) chat.mode = e.mode;
+        if (chat?.started) {
+          chat.mode = e.mode;
+          if (e.intent) chat.intent = e.intent;
+        }
         break;
       case 'buildNotice':
         build?.h.onNotice?.(e.text);
@@ -237,7 +242,7 @@ export function createBrain(opts: BrainOptions = {}): Brain {
         }
       }
       const texts = turns.map((t) => t.join(' ')).filter(Boolean);
-      return { text: texts.join(' '), turns: texts, actions: turn.actions, source: turn.mode };
+      return { text: texts.join(' '), turns: texts, actions: turn.actions, source: turn.mode, ...(turn.intent ? { intent: turn.intent } : {}) };
     },
 
     build(instruction, h = {}, o = {}): Promise<BuildResult> {

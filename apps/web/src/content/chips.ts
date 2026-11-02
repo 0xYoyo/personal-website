@@ -102,7 +102,8 @@ export const BUILD_SEEDS: Record<ProjectId, string> = {
 };
 
 export type ChipCommand =
-  | { kind: 'say'; text: string }
+  /** `echo`: the visitor's line shows the chip they tapped while the brain is asked `text` ("Another build" → a build) */
+  | { kind: 'say'; text: string; echo?: string }
   | { kind: 'play' }
   | { kind: 'next-project' }
   | { kind: 'build'; instruction: string }
@@ -129,7 +130,9 @@ const norm = (s: string) => s.trim().toLowerCase().replace(/[?.!]+$/, '');
 export function resolveChip(label: string, st: ChipState): ChipCommand {
   const l = norm(label);
   if (isEmojiOnly(label)) return { kind: 'say', text: label };
-  if (l.startsWith('open my ')) return st.hasStoredBuild ? { kind: 'open-build' } : { kind: 'say', text: 'Build me something' };
+  // a build chip asks the brain for a build; the visitor's line is the chip they tapped
+  const build: ChipCommand = { kind: 'say', text: 'Build me something', ...(l === 'build me something' ? {} : { echo: label.trim() }) };
+  if (l.startsWith('open my ')) return st.hasStoredBuild ? { kind: 'open-build' } : build;
   switch (l) {
     case 'play the game':
     case 'play his game':
@@ -140,17 +143,17 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
     // typed or older chips: on a card, that project's seed; anywhere else the brain answers (faq.md `build`)
     case 'build me something':
     case 'build me something like this':
-      return st.project ? { kind: 'build', instruction: BUILD_SEEDS[st.project] } : { kind: 'say', text: 'Build me something' };
+      return st.project ? { kind: 'build', instruction: BUILD_SEEDS[st.project] } : build;
     case 'change it':
-      return st.hasBuild ? { kind: 'change-build' } : { kind: 'say', text: 'Build me something' };
+      return st.hasBuild ? { kind: 'change-build' } : build;
     case 'close':
       return { kind: 'close' };
     case 'share it':
-      return st.hasBuild ? { kind: 'share-build' } : { kind: 'say', text: 'Build me something' };
+      return st.hasBuild ? { kind: 'share-build' } : build;
     case 'build another':
     case 'another build':
     case 'another example':
-      return { kind: 'say', text: 'Build me something' };
+      return build;
     case 'next story':
     case 'tell me a story':
       return { kind: 'story-next' };

@@ -49,6 +49,11 @@ export interface Reply {
   turns: string[];
   actions: Action[];
   source: 'live' | 'scripted';
+  /**
+   * The scripted intent the reply played (`my_part_polybot`, `who`, …): the router's or the local
+   * classifier's. Absent for the model's own turns, a name, an emoji, a command.
+   */
+  intent?: string;
 }
 
 export interface BuildHandlers {

@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import type { Mood, ProjectId, StoryId } from '@yoyo/protocol';
 import { ENTRY_CHIPS, clampChips } from '../content/chips';
-import { moveChipsOn, withAnswered } from './answered';
+import { moveChipsOn, withAnswered, withAnsweredIntent } from './answered';
 
 export type Overlay = 'none' | 'card' | 'build' | 'contact' | 'game' | 'stories' | 'tour' | 'history';
 export type Phase = 'boot' | 'entry' | 'ready';
@@ -134,6 +134,8 @@ export interface Actions {
   /** the visitor asked this: its chip (and any chip meaning the same) gives way to the next question */
   /** `project`: the card open when it was asked (WAVE5 U3: per-project follow-ups stay open on other cards) */
   markAnswered(text: string, project?: ProjectId | null): void;
+  /** The intent a reply played counts as answered too (a typed question in words the classifier missed). */
+  markIntent(intent: string): void;
   setEra(e: Era): void;
   setSkipHint(on: boolean): void;
   reset(): void;
@@ -239,6 +241,7 @@ export const useStore = create<State & Actions>()((set, get) => ({
   setEntryName: (entryName) => set({ entryName }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
   markAnswered: (text, project = null) => set((s) => ({ answered: withAnswered(s.answered, text, project) })),
+  markIntent: (intent) => set((s) => ({ answered: withAnsweredIntent(s.answered, intent) })),
   setEra: (era) => set({ era }),
   setSkipHint: (skipHint) => set({ skipHint }),
   reset: () => set({ ...initial(), phase: get().phase }),

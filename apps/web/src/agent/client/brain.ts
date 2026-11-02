@@ -2,7 +2,7 @@
 // tag parser, dispatches actions as events, and keeps visitor memory.
 
 import { captureName, strongLocal } from './intents';
-import { ROUTE_TIMEOUT_MS, routedReply } from './route';
+import { ROUTE_TIMEOUT_MS, routedIntent, routedReply } from './route';
 import { streamLive, type LiveFailure } from './live';
 import { createBrainState, createMemory, defaultStorage, localDay, safeStorage, type Memory, type StorageLike } from './memory';
 import type { Action, BuildRequest, ChatMessage, ChatRequest, GlyphId, ProjectId } from '@yoyo/protocol';
@@ -28,7 +28,8 @@ export type BrainEvent =
    */
   | { type: 'turn' }
   | { type: 'action'; action: Action }
-  | { type: 'end'; mode: BrainMode }
+  /** `intent`: the scripted intent the reply played (the router's or the local classifier's), if any. */
+  | { type: 'end'; mode: BrainMode; intent?: string }
   /**
    * A line to say before the build (scripted "Change it": the live builder can't change this one,
    * here's the closest). The brain waits its read time (Timing.readPerWordMs / readMinMs) before
@@ -253,10 +254,10 @@ export function createBrain(opts: BrainOptions): Brain {
     const temit = (e: BrainEvent) => {
       if (chatTurn === turn) emit(e);
     };
-    const finish = (m: BrainMode) => {
+    const finish = (m: BrainMode, intent?: string | null) => {
       if (chatTurn !== turn) return;
       chatTurn = null;
-      emit({ type: 'end', mode: m });
+      emit({ type: 'end', mode: m, ...(intent ? { intent } : {}) });
     };
     const text = [...input.trim()].slice(0, LIMITS.messageChars).join('');
     emit({ type: 'start' });
@@ -291,13 +292,14 @@ export function createBrain(opts: BrainOptions): Brain {
         // a scripted intent plays its exact copy; a gap plays the model's clamped turns
         settle();
         const raw = routedReply(outcome.route, text, { name: memory.name, lastShown, random, project });
+        const intent = routedIntent(outcome.route, text, { project });
         try {
           await streamScripted(raw, ctrl.signal, temit, false);
           remember(text, raw);
         } catch (e) {
           if (!(e instanceof AbortedError)) throw e;
         } finally {
-          finish('live');
+          finish('live', intent);
         }
         return;
       }
@@ -318,7 +320,10 @@ export function createBrain(opts: BrainOptions): Brain {
     }
 
     const ctx = { name: memory.name, lastShown, random, project };
-    let { raw } = scriptedReply(text, ctx);
+    const scripted = scriptedReply(text, ctx);
+    let { raw } = scripted;
+    const c = scripted.classification;
+    const intent = c.kind === 'intent' && c.id !== 'unknown' ? c.id : null;
     if (resting && !restingShown) {
       raw = withRestingLine(raw);
       restingShown = true;
@@ -329,7 +334,7 @@ export function createBrain(opts: BrainOptions): Brain {
     } catch (e) {
       if (!(e instanceof AbortedError)) throw e;
     } finally {
-      finish('scripted');
+      finish('scripted', intent);
     }
   }
 

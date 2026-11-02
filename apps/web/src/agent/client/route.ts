@@ -35,17 +35,28 @@ const plain = (s: string) => s.replace(/\[\[[^\]]*\]\]/g, ' ').replace(/[[\]|]/g
 
 const isScripted = (id: string) => id === 'unknown' || FAQ_INTENTS.some((i) => i.id === id);
 
-/** The raw reply (tags included, `||` turns) a route plays. */
-export function routedReply(route: Route, text: string, ctx: ScriptedContext): string {
+/**
+ * The intent a route plays (the router's, with the open card's remaps), or null when it plays the model's
+ * own turns. The shell retires the chip that asks it (WAVE5: a typed question retires its chip).
+ */
+export function routedIntent(route: Route, text: string, ctx: Pick<ScriptedContext, 'project'>): string | null {
   let id = route.intent;
   const p = ctx.project ?? null;
-  const local = classify(text, { project: p });
   if (p && id) {
+    const local = classify(text, { project: p });
     // WAVE5 U3: with a card open, "my part" is that project's, and a specific follow-up the site knows beats
     // the router replaying the open project's intro
     if (id === MY_PART && isScripted(myPartOf(p))) id = myPartOf(p);
     else if (id === PROJECT_INTRO[p] && local.kind === 'intent' && specificTo(local.id, p) && isScripted(local.id)) id = local.id;
   }
+  if (!id || id === 'unknown') return null;
+  return isScripted(id) || EXTRA_INTENTS.some((x) => x.id === id) ? id : null;
+}
+
+/** The raw reply (tags included, `||` turns) a route plays. */
+export function routedReply(route: Route, text: string, ctx: ScriptedContext): string {
+  const id = routedIntent(route, text, ctx) ?? (route.intent === 'unknown' ? 'unknown' : null);
+  const local = classify(text, { project: ctx.project ?? null });
   if (id && isScripted(id)) {
     if (id === 'unknown') return FAQ_UNKNOWN;
     // the local classifier agrees: its reply carries the specifics (the visitor's own build ask, the story)

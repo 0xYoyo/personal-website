@@ -26,7 +26,9 @@ describe('chips', () => {
     expect(resolveChip('Next one', st)).toEqual({ kind: 'say', text: 'What have you built?' });
     expect(resolveChip('Build me something', { ...st, project: 'polybot' })).toEqual({ kind: 'build', instruction: BUILD_SEEDS.polybot });
     expect(resolveChip('Build me something', st)).toEqual({ kind: 'say', text: 'Build me something' });
-    expect(resolveChip('Another build', st)).toEqual({ kind: 'say', text: 'Build me something' });
+    // the brain is asked for a build; the visitor's line is the chip they tapped
+    expect(resolveChip('Another build', st)).toEqual({ kind: 'say', text: 'Build me something', echo: 'Another build' });
+    expect(resolveChip('Build another', st)).toEqual({ kind: 'say', text: 'Build me something', echo: 'Build another' });
     expect(resolveChip('What did you do on this?', { ...st, project: 'polybot' })).toEqual({ kind: 'say', text: 'What did you do on this?' });
     expect(resolveChip('Change it', { ...st, hasBuild: true })).toEqual({ kind: 'change-build' });
     expect(resolveChip('Share it', { ...st, hasBuild: true })).toEqual({ kind: 'share-build' });

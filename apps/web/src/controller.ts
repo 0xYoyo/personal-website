@@ -48,6 +48,8 @@ const K_SKIP_HINT = 'yoyo.v3.skipHint';
  * row stays until something sets new chips: the next chip pressed from that row is still about that card.
  */
 let cardRow: { project: ProjectId; key: number } | null = null;
+/** Bumped by every card opened; a reply checks it before putting its end row up (a card opened meanwhile keeps its own). */
+let cardSeq = 0;
 /** The project a message is about: the open card, else the card whose row is still up. */
 function contextProject(): ProjectId | null {
   const st = S();
@@ -429,7 +431,7 @@ export const ctl = {
   speakLine,
 
   /** A visitor message: echo it, stream the reply, run its actions. */
-  async say(text: string) {
+  async say(text: string, opts: { echo?: string } = {}) {
     const clean = text.trim();
     if (!clean || !rt.brain) return;
     const st = S();
@@ -458,12 +460,14 @@ export const ctl = {
     deferred = [];
     const ac = new AbortController();
     turn = ac;
-    st.pushVisitor(clean);
+    // a chip that asks in other words ("Another build") shows the visitor what they tapped
+    st.pushVisitor(opts.echo?.trim() || clean);
     settleSeq++;
     swarm()?.mood('thinking');
     st.setMood('thinking');
     let lastTurn = '';
     let turnsBegun = 0;
+    const cardsAtAsk = cardSeq;
     const pacer = turnPacer({
       onBegin() {
         if (S().mood === 'thinking') {
@@ -495,6 +499,8 @@ export const ctl = {
         }
         if (a.type === 'chips') {
           chipsSet = true;
+          // a card opened while the reply streams keeps its own row (as at the reply's end, below)
+          if (cardSeq !== cardsAtAsk) return;
           const chips = rocketChips(a.chips, { spelled, rocket, offered: rocketOffered });
           if (chips.includes(ROCKET_CHIP)) rocketOffered = true;
           a = { ...a, chips };
@@ -516,6 +522,9 @@ export const ctl = {
     try {
       const reply = await rt.brain.send(clean, handlers, ac.signal, { project: open });
       if (turn !== ac) return;
+      // what the reply answered, as the brain understood it (the router can read words the local classifier
+      // misses): a typed question retires its chip just as tapping it does
+      if (reply.intent) S().markIntent(reply.intent);
       const text = stripMarks(reply.text);
       lastTurn = text;
       // every turn on screen, in order, each after the previous one's read time
@@ -535,7 +544,10 @@ export const ctl = {
       }, readTime(lastTurn));
       // the rocket is up: its chip goes from the row the reply left (it set none of its own)
       if (rocket && S().chips.includes(ROCKET_CHIP)) S().setChips(rocketChips(S().chips, { spelled, rocket, offered: true }));
-      if (!chipsSet) {
+      // a card opened while this reply was still being said ("Next one", ←/→, Work) has put up its own row:
+      // the reply's end row (the previous card's follow-ups, or Who's) must not replace it
+      const movedOn = cardSeq !== cardsAtAsk;
+      if (!chipsSet && !movedOn) {
         if (opened) S().setChips(projectChips(opened));
         else if (/who/i.test(clean) && !deferred.length) S().setChips(WHO_CHIPS);
         else if (open && !deferred.length) {
@@ -591,7 +603,7 @@ export const ctl = {
     const cmd = resolveChip(label, { project: about, name: st.visitor.name ?? rt.brain?.memory.name(), hasBuild: !!st.build.html, hasStoredBuild: !!rt.brain?.memory.builds().some((b) => b.html) });
     switch (cmd.kind) {
       case 'say':
-        void ctl.say(cmd.text);
+        void ctl.say(cmd.text, cmd.echo !== undefined ? { echo: cmd.echo } : {});
         break;
       case 'play':
         ctl.play();
@@ -653,6 +665,7 @@ export const ctl = {
     closeAll('card');
     S().setEra(eraOf(id));
     S().showProject(id);
+    cardSeq++;
     const row = () => {
       S().setChips(projectChips(id));
       cardRow = { project: id, key: S().chipsKey };

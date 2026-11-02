@@ -48,7 +48,8 @@ describe('router intent → the scripted copy, exactly', () => {
     const want = await scriptedTurns(stack.hints[0]!);
     expect(rec.turns()).toEqual(want.turns);
     expect(rec.actions().filter((a) => a.type !== 'mood')).toEqual(want.actions);
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'live' });
+    // the intent it played: the shell retires its chip
+    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'live', intent: 'stack' });
     expect(brain.history().at(-1)!.text).toBe(stack.reply);
   });
 
@@ -110,7 +111,7 @@ describe('strong local matches never call the model (A3)', () => {
     await brain.send('And crypto?');
     expect(calls).toHaveLength(0);
     expect(rec.actions().some((a) => a.type === 'mood' && a.mood === 'listening')).toBe(false);
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'scripted' });
   });
 
   it('builds never call the model: a build ask is local, and build() streams an example', async () => {
@@ -132,7 +133,7 @@ describe('router timeout (A3: 2.5 s)', () => {
     expect(ms).toBeLessThan(3_200);
     const want = await scriptedTurns('do you know python');
     expect(rec.turns()).toEqual(want.turns);
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'scripted' });
   }, 6_000);
 
   it('a route that arrives after the deadline is dropped: no double reply', async () => {
@@ -147,6 +148,6 @@ describe('router timeout (A3: 2.5 s)', () => {
   it('an unparseable 200 counts as a failure and falls back', async () => {
     const { brain, rec } = make(() => json(200, { nope: true }), { retries: 0 });
     await brain.send('do you know python');
-    expect(rec.events.at(-1)).toEqual({ type: 'end', mode: 'scripted' });
+    expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'scripted' });
   });
 });

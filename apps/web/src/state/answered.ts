@@ -52,6 +52,12 @@ export function withAnswered(answered: readonly string[], text: string, project:
   return k && !answered.includes(k) ? [...answered, k] : [...answered];
 }
 
+/** Remember an intent the brain played (`who`, `my_part_polybot`): a typed question the router understood. */
+export function withAnsweredIntent(answered: readonly string[], intent: string): string[] {
+  const k = `i:${intent}`;
+  return answered.includes(k) ? [...answered] : [...answered, k];
+}
+
 /**
  * The row with every answered chip replaced by the next unanswered one from PRIORITY (or dropped when
  * none is left). `contactOpen`: "How do I reach you?" never shows.
