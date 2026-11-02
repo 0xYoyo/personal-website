@@ -1073,10 +1073,23 @@
   opacity: 0;
 }
 @media (max-width: 720px) {
+  /* a phone: no corner of the game is free on every screen (its key hints fill the bottom of the menu, the
+     race timer and Back sit top-left, Settings and the lap count top-right), so the game starts below a
+     52 px strip of its own and Close sits in it, covering nothing */
+  .y-game-frame {
+    position: absolute;
+    top: calc(52px + env(safe-area-inset-top));
+    left: 0;
+    width: 100%;
+    /* an iframe doesn't stretch between top and bottom: its height is set */
+    height: calc(100% - 52px - env(safe-area-inset-top));
+  }
   .y-game-close {
-    top: auto;
+    top: calc(5px + env(safe-area-inset-top));
     right: 14px;
-    bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+  .y-game-hint {
+    top: calc(8px + env(safe-area-inset-top));
   }
 }
 

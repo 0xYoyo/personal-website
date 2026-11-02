@@ -61,7 +61,7 @@ export function GameModal() {
           {GAME_TOUCH ? copy.game.touchHint : copy.game.keyboardHint}
         </p>
       )}
-      {/* on a phone it sits bottom-right, clear of the game's own Settings top-right (FIX4 U10) */}
+      {/* on a phone it sits in a strip of its own above the game (ui.css), covering none of the game's controls */}
       <button className="y-game-close y-mono" onClick={() => ctl.closeOverlay()}>
         {GAME_CLOSE}
       </button>
