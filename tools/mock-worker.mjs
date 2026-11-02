@@ -78,13 +78,15 @@ function lastShownIn(history) {
  * live model really builds (`[[build:<their words>]] on it.`, persona.md) instead of "the live
  * builder is resting", and greets a new name with chips.
  */
-export function mockReply(text, visitor = {}, history = []) {
+export function mockReply(text, visitor = {}, history = [], context = {}) {
   const raw = String(text ?? '').trim();
-  const c = AGENT.classify(raw);
+  // the open card (WAVE5 U3): the router hears it as <open_project>, the mock as the scripted brain's context
+  const project = typeof context?.project === 'string' ? context.project : null;
+  const c = AGENT.classify(raw, { project });
   const name = typeof visitor.name === 'string' && visitor.name ? tagSafe(visitor.name) : null;
   if (c.kind === 'name') {
     const n = tagSafe(c.name);
-    return `[[become:${n}]] nice to meet you, ${n}. [[chips:Spell my name|Build me something|Who are you?]]`;
+    return `[[become:${n}]] nice to meet you, ${n}. [[chips:Spell my name|Watch me build|Who are you?]]`;
   }
   if (c.kind === 'emoji') {
     return `[[become:${tagSafe(c.emoji)}]] ${c.emoji === '🚀' ? '[[mood:excited]] ' : ''}${AGENT.EMOJI_BEATS[0] ?? 'obviously.'}`;
@@ -94,8 +96,8 @@ export function mockReply(text, visitor = {}, history = []) {
     return `[[build:${(ask || 'something small and useful').slice(0, 280)}]] on it.`;
   }
   if (c.kind === 'command' && c.id === 'another-build') return '[[build:another small app, different from the last one]] on it.';
-  const reply = AGENT.scriptedReply(raw, { name, lastShown: lastShownIn(history), random: () => 0 }).raw;
-  if (c.kind === 'spell' || (c.kind === 'spell-my-name' && name)) return `${reply} [[chips:Now a rocket|Build me something|Who are you?]]`;
+  const reply = AGENT.scriptedReply(raw, { name, lastShown: lastShownIn(history), project, random: () => 0 }).raw;
+  if (c.kind === 'spell' || (c.kind === 'spell-my-name' && name)) return `${reply} [[chips:Now a rocket|Watch me build|Who are you?]]`;
   return reply;
 }
 

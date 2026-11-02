@@ -9,7 +9,7 @@ import { ENTRY_CHIPS } from './chips';
 
 export const SHOW_LINES = [
   "I'm Yoyo.",
-  "I don't write most of my code anymore. I direct the things that do.",
+  'I build software, and the tools I use to build it.',
   "Unfiltered. Type what you want the way you'd say it. It finds the product.",
   'Prompt Racers. A kart racer that teaches kids how to talk to AI.',
   'yoyo-loop. I write the spec. Agents build. Another agent reviews. I merge.',

@@ -81,7 +81,7 @@ describe('a reply that opens a card: the card waits until its last turn has been
     await done;
     expect(openedAt).toBeGreaterThan(0);
     expect(openedAt - lastShownAt).toBeGreaterThanOrEqual(3500); // ≥ the 3.6 s floor (50 ms steps)
-    expect(useStore.getState().chips.slice(0, 2)).toEqual(projectChips(useStore.getState().project!));
+    expect(useStore.getState().chips.slice(0, 3)).toEqual(projectChips(useStore.getState().project!));
   });
 
   it('a tap during that hold opens it at once', async () => {

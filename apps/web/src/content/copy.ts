@@ -61,8 +61,6 @@ export const copy = {
     onIt: 'on it.',
     /** SPEC §2.6 (no "Want changes?": changes aren't on here yet, WAVE4 U7) */
     done: (seconds: number) => `${seconds} second${seconds === 1 ? '' : 's'}.`,
-    /** SPEC §2.6 / faq.md build (scripted) */
-    resting: "the live builder is resting, so here's one I made earlier.",
     /** ui: cap reached (SPEC §2.6 asks for an honest message) */
     capped: "that's five builds this hour. come back in a bit, or ask me something.",
     /** POLISH1 A3: the caption while the code streams */
@@ -70,7 +68,7 @@ export const copy = {
     /** ui */
     stopped: 'stopped.',
     /** WAVE4 U7: a typed change request while a build is open */
-    noChanges: 'changes aren\'t on here yet. try "build another".',
+    noChanges: 'changes aren\'t on here yet. try "another build".',
     failed: 'that one fell over. once more?',
     controls: {
       fullscreen: 'Open full screen',

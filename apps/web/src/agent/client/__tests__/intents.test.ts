@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { EXTRA_INTENTS } from '../extras';
 import { FAQ_INTENTS } from '../faq';
-import { captureName, classify, levenshtein, rankIntents, tokenize } from '../intents';
+import { SCOPED_INTENTS, captureName, classify, levenshtein, rankIntents, tokenize } from '../intents';
 import { replyFor, scriptedReply, withRestingLine, RESTING_LINE } from '../scripted';
 import { extractActions } from '../tags';
 import { GLYPH_IDS } from '@yoyo/protocol';
 
-const intentOf = (text: string) => {
-  const c = classify(text);
+const intentOf = (text: string, scopedTo?: string) => {
+  // a scoped follow-up (WAVE5 U3) answers with its card open: its hints are tried there
+  const c = classify(text, { project: scopedTo ? (SCOPED_INTENTS[scopedTo]?.project ?? null) : null });
   return c.kind === 'intent' ? c.id : c.kind;
 };
 const listing = (hint: string) => FAQ_INTENTS.filter((i) => i.hints.includes(hint)).map((i) => i.id);
@@ -16,7 +17,10 @@ describe('faq.ts', () => {
   it('has every intent from faq.md, verbatim', () => {
     expect(FAQ_INTENTS.map((i) => i.id)).toEqual([
       'who', 'built', 'hire', 'weakness', 'like', 'story', 'army', 'crypto', 'agents', 'why_agents', 'fast', 'game', 'unfiltered',
-      'connector', 'monitor', 'pnl', 'sentiment', 'hand_work', 'network', 'polybot', 'university', 'availability', 'contact', 'salary', 'phone', 'looks',
+      'connector', 'monitor', 'pnl', 'sentiment', 'hand_work', 'network', 'polybot', 'without_ai', 'unfiltered_hard', 'racers_teach',
+      'loop_wrong', 'connector_access', 'my_part', 'my_part_unfiltered', 'my_part_prompt-racers', 'my_part_yoyo-loop',
+      'my_part_runi-connector', 'my_part_availability-monitor', 'my_part_polybot', 'my_part_sentiment-gauge', 'my_part_pnl-bot',
+      'my_part_vortex', 'my_part_yoyo-network', 'university', 'availability', 'contact', 'salary', 'phone', 'looks',
       'hobbies', 'travel', 'after_travel', 'ambition', 'opinion', 'opinion_ai', 'opinion_crypto', 'stack', 'this_site',
       'build', 'tour', 'help', 'thanks', 'greeting', 'gm', 'lights', 'politics', 'jailbreak', 'mirror_gone',
     ]);
@@ -31,7 +35,7 @@ describe('intent matching', () => {
         for (const hint of intent.hints) {
           // an easter egg (extras.ts) may claim a single word on purpose, e.g. "curls"
           if (EXTRA_INTENTS.some((x) => x.match.test(hint))) continue;
-          const got = intentOf(hint);
+          const got = intentOf(hint, intent.id);
           const owners = listing(hint);
           if (owners.length === 1) expect(got, `"${hint}"`).toBe(intent.id);
           // A hint faq.md lists under several intents resolves to one of them (see report).
@@ -43,7 +47,7 @@ describe('intent matching', () => {
 
   it('each intent wins outright for at least one of its own hints', () => {
     for (const intent of FAQ_INTENTS) {
-      expect(intent.hints.some((h) => intentOf(h) === intent.id), intent.id).toBe(true);
+      expect(intent.hints.some((h) => intentOf(h, intent.id) === intent.id), intent.id).toBe(true);
     }
   });
 

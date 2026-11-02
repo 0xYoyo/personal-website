@@ -22,7 +22,8 @@
 //    must not say.
 
 import { fileURLToPath } from 'node:url';
-import { normalize } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join, normalize } from 'node:path';
 import { loadAgent } from './lib/agent-bundle.mjs';
 
 const A = await loadAgent();
@@ -87,6 +88,18 @@ export const CHIP_EXPECT = {
   // the build's row (WAVE4 U7): closes the build in the UI
   Close: { ui: 'close' },
   'Build another': { ui: 'say', say: 'Build me something', intent: 'build', actions: ['build:*'] },
+  // WAVE5 C5: the build row's chip, and the main conversation's build chip (a build replay)
+  'Another build': { ui: 'say', say: 'Build me something', intent: 'build', actions: ['build:*'] },
+  // a build command in intents.ts (like "another build"): always a build, never the tour's "watch"
+  'Watch me build': { intent: 'command:another-build', actions: ['build:*'] },
+  // WAVE5 C5: the card rows' question chips (with a card open the site answers my_part as my_part_<id>)
+  // `project`: the card these chips sit on (scoped intents answer only there or when the message names it)
+  'What was the hardest part?': { intent: 'unfiltered_hard', actions: [], project: 'unfiltered' },
+  'How does it teach prompting?': { intent: 'racers_teach', actions: [], project: 'prompt-racers' },
+  'What if an agent gets it wrong?': { intent: 'loop_wrong', actions: [], project: 'yoyo-loop' },
+  'What can it access?': { intent: 'connector_access', actions: [], project: 'runi-connector' },
+  // with no card open: the general answer (faq.md `my_part`); per card it is `my_part_<id>` (evalMyPart)
+  'What did you do on this?': { intent: 'my_part', actions: [] },
   'Another example': { ui: 'say', say: 'Build me something', intent: 'build', actions: ['build:*'] },
   'How was this made?': { intent: 'this_site', actions: ['become:yoyo3d'] },
   'Next story': { ui: 'story-next' },
@@ -128,6 +141,9 @@ const CHIP_STATE = { project: 'prompt-racers', hasBuild: true, hasStoredBuild: t
 /** Expectation for a label; "Open my <title>" chips are dynamic. */
 const expectFor = (chip) => CHIP_EXPECT[chip] ?? (/^Open my /.test(chip) ? { ui: 'open-build' } : undefined);
 
+/** Intents that answer only with their card open or the project named (WAVE5 C4, intents.ts SCOPED_INTENTS). */
+const SCOPED = { unfiltered_hard: 'unfiltered', racers_teach: 'prompt-racers', loop_wrong: 'yoyo-loop', connector_access: 'runi-connector' };
+
 /** Runs the hint checks; returns rows {kind, input, want, got, ok}. */
 export function evalHints() {
   const rows = [];
@@ -135,13 +151,14 @@ export function evalHints() {
     for (const hint of intent.hints) {
       const owners = A.FAQ_INTENTS.filter((i) => i.hints.includes(hint)).map((i) => i.id);
       const egg = A.EXTRA_INTENTS.find((x) => x.match.test(hint));
-      const c = A.classify(hint);
+      const project = SCOPED[intent.id] ?? null;
+      const c = A.classify(hint, { project });
       const got = classKey(c);
       const want = egg ? `extra:${egg.id}` : owners.length > 1 ? owners.join('|') : intent.id;
       let ok = egg ? got === want : owners.includes(got);
       let detail = '';
       if (ok && !egg) {
-        const reply = A.scriptedReply(hint, CTX).raw;
+        const reply = A.scriptedReply(hint, { ...CTX, project }).raw;
         const gotActions = actionsOf(reply);
         let wantActions = actionsOf(A.FAQ_INTENTS.find((i) => i.id === got).reply);
         if (got === 'build') wantActions = wantActions.map((k) => (k === 'build:example' ? 'build:*' : k));
@@ -157,6 +174,7 @@ export function evalHints() {
 
 /** Runs the chip checks against a reply function (text → raw reply); returns rows. */
 export function evalChips(replyFn, label = 'scripted') {
+  // replyFn(text, project): the reply with that card open (null: none)
   const rows = [];
   for (const chip of allChipLabels()) {
     const exp = expectFor(chip);
@@ -182,8 +200,15 @@ export function evalChips(replyFn, label = 'scripted') {
     }
     const want = exp.intent ?? CHIP_EXPECT[text]?.intent;
     const wantActions = exp.actions ?? CHIP_EXPECT[text]?.actions ?? [];
-    const got = classKey(A.classify(text));
-    const acts = actionsOf(replyFn(text));
+    const project = exp.project ?? null;
+    const got = classKey(A.classify(text, { project }));
+    const raw = replyFn(text, project);
+    const acts = actionsOf(raw);
+    // a scoped chip must get its own reply, not the unknown line
+    if (exp.intent && want !== 'build' && A.FAQ_INTENTS.some((i) => i.id === want) && !raw.includes(A.FAQ_INTENTS.find((i) => i.id === want).reply.slice(0, 40))) {
+      rows.push({ kind: `chip/${label}`, input: chip, want: `${want}'s reply`, got: raw.slice(0, 60), ok: false });
+      continue;
+    }
     const ok = got === want && hasAll(wantActions, acts);
     rows.push({ kind: `chip/${label}`, input: chip, want: `${want} ${wantActions.join(' ')}`, got: `${got} ${acts.join(' ')}`, ok });
   }
@@ -269,17 +294,66 @@ export const QUESTIONS = [
   { q: 'did you trade cs skins', intent: 'crypto' },
   { q: 'tell me about the sentiment gauge', intent: 'sentiment', actions: ['show:sentiment-gauge'] },
   { q: 'Show me those', intent: 'hand_work', actions: ['work'] },
+  // WAVE5 C4 / C7: the new intents, typed
+  { q: 'can you code without AI', intent: 'without_ai', actions: ['work'] },
+  { q: 'Can you code without AI?', intent: 'without_ai', actions: ['work'] },
+  { q: 'do you write code by hand', intent: 'without_ai', actions: ['work'] },
+  { q: 'can you actually code', intent: 'without_ai', actions: ['work'] },
+  { q: 'what was the hardest part of unfiltered', intent: 'unfiltered_hard' },
+  { q: 'what was the biggest challenge', intent: 'unfiltered_hard', project: 'unfiltered' },
+  { q: 'what was the hardest part', intent: 'unfiltered_hard', project: 'unfiltered' },
+  { q: 'what is this', intent: 'unfiltered', project: 'unfiltered' },
+  { q: 'how does prompt racers teach prompting', intent: 'racers_teach' },
+  { q: 'what do kids learn', intent: 'racers_teach', project: 'prompt-racers' },
+  { q: 'what happens when an agent gets it wrong', intent: 'loop_wrong' },
+  { q: 'what if the review fails', intent: 'loop_wrong', project: 'yoyo-loop' },
+  { q: 'what if an agent writes a bug', intent: 'loop_wrong' },
+  { q: 'what can the connector access', intent: 'connector_access' },
+  { q: 'what does it read', intent: 'connector_access', project: 'runi-connector' },
+  // scoped follow-ups don't answer off their card: "learn" and "mistake" mean something else there
+  { q: 'what was the hardest part', intent: 'unknown', not: /engine/i },
+  { q: 'what did you do on this project', intent: 'my_part', not: /\bUnfiltered\b/ },
+  { q: 'what was your role', intent: 'my_part' },
+  { q: 'what did you do on unfiltered', intent: 'my_part_unfiltered' },
+  { q: 'your part in prompt racers', intent: 'my_part_prompt-racers' },
+  { q: 'your role in vortex', intent: 'my_part_vortex' },
+  { q: 'Watch me build', intent: 'command:another-build', actions: ['build:*'] },
+  // the card chip on every card without its own question chip, and typed, with that card open
+  ...['prompt-racers', 'yoyo-loop', 'runi-connector', 'availability-monitor', 'polybot', 'sentiment-gauge', 'pnl-bot', 'vortex', 'yoyo-network', 'unfiltered'].flatMap((project) => [
+    { q: 'What did you do on this?', intent: `my_part_${project}`, project },
+    { q: 'what was your part', intent: `my_part_${project}`, project },
+  ]),
 ];
 export function evalQuestions(replyFn, label = 'scripted') {
-  return QUESTIONS.map(({ q, intent, not, actions = [] }) => {
-    const got = classKey(A.classify(q));
-    const raw = replyFn(q);
+  return QUESTIONS.map(({ q, intent, not, actions = [], project = null }) => {
+    const got = classKey(A.classify(q, { project }));
+    const raw = replyFn(q, project);
     const acts = actionsOf(raw);
     const problems = [];
     if (got !== intent) problems.push(`landed on ${got}`);
     if (not && not.test(A.extractActions(raw, { glyphs: A.GLYPH_IDS }).text)) problems.push(`says ${not}`);
     if (!hasAll(actions, acts)) problems.push(`actions ${acts.join(' ')}`);
     return { kind: `ask/${label}`, input: q, want: `${intent} ${actions.join(' ')}${not ? ` not ${not}` : ''}`, got: problems.join(', ') || got, ok: !problems.length };
+  });
+}
+
+/**
+ * WAVE5 C7: claims the site no longer makes. Nothing the brain or the mock can say, no builder line, and no
+ * visible copy in content/ (copy.ts, projects.ts, show.ts, chips.ts) or the Vortex showcase says them.
+ */
+export const BANNED = /made earlier|15 seconds|fifteen seconds|still live|role granted|every language|live builder/i;
+const CONTENT_FILES = ['content/copy.ts', 'content/projects.ts', 'content/show.ts', 'content/chips.ts', 'showcases/parts/vortex/Vortex.tsx'];
+export function evalBanned(replies) {
+  const web = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'web', 'src');
+  const lines = [
+    ['line:EXAMPLE_DONE_LINE', A.EXAMPLE_DONE_LINE],
+    ['line:CHANGE_RESTING_LINE', A.CHANGE_RESTING_LINE],
+    ['line:CHANGE_SAME_LINE', A.CHANGE_SAME_LINE],
+    ...CONTENT_FILES.map((f) => [`file:${f}`, readFileSync(join(web, f), 'utf8').replace(/^\s*(\/\/|\/?\*).*$/gm, '')]),
+  ];
+  return [...replies, ...lines].map(([input, raw]) => {
+    const m = BANNED.exec(raw);
+    return { kind: 'copy/banned', input, want: 'none of the retired claims', got: m ? `says "${m[0]}"` : 'clean', ok: !m };
   });
 }
 
@@ -307,8 +381,8 @@ export async function runEval({ quiet = false } = {}) {
   const { mockReply } = await import('./mock-worker.mjs');
   const rows = [
     ...evalHints(),
-    ...evalChips((t) => A.scriptedReply(t, CTX).raw, 'scripted'),
-    ...evalChips((t) => mockReply(t, {}, []), 'mock'),
+    ...evalChips((t, project) => A.scriptedReply(t, { ...CTX, project }).raw, 'scripted'),
+    ...evalChips((t, project) => mockReply(t, {}, [], { project }), 'mock'),
     ...evalTurns(scriptedReplies(), 'scripted'),
     ...evalTurns(
       A.FAQ_INTENTS.flatMap((i) => i.hints).map((h) => [h, mockReply(h, {}, [])]),
@@ -317,9 +391,10 @@ export async function runEval({ quiet = false } = {}) {
     ...evalTurns(UNPACED, 'unpaced'),
     ...evalWorkerPace([...scriptedReplies(), ...UNPACED]),
     ...evalOnceFacts([...scriptedReplies(), ...allChipLabels().map((c) => [`mock:${c}`, mockReply(c, {}, [])])]),
-    ...evalQuestions((t) => A.scriptedReply(t, CTX).raw, 'scripted'),
-    ...evalQuestions((t) => mockReply(t, {}, []), 'mock'),
+    ...evalQuestions((t, project) => A.scriptedReply(t, { ...CTX, project }).raw, 'scripted'),
+    ...evalQuestions((t, project) => mockReply(t, {}, [], { project }), 'mock'),
     ...evalDashes(scriptedReplies()),
+    ...evalBanned([...scriptedReplies(), ...allChipLabels().map((c) => [`mock:${c}`, mockReply(c, {}, [])])]),
   ];
   const fails = rows.filter((r) => !r.ok);
   const by = (k) => rows.filter((r) => r.kind === k);
@@ -344,6 +419,7 @@ export async function runEval({ quiet = false } = {}) {
       line('ask/scripted'),
       line('ask/mock'),
       line('copy/dash'),
+      line('copy/banned'),
       fails.length ? `${fails.length} FAILED` : 'all passed',
     ].join('\n'),
   );

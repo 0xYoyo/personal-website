@@ -7,7 +7,7 @@ import './vortex.css';
 const D = 9;
 const KEY = 7.6;
 
-/** Illustrative: one applicant signs in with X, members vote in Discord, an admin approves and the role is granted. */
+/** Illustrative: one applicant signs in with X, members vote in Discord, an admin approves and the status is published. */
 const YES = 9;
 const NO = 1;
 
@@ -16,7 +16,7 @@ const T_SIGN = 0.9; // the X sign-in goes through
 const T_VOTE0 = 1.5; // votes start counting
 const T_VOTE1 = 4.0;
 const T_PRESS = 4.7; // the admin presses Approve
-const T_ROLE = 5.3; // the role pill pops in
+const T_ROLE = 5.3; // the status pill pops in
 
 export function Vortex(props: ShowcaseProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -71,14 +71,14 @@ export function Vortex(props: ShowcaseProps) {
     },
     {
       title: 'Admin approves',
-      sub: 'role given automatically',
+      sub: 'status published on approve',
       body: (
         <div className="sc-vx-admin">
           <span className={'sc-vx-btn' + (pressed ? ' is-on' : '')} style={{ transform: `scale(${press})` }}>
             {pressed ? 'Approved' : 'Approve'}
           </span>
           <span className="sc-vx-role" style={{ opacity: Math.min(1, role * 1.5), transform: `scale(${0.7 + 0.3 * role})` }}>
-            Member role granted
+            Accepted · status published
           </span>
         </div>
       ),
@@ -89,7 +89,7 @@ export function Vortex(props: ShowcaseProps) {
     <div ref={ref} className="sc-root sc-vortex">
       <p className="sc-sr">
         Vortex membership system: an applicant applies by signing in with X, community members vote in Discord, and an admin approves.
-        The member role is then granted automatically.
+        The status is published on approve.
       </p>
       <Fit v={v} style={{ opacity: stage }}>
         <div className="sc-vx-stack" aria-hidden="true">

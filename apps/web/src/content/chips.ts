@@ -10,8 +10,10 @@ export type ChipContext = 'entry' | 'who' | 'project' | 'build' | 'story' | 'idl
 /** WAVE3: three at the door, in the second person (the site speaks as Yoyo). */
 export const ENTRY_CHIPS = ['Who are you?', 'What have you built?', 'Spell my name'];
 export const WHO_CHIPS = ['What are you like?', 'What are you bad at?', 'Why should we hire you?', 'How do I reach you?'];
-/** The build's row (WAVE4 U7): no "Change it" (changes aren't on here yet), no "How was this made?". */
-export const BUILD_CHIPS = ['Build another', 'What have you built?', 'How do I reach you?'];
+/** The build's row (WAVE4 U7, WAVE5 U4): no "Change it" (changes aren't on here yet), no "How was this made?". */
+export const BUILD_CHIPS = ['Another build', 'What have you built?', 'How do I reach you?'];
+/** The main conversation's build chip (WAVE5 C5): plays a build replay. */
+export const WATCH_BUILD_CHIP = 'Watch me build';
 export const STORY_CHIPS = ['Next story', 'What have you built?', 'How do I reach you?'];
 /** The tour's end chips (WAVE3 V3). */
 export const TOUR_END_CHIPS = ['Who are you?', 'What have you built?', 'Play the game'];
@@ -53,12 +55,20 @@ export const openBuildChip = (title: string): string => `Open my ${title}`;
 export const returningChips = (buildTitle?: string): string[] =>
   buildTitle ? [openBuildChip(buildTitle), 'Who are you?', 'What have you built?'] : ENTRY_CHIPS;
 
-/** The card chip is "Build me something" (WAVE4 C2); with a card open it builds that project's seed. */
-export const CARD_BUILD_CHIP = 'Build me something';
+/**
+ * The card rows (WAVE5 C5): no build chip on a card. Each question chip lands on its own intent
+ * (unfiltered_hard, racers_teach, loop_wrong, connector_access, my_part; with a card open the site
+ * answers my_part as `my_part_<open project>`).
+ */
+export const MY_PART_CHIP = 'What did you do on this?';
+export const PROJECT_CHIPS: Readonly<Partial<Record<ProjectId, readonly string[]>>> = {
+  unfiltered: ['Next one', 'What was the hardest part?', 'Who are you?'],
+  'prompt-racers': ['Next one', 'Play it', 'How does it teach prompting?'],
+  'yoyo-loop': ['Next one', 'What if an agent gets it wrong?', 'Who are you?'],
+  'runi-connector': ['Next one', 'What can it access?', 'Who are you?'],
+};
 export function projectChips(id: ProjectId): string[] {
-  return id === 'prompt-racers'
-    ? ['Next one', 'Play it', CARD_BUILD_CHIP]
-    : ['Next one', CARD_BUILD_CHIP];
+  return [...(PROJECT_CHIPS[id] ?? ['Next one', MY_PART_CHIP, 'Who are you?'])];
 }
 
 export function defaultChips(ctx: ChipContext, project?: ProjectId | null): string[] {
@@ -127,7 +137,7 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
       return { kind: 'play' };
     case 'next one':
       return st.project ? { kind: 'next-project' } : { kind: 'say', text: 'What have you built?' };
-    // on a card: that project's seed; anywhere else the brain answers (faq.md `build`)
+    // typed or older chips: on a card, that project's seed; anywhere else the brain answers (faq.md `build`)
     case 'build me something':
     case 'build me something like this':
       return st.project ? { kind: 'build', instruction: BUILD_SEEDS[st.project] } : { kind: 'say', text: 'Build me something' };
@@ -138,6 +148,7 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
     case 'share it':
       return st.hasBuild ? { kind: 'share-build' } : { kind: 'say', text: 'Build me something' };
     case 'build another':
+    case 'another build':
     case 'another example':
       return { kind: 'say', text: 'Build me something' };
     case 'next story':

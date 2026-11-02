@@ -9,7 +9,15 @@ describe('chips', () => {
     expect(defaultChips('who')).toEqual(['What are you like?', 'What are you bad at?', 'Why should we hire you?', 'How do I reach you?']);
     expect(projectChips('prompt-racers')).toContain('Play it');
     expect(projectChips('polybot')).not.toContain('Play it');
-    expect(defaultChips('build')).toEqual(['Build another', 'What have you built?', 'How do I reach you?']); // WAVE4 U7
+    expect(defaultChips('build')).toEqual(['Another build', 'What have you built?', 'How do I reach you?']); // WAVE5 U4
+    // the card rows (WAVE5 C5): no build chip on a card
+    expect(projectChips('unfiltered')).toEqual(['Next one', 'What was the hardest part?', 'Who are you?']);
+    expect(projectChips('prompt-racers')).toEqual(['Next one', 'Play it', 'How does it teach prompting?']);
+    expect(projectChips('yoyo-loop')).toEqual(['Next one', 'What if an agent gets it wrong?', 'Who are you?']);
+    expect(projectChips('runi-connector')).toEqual(['Next one', 'What can it access?', 'Who are you?']);
+    for (const id of ['availability-monitor', 'polybot', 'sentiment-gauge', 'pnl-bot', 'vortex', 'yoyo-network'] as const) {
+      expect(projectChips(id)).toEqual(['Next one', 'What did you do on this?', 'Who are you?']);
+    }
   });
 
   it('runs UI commands directly', () => {
@@ -18,7 +26,8 @@ describe('chips', () => {
     expect(resolveChip('Next one', st)).toEqual({ kind: 'say', text: 'What have you built?' });
     expect(resolveChip('Build me something', { ...st, project: 'polybot' })).toEqual({ kind: 'build', instruction: BUILD_SEEDS.polybot });
     expect(resolveChip('Build me something', st)).toEqual({ kind: 'say', text: 'Build me something' });
-    expect(projectChips('polybot')).toEqual(['Next one', 'Build me something']);
+    expect(resolveChip('Another build', st)).toEqual({ kind: 'say', text: 'Build me something' });
+    expect(resolveChip('What did you do on this?', { ...st, project: 'polybot' })).toEqual({ kind: 'say', text: 'What did you do on this?' });
     expect(resolveChip('Change it', { ...st, hasBuild: true })).toEqual({ kind: 'change-build' });
     expect(resolveChip('Share it', { ...st, hasBuild: true })).toEqual({ kind: 'share-build' });
     expect(resolveChip('Tell me a story', st)).toEqual({ kind: 'story-next' });

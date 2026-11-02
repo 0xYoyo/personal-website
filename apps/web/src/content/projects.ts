@@ -3,7 +3,7 @@
 // projects.ts (verified against the baked GitHub data, 2026-10-23); commit and
 // PR counts are baked literals computed from data/commits.json and prs.json so
 // the site doesn't ship 300 kB of JSON. Status words are mine: be honest.
-// `voiceLine` is the one-liner shown big; the card copy (voiceLine, cardFacts) is WAVE4 C1's, verbatim.
+// `voiceLine` is the one-liner shown big; the card copy (voiceLine, cardFacts) is WAVE4 C1's and WAVE5 C1's, verbatim.
 import type { GlyphId, ProjectId } from '@yoyo/protocol';
 
 export type ProjectStatus = 'active' | 'shipped' | 'paused' | 'stopped' | 'archived';
@@ -32,8 +32,8 @@ export interface Project {
   voiceLine: string;
   /** One plain sentence of what it is (screen readers, history, OG) */
   oneLiner: string;
-  /** The three small facts on the card: universal words, no implementation details (WAVE4 C1) */
-  cardFacts: [string, string, string];
+  /** The two or three small facts on the card: universal words, no implementation details (WAVE5 C1) */
+  cardFacts: string[];
   /** All verified facts (the agent may quote these) */
   facts: string[];
   stack: string[];
@@ -75,19 +75,18 @@ export const projects: Project[] = [
     era: 'ai',
     period: 'Jul 2026 – present',
     voiceLine: 'Search engine for online stores that understands people.',
-    oneLiner: 'A search engine for online stores that understands what people mean. Platform-independent, first distributed as a Shopify app.',
+    oneLiner: 'A search engine for online stores that understands what people mean. Platform-independent, built to plug into Shopify first.',
     cardFacts: [
-      'A complete AI product, from the search engine to the app store owners install.',
-      'Shows each store exactly how many sales the search brought in.',
-      'My biggest build: 600+ commits in three months, built with my own AI agent team.',
+      "I built the search engine and the storefront experience around it, from importing a store's catalog to showing shoppers the results.",
+      'My biggest build: 600+ commits in under three months, built with my own AI agent team.',
     ],
     facts: [
-      'Turns a request in any language into ranked products; a follow-up like "same but cheaper" changes the search.',
-      'A complete product: the search engine, plus the app store owners install. It shows each store how many sales the search brought in.',
+      'Turns a request in English or Hebrew into ranked products; a follow-up like "same but cheaper" changes the search.',
+      "The search engine and the storefront experience around it, from importing a store's catalog to showing shoppers the results.",
       'Schema-validated LLM intent extraction, hybrid vector and keyword retrieval, SQL constraints, model fallbacks, cost metering.',
       'Bilingual evaluation suite with 98 regression cases.',
       'Engine v2 (Oct 2026) rebuilt around a decision model, the "judge".',
-      '600+ commits in three months; 245 PRs merged, mostly through yoyo-loop. Still in active development.',
+      '600+ commits in under three months; 245 PRs merged, mostly through yoyo-loop. Still in active development.',
     ],
     stack: ['TypeScript', 'React', 'Node.js', 'PostgreSQL', 'Gemini AI', 'Docker'],
     links: [gh('unfiltered')],
@@ -108,9 +107,9 @@ export const projects: Project[] = [
     oneLiner:
       'A 3D kart racing game that teaches Israeli kids aged 8–15 how to talk to AI. Built for the Base44 "Hour of Vibe Code" 2026 contest.',
     cardFacts: [
-      'Built for an AI-education contest for Israeli schools.',
+      'Kids build better kart parts by writing better prompts, then race with what they built.',
       'A full game: seven AI rivals, upgrades and races that get harder.',
-      'Runs entirely in the browser, even offline.',
+      'Made for an AI-education contest for Israeli schools. Runs in the browser, even offline.',
     ],
     facts: [
       'One HTML file, zero network calls, no asset files. Graphics are procedural; audio is synthesized. Runs offline.',
@@ -180,7 +179,7 @@ export const projects: Project[] = [
       'Built and published in under a week (Oct 14 – 19, 2026).',
     ],
     stack: ['TypeScript', 'Node.js', 'MCP'],
-    links: [gh('runi-connector'), { kind: 'npm', label: 'npm', href: 'https://www.npmjs.com/package/reichman-courses-connector' }],
+    links: [gh('runi-connector'), { kind: 'repo', label: 'Install', href: 'https://github.com/0xYoyo/runi-connector#readme' }],
     glyph: 'cap',
     showcase: 'runi-connector',
     commits: 42,
@@ -224,7 +223,7 @@ export const projects: Project[] = [
     oneLiner: 'A bot that hunted for mispriced sports bets on Polymarket by comparing live prices against a top bookmaker.',
     cardFacts: [
       'Compared live prices across 11 sports leagues against a top bookmaker.',
-      'Built-in safety: spending limits and an instant off switch.',
+      'Matched each game across both markets and surfaced the gaps on a dashboard.',
       'I shut it down when the data showed the edge was too small to win.',
     ],
     facts: [
@@ -250,9 +249,8 @@ export const projects: Project[] = [
     voiceLine: 'Dashboard that measures the mood around any crypto project.',
     oneLiner: 'A dashboard that measures the mood around any crypto project: AI reads posts on X and turns them into one score.',
     cardFacts: [
-      'AI reads thousands of posts on X and turns them into one score.',
-      'Runs nonstop in the background, with live trends and top supporters.',
-      'Full accounts: sign-up, Google sign-in, email verification.',
+      "Tracks the conversation around a crypto project on X: sentiment, attention, follower growth and who's driving it.",
+      'Collects and analyzes posts in the background, with live trends, influential accounts and top supporters.',
     ],
     facts: [
       'AI (Gemini) reads thousands of posts on X about a crypto project and turns them into one sentiment score.',
@@ -275,12 +273,12 @@ export const projects: Project[] = [
     oneLiner: 'A Discord bot that shows crypto traders what they really made or lost: profit and loss from wallet-level buys, sells, fees and holdings.',
     cardFacts: [
       'Profit and loss for coins and NFTs across Ethereum, Solana and Bitcoin.',
-      "Turns a wallet's whole trading history into a shareable profit card.",
+      "Paste a token or NFT collection and it turns your wallets' trades in it into a shareable profit card.",
       'Built for a trading community of 100 to 200 members.',
     ],
     facts: [
       'Realized and unrealized profit and loss for coins and NFTs across Ethereum, Solana and Bitcoin.',
-      "Turns a wallet's whole trading history into a shareable profit card.",
+      "Paste a token or NFT collection and it turns your wallets' trades in it into a shareable profit card.",
       'Written by hand in 2023, before AI coding tools.',
       'Built for a trading community of 100 to 200 members.',
     ],
@@ -303,16 +301,16 @@ export const projects: Project[] = [
     cardFacts: [
       'A website, a Discord bot and an admin dashboard working as one.',
       'Tracks every applicant from first click to final decision.',
-      'Approved members get access automatically.',
+      'Applications, votes and decisions stay in sync between the website and Discord.',
     ],
     facts: [
       'Applicants sign in with X (Twitter).',
       'Community members vote on each application in Discord; an admin dashboard shows the votes and decides.',
-      'Tracks every applicant from first click to final decision; approved members get access automatically.',
+      'Tracks every applicant from first click to final decision; applications, votes and decisions stay in sync between the website and Discord.',
       'The Discord bot is from Sep 2023 – Jan 2024; the application site from Mar–Apr 2025. Written by hand.',
     ],
     stack: ['React', 'Node.js', 'MongoDB', 'Discord.js', 'X login'],
-    links: [gh('vortex-application'), { kind: 'repo', label: 'Bot', href: 'https://github.com/0xYoyo/vortex-bot' }],
+    links: [gh('vortex-application'), { kind: 'repo', label: 'Bot', href: 'https://github.com/0xYoyo/vortex-application/tree/main/bot' }],
     glyph: 'check',
     showcase: 'vortex',
     commits: 89,
@@ -330,17 +328,16 @@ export const projects: Project[] = [
     cardFacts: [
       'Profiles, posts, photos, likes, comments and follows.',
       'Its own server, database and secure login.',
-      'Still live today.',
     ],
     facts: [
       'A RESTful, stateless API and a React front end that talks to it.',
       'Sign up, log in, or look around as a guest with a demo profile.',
       'Home feed of followed users, profiles, follow and unfollow, posts with pictures, likes and comments.',
       'Login with Passport, bcrypt and JWTs; image uploads through Multer and Cloudinary.',
-      'Written by hand in 2023. Still live today.',
+      'Written by hand in 2023.',
     ],
     stack: ['React', 'Node.js', 'Express', 'MongoDB'],
-    links: [gh('yoyo-network-0xYoyo'), { kind: 'live', label: 'Live', href: 'https://yoyo-network.netlify.app/' }],
+    links: [gh('yoyo-network-0xYoyo')],
     glyph: 'keyboard',
     showcase: 'yoyo-network',
     commits: 58,
