@@ -535,7 +535,10 @@ export const ctl = {
       }, readTime(lastTurn));
       // the rocket is up: its chip goes from the row the reply left (it set none of its own)
       if (rocket && S().chips.includes(ROCKET_CHIP)) S().setChips(rocketChips(S().chips, { spelled, rocket, offered: true }));
-      if (!chipsSet) {
+      // a card opened while this reply was still being said ("Next one", Work, ←/→) has put up its own row:
+      // the reply's end row must not replace it with the previous card's
+      const movedOn = S().overlay === 'card' && S().project !== (opened ?? open);
+      if (!chipsSet && !movedOn) {
         if (opened) S().setChips(projectChips(opened));
         else if (/who/i.test(clean) && !deferred.length) S().setChips(WHO_CHIPS);
         else if (open && !deferred.length) {
