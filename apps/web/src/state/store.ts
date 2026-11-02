@@ -41,6 +41,8 @@ export interface BuildState {
   startedAt: number;
   seconds: number;
   title: string;
+  /** a prebuilt example streamed in (WAVE5 U4): the frame says "Build replay" */
+  replay?: boolean;
 }
 
 export interface RunnerView {

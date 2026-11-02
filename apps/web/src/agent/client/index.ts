@@ -6,7 +6,7 @@
 //   const { url } = await brain.share(html);
 
 export { createBrain, cleanHtml, LIMITS } from './brain';
-export type { Brain, BrainEvent, BrainErrorReason, BrainMode, BrainOptions, ChatMessage } from './brain';
+export type { Brain, BrainEvent, BrainErrorReason, BrainMode, BrainOptions, ChatMessage, SendContext } from './brain';
 
 export { createTagStream, extractActions, resolveTag, shapeFromArg, isEmojiOnly, leadingEmoji } from './tags';
 export type { TagStream, ParseOut, ResolveOptions } from './tags';

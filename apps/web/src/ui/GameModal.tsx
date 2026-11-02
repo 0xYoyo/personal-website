@@ -1,5 +1,6 @@
-// The real Prompt Racers (same-origin iframe, no sandbox). Esc closes even
-// when focus is inside the game: we listen on the iframe's contentWindow.
+// The real Prompt Racers (same-origin iframe, no sandbox). Esc inside the game is the game's
+// own (its pause, WAVE5 U2): the site doesn't listen in the frame. The Close button closes, and
+// Esc does when focus is outside the frame (App's global keys).
 import { useEffect, useRef, useState } from 'react';
 import { copy } from '../content/copy';
 import { ctl } from '../controller';
@@ -12,6 +13,8 @@ export const GAME_SRC = '/play/prompt-racers.html';
  * best on a keyboard (FIX4 U10). Flip this when the game ships touch controls.
  */
 export const GAME_TOUCH = false;
+/** WAVE5 U2: just "Close": focus starts in the game, where Esc is the game's own pause, not the site's. */
+export const GAME_CLOSE = 'Close';
 const isTouch = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 
 export function GameModal() {
@@ -26,18 +29,11 @@ export function GameModal() {
     const f = frame.current;
     if (!f) return;
     let win: Window | null = null;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        ctl.closeOverlay();
-      }
-    };
     const seen = () => setHint(false);
     const hintTimer = setTimeout(seen, 8000);
     const attach = () => {
       try {
         win = f.contentWindow;
-        win?.addEventListener('keydown', onKey, true);
         win?.addEventListener('pointerdown', seen, { once: true, capture: true });
         f.focus();
       } catch {
@@ -50,7 +46,6 @@ export function GameModal() {
       clearTimeout(hintTimer);
       f.removeEventListener('load', attach);
       try {
-        win?.removeEventListener('keydown', onKey, true);
         win?.removeEventListener('pointerdown', seen, true);
       } catch {
         /* gone */
@@ -68,7 +63,7 @@ export function GameModal() {
       )}
       {/* on a phone it sits bottom-right, clear of the game's own Settings top-right (FIX4 U10) */}
       <button className="y-game-close y-mono" onClick={() => ctl.closeOverlay()}>
-        {copy.game.close}
+        {GAME_CLOSE}
       </button>
     </section>
   );

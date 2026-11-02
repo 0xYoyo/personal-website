@@ -129,7 +129,8 @@ export interface Memory {
 }
 
 export interface Brain {
-  send(text: string, handlers?: ReplyHandlers, signal?: AbortSignal): Promise<Reply>;
+  /** `ctx.project`: the card open when the visitor asked (WAVE5 U3) */
+  send(text: string, handlers?: ReplyHandlers, signal?: AbortSignal, ctx?: { project?: ProjectId | null }): Promise<Reply>;
   build(instruction: string, handlers?: BuildHandlers, opts?: { previousHtml?: string; signal?: AbortSignal }): Promise<BuildResult>;
   /** Returns a shareable URL for a build (KV permalink, or a `#b=` URL fallback). */
   share(html: string): Promise<string>;

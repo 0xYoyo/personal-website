@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { copy } from '../content/copy';
 import { projectById } from '../content/projects';
-import { ctl, lastOfShelf, MORE_ON_GITHUB } from '../controller';
+import { ctl, lastOfShelf, MORE_ON_GITHUB, shelfPosition } from '../controller';
 import { getShowcase } from '../showcases';
 import { useStore } from '../state/store';
 import { useDialog } from './useDialog';
@@ -63,6 +63,7 @@ export function Card() {
   // last card ends with a quiet link to the rest on GitHub
   const era = p.era;
   const last = lastOfShelf(id);
+  const pos = shelfPosition(id);
   const Showcase = getShowcase(p.showcase);
 
   return (
@@ -86,12 +87,18 @@ export function Card() {
           if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && performance.now() - s.t < 700) ctl.nextProject(dx < 0 ? 1 : -1);
         }}
       >
-        <div className="y-card-era y-mono" role="group" aria-label={copy.card.erasLabel}>
-          {(['ai', 'hand'] as const).map((e) => (
-            <button key={e} className="y-card-era-btn" aria-pressed={era === e} onClick={() => era !== e && ctl.openWork(e)}>
-              {copy.card.eras[e]}
-            </button>
-          ))}
+        <div className="y-card-top">
+          <div className="y-card-era y-mono" role="group" aria-label={copy.card.erasLabel}>
+            {(['ai', 'hand'] as const).map((e) => (
+              <button key={e} className="y-card-era-btn" aria-pressed={era === e} onClick={() => era !== e && ctl.openWork(e)}>
+                {copy.card.eras[e]}
+              </button>
+            ))}
+          </div>
+          {/* WAVE5 U5: where this card sits on its shelf */}
+          <span className="y-card-pos y-mono" aria-label={`Project ${pos.at} of ${pos.of}`}>
+            {pos.at} / {pos.of}
+          </span>
         </div>
         <div className="y-card-show">
           <Showcase reducedMotion={reducedMotion} />

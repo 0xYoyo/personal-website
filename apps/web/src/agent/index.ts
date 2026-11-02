@@ -184,7 +184,7 @@ export function createBrain(opts: BrainOptions = {}): Brain {
     memory,
     mode: () => client.mode(),
 
-    async send(text, h = {}, signal): Promise<Reply> {
+    async send(text, h = {}, signal, ctx = {}): Promise<Reply> {
       if (signal?.aborted) throw new BrainError('aborted');
       // turns[i] = the words of turn i; a boundary opens a new (empty) turn, reported on its first word
       const turns: string[][] = [[]];
@@ -218,7 +218,7 @@ export function createBrain(opts: BrainOptions = {}): Brain {
       };
       signal?.addEventListener('abort', onAbort, { once: true });
       try {
-        await client.send(text);
+        await client.send(text, ctx);
       } finally {
         signal?.removeEventListener('abort', onAbort);
         if (chat === turn) chat = null;

@@ -9,6 +9,8 @@ import { useStore } from '../state/store';
 import { useDialog } from './useDialog';
 
 const streamedTitle = (html: string) => /<title>([^<]{1,60})<\/title>/i.exec(html)?.[1]?.trim() ?? '';
+/** WAVE5 U4: the frame header's label while a prebuilt example plays (top-left, mono, muted). */
+export const BUILD_REPLAY = 'Build replay';
 /** Only the tail is drawn while streaming (the view sits scrolled to the bottom anyway). */
 const CODE_TAIL = 7000;
 
@@ -183,6 +185,7 @@ export function BuildFrame() {
         </p>
         <div ref={frameRef} className="y-build-frame" data-visible={visible} data-locked={locked} data-flash={flash} data-maxed={maxed}>
           <div className="y-build-chrome y-mono">
+            {build.replay && <span className="y-build-replay">{BUILD_REPLAY}</span>}
             <span className="y-build-title">{build.title || streamedTitle(build.html) || (build.instruction === 'example' ? '' : build.instruction)}</span>
             <span className="y-build-bytes" aria-hidden="true">
               {build.bytes ? `${(build.bytes / 1024).toFixed(1)} kB` : ''}

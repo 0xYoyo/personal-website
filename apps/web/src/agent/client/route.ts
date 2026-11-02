@@ -6,7 +6,7 @@
 
 import { EXTRA_INTENTS } from './extras';
 import { FAQ_INTENTS, FAQ_UNKNOWN } from './faq';
-import { classify } from './intents';
+import { classify, MY_PART, myPartOf, PROJECT_INTRO, specificTo } from './intents';
 import { replyFor, scriptedReply, type ScriptedContext } from './scripted';
 
 export interface Route {
@@ -37,11 +37,18 @@ const isScripted = (id: string) => id === 'unknown' || FAQ_INTENTS.some((i) => i
 
 /** The raw reply (tags included, `||` turns) a route plays. */
 export function routedReply(route: Route, text: string, ctx: ScriptedContext): string {
-  const id = route.intent;
+  let id = route.intent;
+  const p = ctx.project ?? null;
+  const local = classify(text, { project: p });
+  if (p && id) {
+    // WAVE5 U3: with a card open, "my part" is that project's, and a specific follow-up the site knows beats
+    // the router replaying the open project's intro
+    if (id === MY_PART && isScripted(myPartOf(p))) id = myPartOf(p);
+    else if (id === PROJECT_INTRO[p] && local.kind === 'intent' && specificTo(local.id, p) && isScripted(local.id)) id = local.id;
+  }
   if (id && isScripted(id)) {
     if (id === 'unknown') return FAQ_UNKNOWN;
     // the local classifier agrees: its reply carries the specifics (the visitor's own build ask, the story)
-    const local = classify(text);
     if (local.kind === 'intent' && local.id === id) return scriptedReply(text, ctx).raw;
     const raw = replyFor({ kind: 'intent', id, score: 9 }, ctx);
     if (id === 'build') {

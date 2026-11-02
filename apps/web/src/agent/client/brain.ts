@@ -85,8 +85,14 @@ export interface BrainOptions {
   buildFirstChunkTimeoutMs?: number;
 }
 
+/** What the visitor is looking at when they send (WAVE5 U3). */
+export interface SendContext {
+  /** the project card open at the time: "this", "it" and "what did you do on this?" mean it */
+  project?: ProjectId | null;
+}
+
 export interface Brain {
-  send(text: string): Promise<void>;
+  send(text: string, ctx?: SendContext): Promise<void>;
   /** Stops the current reply and the current build. */
   abort(): void;
   /** Stops only the current reply (its `end` is emitted right away). */
@@ -238,7 +244,8 @@ export function createBrain(opts: BrainOptions): Brain {
     emit({ type: 'error', reason: 'aborted' });
   }
 
-  async function send(input: string): Promise<void> {
+  async function send(input: string, sctx: SendContext = {}): Promise<void> {
+    const project = sctx.project ?? null;
     abortChat();
     const ctrl = new AbortController();
     const turn: Turn = { ctrl, mode: mode() };
@@ -263,14 +270,14 @@ export function createBrain(opts: BrainOptions): Brain {
 
     let resting = false;
     // WAVE4 A3: what the scripted brain answers for sure never waits on the model
-    if (turn.mode === 'live' && !strongLocal(text)) {
+    if (turn.mode === 'live' && !strongLocal(text, { project })) {
       // something to watch while the router decides: the swarm gathers into its listening ring
       temit({ type: 'action', action: { type: 'mood', mood: 'listening' } });
       const settle = () => temit({ type: 'action', action: { type: 'mood', mood: 'thinking' } });
       const sink = makeSink(temit);
       const outcome = await streamLive({
         url: `${agentUrl}/chat`,
-        body: { messages: [...history, { role: 'visitor', text }], visitor: visitor() } satisfies ChatRequest,
+        body: { messages: [...history, { role: 'visitor', text }], visitor: visitor(), ...(project ? { context: { project } } : {}) } satisfies ChatRequest,
         fetchImpl,
         signal: ctrl.signal,
         firstTokenMs: opts.firstTokenTimeoutMs ?? ROUTE_TIMEOUT_MS,
@@ -283,7 +290,7 @@ export function createBrain(opts: BrainOptions): Brain {
       if (outcome.ok && outcome.route) {
         // a scripted intent plays its exact copy; a gap plays the model's clamped turns
         settle();
-        const raw = routedReply(outcome.route, text, { name: memory.name, lastShown, random });
+        const raw = routedReply(outcome.route, text, { name: memory.name, lastShown, random, project });
         try {
           await streamScripted(raw, ctrl.signal, temit, false);
           remember(text, raw);
@@ -310,7 +317,7 @@ export function createBrain(opts: BrainOptions): Brain {
       resting = true;
     }
 
-    const ctx = { name: memory.name, lastShown, random };
+    const ctx = { name: memory.name, lastShown, random, project };
     let { raw } = scriptedReply(text, ctx);
     if (resting && !restingShown) {
       raw = withRestingLine(raw);

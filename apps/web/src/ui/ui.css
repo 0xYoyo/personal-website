@@ -547,15 +547,34 @@
 .y-card {
   position: relative;
 }
-/* every card leaves room above it for the era toggle (WAVE4 U8), so both shelves sit at the same y */
+/* every card leaves room above it for the era toggle (WAVE4 U8), so both shelves sit at the same y.
+   WAVE5 U1: the wrap ends above the chips row (its measured height) and the card is capped to it, so an
+   open card never covers the chips or the bar on a short desktop (1280×720, 1024×640); it scrolls inside */
 .y-card-wrap {
   padding: 40px 0 8px;
+  bottom: calc(var(--bar-bottom) + var(--bar-h) + 14px + max(var(--chips-h, 40px), 36px) + 12px);
+  grid-template-rows: minmax(0, 1fr);
 }
-/* the Work overlay's era toggle (WAVE4 U8): a small segmented control just above the card */
-.y-card-era {
+/* the Work overlay's era toggle (WAVE4 U8): a small segmented control just above the card, with the
+   card's place on its shelf beside it (WAVE5 U5) */
+.y-card-top {
   position: absolute;
   left: 0;
   bottom: calc(100% + 10px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.y-card-pos {
+  font-size: var(--t-mono-xs);
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  /* "10 / 10" and "3 / 6" take the same room: nothing beside it moves */
+  min-width: 7ch;
+  white-space: nowrap;
+}
+.y-card-era {
   display: inline-flex;
   padding: 2px;
   border-radius: var(--radius-pill);
@@ -842,6 +861,16 @@
   font-size: var(--t-mono-xs);
   color: var(--muted);
   border-bottom: 1px solid var(--hairline);
+}
+/* WAVE5 U4: a prebuilt example says so, quietly, first thing in the header */
+.y-build-replay {
+  flex: none;
+  font-size: max(12px, var(--t-mono-xs));
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+  padding-right: 16px;
+  border-right: 1px solid var(--hairline);
 }
 .y-build-title {
   flex: 1;
@@ -1245,8 +1274,8 @@
   .y-card-wrap {
     padding: 0;
   }
-  /* the sheet starts under the top bar: the era toggle is its first line instead */
-  .y-card-era {
+  /* the sheet starts under the top bar: the era toggle (and the position) is its first line instead */
+  .y-card-top {
     position: static;
     order: -1;
     align-self: flex-start;

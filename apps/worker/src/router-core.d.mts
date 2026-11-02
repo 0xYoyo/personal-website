@@ -37,7 +37,8 @@ export function jsonRouterSchema(intentIds: string[]): Record<string, unknown>;
 export function thinkingFor(model: string): Record<string, unknown> | null;
 export function thinkingFallback(current: Record<string, unknown> | null): Record<string, unknown> | null;
 export function neutralise(s: string): string;
-export function routerUserText(turns: { role: RouterRole; content: string }[]): string;
+export const OPEN_PROJECT_RULE: string;
+export function routerUserText(turns: { role: RouterRole; content: string }[], ctx?: { project?: { id: string; name: string } | null }): string;
 export function geminiRouterBody(o: {
   model: string;
   system: string;

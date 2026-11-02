@@ -1,6 +1,6 @@
 // Dialog behaviour for overlays: remembers the opener, moves focus in, traps
 // Tab inside, and restores focus on close. Esc is handled globally (App) so
-// it works the same everywhere, including inside the game iframe.
+// it works the same everywhere (inside the game iframe Esc is the game's own pause, WAVE5 U2).
 import { useEffect, type RefObject } from 'react';
 
 const FOCUSABLE =

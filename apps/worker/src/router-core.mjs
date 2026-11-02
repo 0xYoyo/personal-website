@@ -188,7 +188,7 @@ export function thinkingFor(model) {
 /** Visitor text can't open or close the fences, or smuggle `[[tags]]`. */
 export function neutralise(s) {
   return String(s)
-    .replace(/<\/?\s*(visitor_message|recent|instruction)\s*>/gi, '')
+    .replace(/<\/?\s*(visitor_message|recent|instruction|open_project)\s*>/gi, '')
     .replace(/\[\[/g, '[ [')
     .replace(/\]\]/g, '] ]');
 }
@@ -198,13 +198,18 @@ const clipChars = (s, n) => {
   return c.length > n ? `${c.slice(0, n).join('')}…` : s;
 };
 
+/** The rule that comes with an open project (WAVE5 U3). */
+export const OPEN_PROJECT_RULE = "Questions about 'this' or 'it' refer to the open project.";
+
 /**
  * The one user turn: the last two messages before this one (tags stripped, clipped) and the
- * visitor's message, fenced.
+ * visitor's message, fenced. With a project card open (WAVE5 U3), `<open_project>id: name</open_project>`
+ * and its rule line come first.
  * @param {{ role: 'user' | 'model', content: string }[]} turns oldest first; the last is the visitor's
+ * @param {{ project?: { id: string, name: string } | null }} [ctx]
  * @returns {string}
  */
-export function routerUserText(turns) {
+export function routerUserText(turns, ctx = {}) {
   const last = turns[turns.length - 1];
   const before = turns.slice(0, -1).slice(-ROUTER_LIMITS.historyMessages);
   const lines = before
@@ -214,7 +219,9 @@ export function routerUserText(turns) {
     })
     .filter(Boolean);
   const msg = neutralise(clipChars(String(last?.content ?? '').trim(), ROUTER_LIMITS.messageChars));
-  return `${lines.length ? `<recent>\n${lines.join('\n')}\n</recent>\n` : ''}<visitor_message>\n${msg}\n</visitor_message>`;
+  const p = ctx.project;
+  const open = p ? `<open_project>${neutralise(p.id)}: ${neutralise(p.name)}</open_project>\n${OPEN_PROJECT_RULE}\n` : '';
+  return `${open}${lines.length ? `<recent>\n${lines.join('\n')}\n</recent>\n` : ''}<visitor_message>\n${msg}\n</visitor_message>`;
 }
 
 /**

@@ -4,7 +4,7 @@
 
 import { EXTRA_INTENTS } from './extras';
 import { EMOJI_BEATS, FAQ_INTENTS, FAQ_UNKNOWN } from './faq';
-import { classify, type Classification } from './intents';
+import { classify, MY_PART, myPartOf, type Classification } from './intents';
 import { PROJECT_IDS, type ProjectId } from '@yoyo/protocol';
 
 /** The one-time honesty line after a live failure (SPEC §7). */
@@ -27,6 +27,8 @@ export interface ScriptedContext {
   name: string | null;
   /** last project card opened in this session (for "Next one") */
   lastShown: ProjectId | null;
+  /** the card open when the visitor asked (WAVE5 U3): "this" and "what did you do on this?" mean it */
+  project?: ProjectId | null;
   random: () => number;
 }
 
@@ -42,7 +44,7 @@ const reply = (id: string): string => FAQ_INTENTS.find((i) => i.id === id)?.repl
 const tagSafe = (s: string) => s.replace(/[[\]|]/g, '').trim();
 
 export function scriptedReply(text: string, ctx: ScriptedContext): ScriptedReply {
-  const c = classify(text);
+  const c = classify(text, { project: ctx.project ?? null });
   let raw = replyFor(c, ctx);
   // faq.md's build line hands off `[[build:example]]`; carry the visitor's own words instead,
   // so the example picked matches what they asked for (POLISH1 C1). Chip follow-ups
@@ -58,6 +60,8 @@ export function replyFor(c: Classification, ctx: ScriptedContext): string {
   switch (c.kind) {
     case 'intent':
       if (c.id === 'story' && c.story) return `[[story:${c.story}]]`;
+      // "what did you do on this?" with a card open: that project's answer
+      if (c.id === MY_PART && ctx.project && FAQ_INTENTS.some((i) => i.id === myPartOf(ctx.project!))) return reply(myPartOf(ctx.project));
       return reply(c.id);
     case 'name': {
       const n = tagSafe(c.name);

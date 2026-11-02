@@ -2,7 +2,7 @@
 // minimal thinking, a small token budget. The model routes to a scripted intent or fills a gap;
 // the reply is clamped before it leaves the Worker. The Anthropic provider keeps the streamed path.
 
-import { GLYPH_IDS } from '@yoyo/protocol';
+import { GLYPH_IDS, type ProjectId } from '@yoyo/protocol';
 import { classifyFailure, GEMINI_BASE } from './gemini';
 import type { ModelFailure } from './provider';
 import { ROUTER_INTENT_IDS, ROUTER_SYSTEM_PROMPT } from './prompt.generated';
@@ -18,17 +18,33 @@ export const ROUTER_KNOWN = { intents: [...ROUTER_INTENT_IDS], glyphs: [...GLYPH
 /** The site gives up at 2.5 s; past this the Worker stops waiting too. */
 export const ROUTER_UPSTREAM_TIMEOUT_MS = 6_000;
 
+/** The cards' names, for `<open_project>` (WAVE5 U3; content/projects.ts in the site). */
+export const PROJECT_NAMES: Readonly<Record<ProjectId, string>> = {
+  unfiltered: 'Unfiltered',
+  'prompt-racers': 'Prompt Racers',
+  'yoyo-loop': 'yoyo-loop',
+  'runi-connector': 'Reichman Courses connector',
+  'availability-monitor': 'Availability Monitor',
+  polybot: 'Polybot',
+  'sentiment-gauge': 'Crypto Sentiment Gauge',
+  'pnl-bot': 'Discord PnL bot',
+  vortex: 'Vortex application system',
+  'yoyo-network': 'yoyo-network',
+};
+
 export interface RouteRequest {
   apiKey: string;
   model: string;
   turns: ChatTurn[];
+  /** the project card open on the site when the visitor asked (WAVE5 U3) */
+  project?: ProjectId | null;
   fetchImpl: typeof fetch;
   signal?: AbortSignal;
   timeoutMs?: number;
 }
 
 export async function routeGemini(req: RouteRequest): Promise<{ ok: true; route: RouteReply } | ModelFailure> {
-  const userText = routerUserText(req.turns);
+  const userText = routerUserText(req.turns, { project: req.project ? { id: req.project, name: PROJECT_NAMES[req.project] } : null });
   const signal = withTimeout(req.signal, req.timeoutMs ?? ROUTER_UPSTREAM_TIMEOUT_MS);
   let thinking = thinkingFor(req.model);
   let res: Response;

@@ -5,7 +5,7 @@
 import { EXTRA_INTENTS } from './extras';
 import { FAQ_INTENTS, type FaqIntent } from './faq';
 import { leadingEmoji } from './tags';
-import type { StoryId } from '@yoyo/protocol';
+import type { ProjectId, StoryId } from '@yoyo/protocol';
 
 export type Classification =
   | { kind: 'intent'; id: string; score: number; story?: StoryId }
@@ -130,7 +130,79 @@ export function captureName(text: string): string | null {
 
 const norm = (s: string) => tokenize(s).join(' ');
 
-export function classify(text: string): Classification {
+// ---- the open project (WAVE5 U3) ------------------------------------------------
+
+/** What the visitor is looking at when they ask: the card open at the time, if any. */
+export interface ClassifyContext {
+  project?: ProjectId | null;
+}
+
+/** Each project's intro intent in faq.md (the reply that opens its card); Vortex has none. */
+export const PROJECT_INTRO: Readonly<Partial<Record<ProjectId, string>>> = {
+  unfiltered: 'unfiltered',
+  'prompt-racers': 'game',
+  'yoyo-loop': 'agents',
+  'runi-connector': 'connector',
+  'availability-monitor': 'monitor',
+  polybot: 'polybot',
+  'sentiment-gauge': 'sentiment',
+  'pnl-bot': 'pnl',
+  'yoyo-network': 'network',
+};
+
+/**
+ * Follow-ups that only make sense about one project: they answer with that project's card open, or when
+ * the message names it ("what was the hardest part of unfiltered?"). Anywhere else their hints ("mistake",
+ * "learn", "access") mean something else, so they are left out.
+ */
+export const SCOPED_INTENTS: Readonly<Record<string, { project: ProjectId; names: RegExp }>> = {
+  unfiltered_hard: { project: 'unfiltered', names: /\bunfiltered\b/ },
+  racers_teach: { project: 'prompt-racers', names: /\b(prompt racers|racers|racer|game|kart|karts|prompting)\b/ },
+  loop_wrong: { project: 'yoyo-loop', names: /\b(yoyo loop|loop|agent|agents)\b/ },
+  connector_access: { project: 'runi-connector', names: /\b(connector|runi|moodle|reichman|courses?)\b/ },
+};
+
+/** The generic "what did you do on this?" and its per-project replies (`my_part_<project id>`). */
+export const MY_PART = 'my_part';
+export const myPartOf = (project: ProjectId): string => `${MY_PART}_${project}`;
+
+const hasIntent = (id: string) => FAQ_INTENTS.some((i) => i.id === id);
+
+/** Whether a scoped intent may answer here (always, for an unscoped one). */
+export function inScope(id: string, n: string, ctx: ClassifyContext = {}): boolean {
+  const s = SCOPED_INTENTS[id];
+  return !s || ctx.project === s.project || s.names.test(n);
+}
+
+/** A follow-up about one project in particular: its own `my_part_<id>`, or a scoped intent of that project. */
+export const specificTo = (id: string, project: ProjectId): boolean => id === myPartOf(project) || SCOPED_INTENTS[id]?.project === project;
+
+/** "tell me about this", "what is this project": the open card's own intro. */
+const ABOUT_THIS = /^(?:(?:so|and|ok|okay)\s+)?(?:tell me (?:more )?about (?:this|it)|more about (?:this|it)|what is (?:this|it)|whats this|what does (?:this|it) do|this project|this one|about this)(?: project| one| app| thing)?$/;
+
+/**
+ * The open project decides between close matches (WAVE5 U3): `my_part` becomes `my_part_<open id>`; a
+ * specific follow-up beats the project's intro (the card is already open, so the intro would only repeat it).
+ */
+function withProject(ranked: { id: string; score: number }[], n: string, ctx: ClassifyContext): { id: string; score: number }[] {
+  const p = ctx.project;
+  const out = ranked.filter((r) => inScope(r.id, n, ctx));
+  if (!p) return out;
+  const specific = (id: string) => id === MY_PART || specificTo(id, p);
+  const best = out[0];
+  if (best && best.id === PROJECT_INTRO[p]) {
+    const better = out.find((r) => specific(r.id));
+    if (better) {
+      out.splice(out.indexOf(better), 1);
+      out.unshift(better);
+    }
+  }
+  const top = out[0];
+  if (top?.id === MY_PART && hasIntent(myPartOf(p))) out[0] = { id: myPartOf(p), score: top.score };
+  return out;
+}
+
+export function classify(text: string, ctx: ClassifyContext = {}): Classification {
   const raw = text.trim();
   if (!raw || raw === '?') return { kind: 'intent', id: 'help', score: 3 };
 
@@ -149,7 +221,7 @@ export function classify(text: string): Classification {
   // WAVE3: the site speaks as Yoyo, so "who are you?" is `who`; "are you an AI?" is how the site works.
   if (/^who are you$/.test(n)) return { kind: 'intent', id: 'who', score: 3 };
   if (/^what are you$|^are you (an? )?(ai|bot|agent|real)$/.test(n)) return { kind: 'intent', id: 'this_site', score: 3 };
-  if (/^(another example|build another|change it|make another|another build|one more)$/.test(n)) return { kind: 'command', id: 'another-build' };
+  if (/^(another example|build another|change it|make another|another build|one more|watch me build|watch another build)$/.test(n)) return { kind: 'command', id: 'another-build' };
 
   const spell = /^(?:please\s+)?(spell|write|show|become)\s+(.+?)[.!]*$/i.exec(raw);
   if (spell?.[2]) {
@@ -168,7 +240,12 @@ export function classify(text: string): Classification {
     }
   }
 
-  const ranked = rankIntents(raw);
+  if (ctx.project && ABOUT_THIS.test(n)) {
+    // its intro; a project without one (Vortex) answers with what I did on it
+    const about = [PROJECT_INTRO[ctx.project], myPartOf(ctx.project)].find((id) => id && hasIntent(id));
+    if (about) return { kind: 'intent', id: about, score: 3 };
+  }
+  const ranked = withProject(rankIntents(raw), n, ctx);
   const best = ranked[0];
   if (best && best.score >= 1) {
     if (best.id === 'story') {
@@ -200,9 +277,9 @@ const FILLER = new Set([
  * that isn't filler ("And crypto?", "What have you built?", "How do I reach you?"). Anything
  * else goes to the router.
  */
-export function strongLocal(text: string): boolean {
+export function strongLocal(text: string, ctx: ClassifyContext = {}): boolean {
   const raw = text.trim();
-  const c = classify(raw);
+  const c = classify(raw, ctx);
   switch (c.kind) {
     case 'name':
     case 'emoji':
@@ -218,6 +295,9 @@ export function strongLocal(text: string): boolean {
   if (!tokens.length || raw === '?') return true;
   // builds never wait on the model (A4); the explicit questions classify() pins are scripted
   if (c.id === 'build') return true;
+  // a follow-up about the open card ("What did you do on this?", its chips) is answered for sure (WAVE5 U3)
+  const p = ctx.project;
+  if (p && (c.id === myPartOf(p) || SCOPED_INTENTS[c.id]?.project === p)) return true;
   const n = tokens.join(' ');
   if (/^(who are you|what are you|are you (an? )?(ai|bot|agent|real))$/.test(n)) return true;
   const intent = FAQ_INTENTS.find((i) => i.id === c.id);

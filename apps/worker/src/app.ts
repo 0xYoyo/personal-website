@@ -18,6 +18,7 @@ import { createPacer } from './pace';
 import type { GeminiContent } from './gemini';
 import { apiKey, modelName, provider, streamModel as callModel } from './provider';
 import { BUCKETS, DailyCounter, MemoryKV, clientIp, ipKey, takeDaily, takeToken, type LimitKind } from './limits';
+import { isProjectId } from '@yoyo/protocol';
 import { routeGemini } from './router';
 import {
   BUILD_SYSTEM_PROMPT,
@@ -155,7 +156,10 @@ export function createApp(deps: Partial<Deps> = {}) {
       const stop = await gate('chat', cap(env.DAILY_CHAT_CAP, 150));
       if (stop) return stop;
       if (provider(env) === 'gemini') {
-        const result = await routeGemini({ apiKey: apiKey(env), model: modelName(env), turns: parsed.turns, fetchImpl, signal: req.signal }).catch(
+        // the card open on the site, if any (WAVE5 U3): the router reads "this" / "it" as it
+        const ctxProject = (body as { context?: { project?: unknown } }).context?.project;
+        const project = isProjectId(ctxProject) ? ctxProject : null;
+        const result = await routeGemini({ apiKey: apiKey(env), model: modelName(env), turns: parsed.turns, project, fetchImpl, signal: req.signal }).catch(
           (e: unknown) => ({ ok: false as const, status: 0, kind: 'upstream' as const, detail: e instanceof Error ? e.message : 'network' }),
         );
         if (result.ok) return json(200, result.route, { 'cache-control': 'no-store' });

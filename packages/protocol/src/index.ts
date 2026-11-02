@@ -312,7 +312,8 @@ export type Role = 'visitor' | 'agent';
 export interface ChatMessage { role: Role; text: string }
 export interface VisitorInfo { name?: string; returning: boolean; device: 'desktop' | 'mobile'; /** browser language (BCP 47), optional */ lang?: string }
 
-export interface ChatRequest { messages: ChatMessage[]; visitor: VisitorInfo }
+/** `context.project`: the project card open when the visitor asked (WAVE5 U3); the router reads "this" / "it" as it. */
+export interface ChatRequest { messages: ChatMessage[]; visitor: VisitorInfo; context?: { project?: ProjectId } }
 export interface BuildRequest { instruction: string; previousHtml?: string }
 export interface ShareRequest { html: string }
 export interface ShareResponse { id: string; /** absolute permalink (`<worker>/s/<id>`) */ url?: string }

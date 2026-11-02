@@ -39,7 +39,7 @@ let lockTimer: ReturnType<typeof setTimeout> | null = null;
 export const CONTACT_CHIPS = ['Copy my email', 'What have you built?', 'Why should we hire you?'];
 const COPIED_CHIP = 'Email copied';
 /** After a build closes (WAVE4 U7). */
-const AFTER_BUILD_CHIPS = ['Build another', 'What have you built?', 'How do I reach you?'];
+const AFTER_BUILD_CHIPS = ['Another build', 'What have you built?', 'How do I reach you?'];
 /** The Work overlay's end-of-shelf link (WAVE4 U8). */
 export const MORE_ON_GITHUB = 'https://github.com/0xYoyo?tab=repositories';
 const K_SKIP_HINT = 'yoyo.v3.skipHint';
@@ -196,6 +196,11 @@ function showSkipHint() {
 /** The Work overlay's shelf a project sits on, and that shelf in order (WAVE4 U8). */
 const eraOf = (id: ProjectId): WorkEra => projectById(id).era;
 const shelf = (era: WorkEra): ProjectId[] => projectsOf(era).map((p) => p.id);
+/** Where `id` sits on its shelf, 1-based (WAVE5 U5: the card's `3 / 6`). */
+export const shelfPosition = (id: ProjectId): { at: number; of: number } => {
+  const ids = shelf(eraOf(id));
+  return { at: ids.indexOf(id) + 1, of: ids.length };
+};
 /** Whether `id` is the last card of its shelf (the "50+ more on GitHub" link sits there). */
 export const lastOfShelf = (id: ProjectId): boolean => {
   const ids = shelf(eraOf(id));
@@ -421,6 +426,8 @@ export const ctl = {
       return;
     }
     st.markAnswered(clean);
+    // the card open when they asked is what "this" means (WAVE5 U3); the answer closes it below
+    const open = st.overlay === 'card' ? st.project : null;
     // typed with a card or contact open (the bar stays up over them, FIX4 U2): the answer needs the words
     if (st.overlay === 'card' || st.overlay === 'contact') closeAll();
     skipForAnswer();
@@ -490,7 +497,7 @@ export const ctl = {
       },
     };
     try {
-      const reply = await rt.brain.send(clean, handlers, ac.signal);
+      const reply = await rt.brain.send(clean, handlers, ac.signal, { project: open });
       if (turn !== ac) return;
       const text = stripMarks(reply.text);
       lastTurn = text;
@@ -778,8 +785,11 @@ export const ctl = {
             S().patchBuild({ status: 'streaming', html, bytes, expected, progress: buildProgress(bytes, expected) });
           },
           // "on it." only once the builder has actually taken the request (POLISH1 C5)
-          onAccepted() {
-            if (buildAbort === ac) said = said.then(() => speakLine(copy.build.onIt));
+          onAccepted(source) {
+            if (buildAbort !== ac) return;
+            // a prebuilt example says what it is (WAVE5 U4)
+            if (source === 'example') S().patchBuild({ replay: true });
+            said = said.then(() => speakLine(copy.build.onIt));
           },
           onNotice(text) {
             if (buildAbort === ac) said = said.then(() => speakLine(text));
@@ -791,9 +801,9 @@ export const ctl = {
       const seconds = Math.max(1, Math.round(res.ms / 1000));
       if (res.unchanged) {
         // scripted "Change it" to the example already on screen: nothing re-streams, no re-lock, no new build
-        S().patchBuild({ status: 'locked', html: res.html, bytes: res.bytes, progress: 1, title: res.title });
+        S().patchBuild({ status: 'locked', html: res.html, bytes: res.bytes, progress: 1, title: res.title, replay: res.source === 'example' });
       } else {
-        S().patchBuild({ status: 'locked', html: res.html, bytes: res.bytes, progress: 1, seconds, title: res.title });
+        S().patchBuild({ status: 'locked', html: res.html, bytes: res.bytes, progress: 1, seconds, title: res.title, replay: res.source === 'example' });
         rt.sound?.thump();
         swarm()?.pulse(1);
         brain.memory.addBuild({ title: res.title, instruction, html: res.html });
@@ -816,7 +826,7 @@ export const ctl = {
         S().closeOverlay();
         await speakLine(reason === 'cap' ? copy.build.capped : copy.build.failed);
       }
-      S().setChips(['Build me something', 'Who are you?', 'What have you built?']);
+      S().setChips(['Watch me build', 'Who are you?', 'What have you built?']);
     } finally {
       if (buildAbort === ac) buildAbort = null;
     }
@@ -828,7 +838,7 @@ export const ctl = {
     claimBody();
     closeAll('build');
     const st = S();
-    st.patchBuild({ ...emptyBuild, status: 'locked', instruction: last.instruction, html: last.html, bytes: last.html.length, progress: 1, title: last.title });
+    st.patchBuild({ ...emptyBuild, status: 'locked', instruction: last.instruction, html: last.html, bytes: last.html.length, progress: 1, title: last.title, replay: !!last.example });
     st.openOverlay('build');
     st.setChips(BUILD_CHIPS);
   },
