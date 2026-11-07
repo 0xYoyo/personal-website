@@ -2,7 +2,7 @@
 // voice. UI components call `ctl.*`; state lives in the zustand store.
 import type { Action, ProjectId, Rect, ShapeSpec, StoryId, WorkEra } from '@yoyo/protocol';
 import { BrainError, type Brain, type ReplyHandlers } from './agent';
-import { BUILD_CHIPS, WATCH_BUILD_CHIP, ENTRY_CHIPS, ROCKET_CHIP, WHO_CHIPS, STORY_CHIPS, changeIntent, projectChips, resolveChip, rocketChips } from './content/chips';
+import { BUILD_CHIPS, CONTACT_CHIPS, WATCH_BUILD_CHIP, ENTRY_CHIPS, ROCKET_CHIP, WHO_CHIPS, STORY_CHIPS, changeIntent, projectChips, projectRowAfter, resolveChip, rocketChips } from './content/chips';
 import { copy } from './content/copy';
 import { projectById, projectsOf } from './content/projects';
 import { nextStory, stories, storyById } from './content/stories';
@@ -12,6 +12,7 @@ import { emptyBuild, useStore, type Overlay } from './state/store';
 import type { SwarmHandle } from './swarm';
 import { createRunner, type Runner, type Step } from './ui/runner/engine';
 import { markShowSeen } from './state/visit';
+import { moveChipsOn } from './state/answered';
 import type { Scene } from '@yoyo/protocol';
 import type { Sound } from './ui/sound';
 import { createChannel, createPacer, readLeft, stripMarks, TURN_WORD_MS, type Pacer, type TurnFit } from './ui/turns';
@@ -35,8 +36,8 @@ let runner: Runner | null = null;
 let deferred: Action[] = [];
 let lastBuildRect: Rect | null = null;
 let lockTimer: ReturnType<typeof setTimeout> | null = null;
-/** Contact's chips (WAVE4 U6). */
-export const CONTACT_CHIPS = ['Copy my email', 'What have you built?', 'Why should we hire you?'];
+/** Contact's chips (WAVE4 U6, WAVE6 X4). */
+export { CONTACT_CHIPS };
 const COPIED_CHIP = 'Email copied';
 /** After a build closes (WAVE4 U7). */
 const AFTER_BUILD_CHIPS = BUILD_CHIPS;
@@ -56,6 +57,30 @@ function contextProject(): ProjectId | null {
   if (st.overlay === 'card') return st.project;
   return st.overlay === 'none' && cardRow && cardRow.key === st.chipsKey ? cardRow.project : null;
 }
+/**
+ * The row a project's answer leaves once its card has closed (WAVE6 X1/X2): the card's own chips and
+ * `Back to <name>`; the project stays the context ("Next one" goes on from it) while the row is up.
+ */
+function projectRow(id: ProjectId) {
+  S().setChips(projectRowAfter(id, projectById(id).name), { project: id });
+  cardRow = { project: id, key: S().chipsKey };
+}
+/** The project the game was opened from (Prompt Racers' "Play it"): its row comes back when the game closes. */
+let gameFrom: ProjectId | null = null;
+/**
+ * Newest click wins (WAVE6 X3). Bumped by every question and every navigation (a card, Next, ←/→, Work,
+ * the era switch, Contact, History, Close, the game, a build, the show); a reply checks it before any of
+ * its actions (a shape, a chips row, a card or contact it was about to open), so an older reply never
+ * reopens a card or reclaims the screen once the visitor has moved on. Its words may finish.
+ */
+let navSeq = 0;
+function moveOn() {
+  navSeq++;
+  deferred = [];
+  // a reply holding its last turn before an overlay: let it go now (it finds itself superseded)
+  holdSkip?.();
+}
+
 /** "Now a rocket" has been offered this visit (FIX4 U6). */
 let rocketOffered = false;
 /** Bumped by every turn; a pending "let the shape go" from an older turn checks it. */
@@ -253,6 +278,7 @@ function closeAll(except?: Overlay) {
   }
   if (st.overlay !== 'none' && st.overlay !== except) {
     if (st.overlay === 'build') stopBuild(true);
+    if (st.overlay === 'game') gameFrom = null;
     st.closeOverlay();
     swarm()?.release();
   }
@@ -329,6 +355,7 @@ function skipForAnswer() {
 }
 
 function startRunner(kind: 'tour' | 'stories', steps: Step[], storyOf?: (i: number) => StoryId) {
+  moveOn();
   closeAll();
   runner?.skip();
   claimBody();
@@ -446,7 +473,6 @@ export const ctl = {
     }
     // the card open when they asked (or whose row is still up) is what "this" means (WAVE5 U3); the answer closes it below
     const open = contextProject();
-    st.markAnswered(clean, open);
     // typed with a card or contact open (the bar stays up over them, FIX4 U2): the answer needs the words
     if (st.overlay === 'card' || st.overlay === 'contact') closeAll();
     skipForAnswer();
@@ -457,9 +483,12 @@ export const ctl = {
     S().finishAgent({ keepStreaming: true }); // a turn cut short rests as far as it got
     // the visitor moved on: the next turn does not wait for the one on screen
     channel.last = null;
-    deferred = [];
+    moveOn();
     const ac = new AbortController();
     turn = ac;
+    const navAtAsk = navSeq;
+    /** this reply is still the newest thing the visitor did (WAVE6 X3) */
+    const mine = () => turn === ac && navSeq === navAtAsk;
     // a chip that asks in other words ("Another build") shows the visitor what they tapped
     st.pushVisitor(opts.echo?.trim() || clean);
     settleSeq++;
@@ -493,11 +522,15 @@ export const ctl = {
         pacer.boundary();
       },
       onAction(a) {
+        // the visitor has moved on: nothing of this reply's may still act (WAVE6 X3)
+        if (!mine()) return;
         if (a.type === 'become') {
           if (a.shape.kind === 'text') spelled = true;
           if (a.shape.kind === 'emoji' && a.shape.emoji === '🚀') rocket = true;
         }
         if (a.type === 'chips') {
+          // asked from a project's row: the answer keeps that project's row (set at the end, WAVE6 X1)
+          if (open) return;
           chipsSet = true;
           // a card opened while the reply streams keeps its own row (as at the reply's end, below)
           if (cardSeq !== cardsAtAsk) return;
@@ -511,7 +544,7 @@ export const ctl = {
         else if (a.type === 'become') {
           const act = a;
           pacer.cue(() => {
-            if (turn === ac) runAction(act);
+            if (mine()) runAction(act);
           });
         } else runAction(a);
       },
@@ -522,9 +555,6 @@ export const ctl = {
     try {
       const reply = await rt.brain.send(clean, handlers, ac.signal, { project: open });
       if (turn !== ac) return;
-      // what the reply answered, as the brain understood it (the router can read words the local classifier
-      // misses): a typed question retires its chip just as tapping it does
-      if (reply.intent) S().markIntent(reply.intent);
       const text = stripMarks(reply.text);
       lastTurn = text;
       // every turn on screen, in order, each after the previous one's read time
@@ -533,6 +563,16 @@ export const ctl = {
       if (turn !== ac) return;
       lastTurn = [...S().lines].reverse().find((l) => l.role === 'agent')?.text ?? lastTurn;
       S().setMood('idle');
+      // the answer completed (WAVE6 X1): only now does the question count as answered (an interrupted one
+      // stays). By what the reply played too (the router can read words the local classifier misses), so a
+      // typed question retires its chip just as tapping it does.
+      if (mine()) {
+        S().markAnswered(clean, open);
+        if (reply.intent) S().markIntent(reply.intent);
+        // a general row the reply put up while it was said: the question just answered moves on there too
+        const row = S().chips;
+        if (chipsSet && !open && cardSeq === cardsAtAsk && moveChipsOn(row, S().answered, { contactOpen: S().overlay === 'contact' }).join('|') !== row.join('|')) S().setChips(row);
+      }
       // The last turn rests on screen; keep its shape up while it is read (the one clock, ui/pace.ts),
       // reduced motion too.
       const seq = ++settleSeq;
@@ -542,6 +582,8 @@ export const ctl = {
         if (seq !== settleSeq || turn || S().overlay !== 'none' || runner?.running()) return;
         swarm()?.mood('idle');
       }, readTime(lastTurn));
+      // the visitor moved on while it was said (a card, contact, History, Close …): the rest of this reply is theirs no more
+      if (!mine()) return;
       // the rocket is up: its chip goes from the row the reply left (it set none of its own)
       if (rocket && S().chips.includes(ROCKET_CHIP)) S().setChips(rocketChips(S().chips, { spelled, rocket, offered: true }));
       // a card opened while this reply was still being said ("Next one", ←/→, Work) has put up its own row:
@@ -549,19 +591,17 @@ export const ctl = {
       const movedOn = cardSeq !== cardsAtAsk;
       if (!chipsSet && !movedOn) {
         if (opened) S().setChips(projectChips(opened));
+        // a follow-up from a card (or from its row): that project's row stays, every chip of it, with the way
+        // back to the card; it stays about that card (WAVE6 X1/X2)
+        else if (open && !deferred.length) projectRow(open);
         else if (/who/i.test(clean) && !deferred.length) S().setChips(WHO_CHIPS);
-        else if (open && !deferred.length) {
-          // a follow-up from a card: its row stays, the question just answered moves on, and it stays about that card
-          S().setChips(projectChips(open), { project: open });
-          cardRow = { project: open, key: S().chipsKey };
-        }
       }
       const queue = deferred;
       deferred = [];
       if (queue.length) {
         // the reply's last turn is read in full before an overlay takes the stage (WAVE4 U2); a tap moves on
         if (text) await hold(readLeft(channel, performance.now()), ac.signal);
-        if (turn !== ac) return;
+        if (!mine()) return;
         S().setSkipHint(false);
         for (const a of queue) runAction(a);
       }
@@ -598,7 +638,6 @@ export const ctl = {
     const low = label.trim().toLowerCase();
     if (low === 'copy my email' || low === COPIED_CHIP.toLowerCase()) return void ctl.copyEmail();
     if (low === 'close' && st.overlay !== 'none') return ctl.closeOverlay();
-    if (low !== 'what have you built?') st.markAnswered(label, contextProject());
     const about = contextProject();
     const cmd = resolveChip(label, { project: about, name: st.visitor.name ?? rt.brain?.memory.name(), hasBuild: !!st.build.html, hasStoredBuild: !!rt.brain?.memory.builds().some((b) => b.html) });
     switch (cmd.kind) {
@@ -606,7 +645,20 @@ export const ctl = {
         void ctl.say(cmd.text, cmd.echo !== undefined ? { echo: cmd.echo } : {});
         break;
       case 'play':
+        st.markAnswered(label, about);
         ctl.play();
+        break;
+      case 'back':
+        // WAVE6 X2: the card the row is about, reopened; the conversation stays as it is
+        if (about) ctl.openProject(about);
+        break;
+      case 'cv':
+        // WAVE6 X4: the panel's CV link, in a new tab (from the click itself, so no popup blocker stops it)
+        window.open(copy.contact.cvHref, '_blank', 'noopener,noreferrer');
+        break;
+      case 'work':
+        // WAVE6 X5: `[[work:hand]]`
+        runAction({ type: 'work', era: cmd.era });
         break;
       case 'next-project':
         // from a card's row that outlived its card: the one after that card
@@ -632,6 +684,8 @@ export const ctl = {
         ctl.openStoredBuild();
         break;
       case 'become':
+        st.markAnswered(label, about);
+        moveOn();
         S().pushVisitor(cmd.text);
         claimBody();
         swarm()?.become(cmd.shape);
@@ -639,6 +693,8 @@ export const ctl = {
         break;
       case 'ask-name':
         // one line everywhere (FIX4 U6)
+        st.markAnswered(label, about);
+        moveOn();
         S().pushVisitor(label);
         claimBody();
         swarm()?.become({ kind: 'glyph', id: 'question' });
@@ -661,6 +717,7 @@ export const ctl = {
   // ---- projects ------------------------------------------------------------
   /** `chipsAfter`: a reply opened the card and its chips stay this many ms more before the card's take over. */
   openProject(id: ProjectId, opts: { chipsAfter?: number } = {}) {
+    moveOn();
     claimBody();
     closeAll('card');
     S().setEra(eraOf(id));
@@ -701,6 +758,7 @@ export const ctl = {
       return;
     }
     if (st.overlay === 'none') return;
+    moveOn();
     const was = st.overlay;
     if (was === 'build') stopBuild(true);
     st.closeOverlay();
@@ -709,20 +767,28 @@ export const ctl = {
       // the game covers the bar; a card (the phone's sheet too, FIX4 U2) and the build frame don't
       const covered = was === 'game';
       // the build's row ("Share it", "Close") means nothing once it is closed (WAVE4 U7)
+      // the game opened from a project ("Play it"): that project's row comes back, still about it (WAVE6 X1/X2)
+      const from = was === 'game' ? gameFrom : null;
+      gameFrom = null;
       const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who are you?', 'What have you built?'] : AFTER_BUILD_CHIPS;
-      if (chips) S().setChips([]);
-      settleBody(covered, () => chips && S().setChips(chips));
+      S().setChips([]);
+      settleBody(covered, () => (from ? projectRow(from) : S().setChips(chips)));
     } else {
       swarm()?.release();
     }
   },
   play() {
+    // from a card, or a project's row: the game belongs to that project's journey
+    const from = contextProject();
+    moveOn();
     claimBody();
     closeAll('game');
+    gameFrom = from;
     S().openOverlay('game');
     swarm()?.mood('asleep');
   },
   contact() {
+    moveOn();
     claimBody();
     closeAll('contact');
     S().openOverlay('contact');
@@ -743,10 +809,12 @@ export const ctl = {
     if (chips.some((c) => c.toLowerCase() === 'copy my email')) S().setChips(chips.map((c) => (c.toLowerCase() === 'copy my email' ? COPIED_CHIP : c)));
   },
   history() {
+    moveOn();
     closeAll('history');
     S().openOverlay(S().overlay === 'history' ? 'none' : 'history');
   },
   home() {
+    moveOn();
     turn?.abort();
     claimBody();
     closeAll();
@@ -799,6 +867,7 @@ export const ctl = {
       await speakLine(copy.build.capped);
       return;
     }
+    moveOn();
     claimBody();
     closeAll('build');
     buildAbort?.abort();
@@ -874,6 +943,7 @@ export const ctl = {
   openStoredBuild() {
     const last = rt.brain?.memory.builds().find((b) => b.html);
     if (!last) return;
+    moveOn();
     claimBody();
     closeAll('build');
     const st = S();

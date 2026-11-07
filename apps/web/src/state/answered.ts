@@ -1,8 +1,10 @@
-// Chips never go backwards (WAVE4 U5). Every question the visitor asks this session (typed or a chip)
-// is remembered by what it means (the scripted classifier's intent, so "tell me about yourself"
-// answers "Who are you?" too). A chip whose meaning was already answered gives its place to the next
-// unanswered one from PRIORITY; "What have you built?" may always stay. Contact (U6) never offers
-// "How do I reach you?" while it is open.
+// Chips never go backwards (WAVE4 U5), on the general rows only (WAVE6 X1). Every question the visitor
+// had answered this session (typed or a chip; counted once its answer completed) is remembered by what
+// it means (the scripted classifier's intent, so "tell me about yourself" answers "Who are you?" too).
+// On a general row a chip whose meaning was already answered gives its place to the next unanswered one
+// from PRIORITY; "What have you built?" may always stay. A project's row is never filtered or refilled
+// (the store skips it). Contact (U6) never offers "How do I reach you?" while it is open, and its
+// answered chips are dropped, never refilled (WAVE6 X4: no "What have you built?" there).
 import type { ProjectId } from '@yoyo/protocol';
 import { classify } from '../agent/client/intents';
 
@@ -26,7 +28,19 @@ const REACH = 'how do i reach you';
 const norm = (s: string) => s.trim().toLowerCase().replace(/[?.!…]+$/, '');
 
 /** Moves, not questions: they never count as answered, whatever the classifier makes of their words. */
-const MOVES = new Set(['copy my email', 'email copied', 'next one', 'build me something', 'build another', 'share it', 'close', 'play it', 'show me those']);
+const MOVES = new Set([
+  'copy my email',
+  'email copied',
+  'view my cv',
+  'next one',
+  'build me something',
+  'build another',
+  'share it',
+  'close',
+  'play it',
+  'show me those',
+  'show my hand-written work',
+]);
 
 const keys = new Map<string, string | null>();
 /**
@@ -36,7 +50,7 @@ const keys = new Map<string, string | null>();
  */
 export function meaningOf(text: string, project: ProjectId | null = null): string | null {
   const n = norm(text);
-  if (!n || MOVES.has(n)) return null;
+  if (!n || MOVES.has(n) || n.startsWith('back to ')) return null;
   const ck = `${project ?? ''}|${n}`;
   if (keys.has(ck)) return keys.get(ck)!;
   const c = classify(text, { project });
@@ -60,7 +74,7 @@ export function withAnsweredIntent(answered: readonly string[], intent: string):
 
 /**
  * The row with every answered chip replaced by the next unanswered one from PRIORITY (or dropped when
- * none is left). `contactOpen`: "How do I reach you?" never shows.
+ * none is left). `contactOpen`: "How do I reach you?" never shows, and an answered chip is just dropped.
  */
 export function moveChipsOn(
   chips: readonly string[],
@@ -82,6 +96,7 @@ export function moveChipsOn(
       if (!out.some((x) => norm(x) === norm(c))) out.push(c);
       continue;
     }
+    if (opts.contactOpen) continue;
     const next = PRIORITY.find((p) => !stale(p) && !has(p));
     if (next) out.push(next);
   }

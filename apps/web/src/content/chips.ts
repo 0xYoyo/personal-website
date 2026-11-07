@@ -15,6 +15,12 @@ export const BUILD_CHIPS = ['Another build', 'What have you built?', 'How do I r
 /** The main conversation's build chip (WAVE5 C5): plays a build replay. */
 export const WATCH_BUILD_CHIP = 'Watch me build';
 export const STORY_CHIPS = ['Next story', 'What have you built?', 'How do I reach you?'];
+/** Contact's row (WAVE6 X4): no "What have you built?" there. */
+export const CONTACT_CHIPS = ['Copy my email', 'View my CV', 'Why should we hire you?'];
+/** Contact's "View my CV": the panel's CV link, in a new tab. */
+export const CV_CHIP = 'View my CV';
+/** The hire reply's first chip (WAVE6 X5): Work on the Hand-written era (`[[work:hand]]`). */
+export const HAND_WORK_CHIP = 'Show my hand-written work';
 /** The tour's end chips (WAVE3 V3). */
 export const TOUR_END_CHIPS = ['Who are you?', 'What have you built?', 'Play the game'];
 
@@ -70,6 +76,10 @@ export const PROJECT_CHIPS: Readonly<Partial<Record<ProjectId, readonly string[]
 export function projectChips(id: ProjectId): string[] {
   return [...(PROJECT_CHIPS[id] ?? ['Next one', MY_PART_CHIP, 'Who are you?'])];
 }
+/** WAVE6 X2: a card closed for its answer; this chip (the project's own name) reopens it. */
+export const backChip = (name: string): string => `Back to ${name}`;
+/** The row a project's answer leaves once its card has closed (WAVE6 X1/X2): its own chips, then the way back. */
+export const projectRowAfter = (id: ProjectId, name: string): string[] => [...projectChips(id), backChip(name)];
 
 export function defaultChips(ctx: ChipContext, project?: ProjectId | null): string[] {
   switch (ctx) {
@@ -114,6 +124,12 @@ export type ChipCommand =
   | { kind: 'story-next' }
   | { kind: 'sound-on' }
   | { kind: 'open-build' }
+  /** WAVE6 X2: "Back to <Project>": reopen the card the row is about */
+  | { kind: 'back' }
+  /** WAVE6 X4: contact's CV, in a new tab */
+  | { kind: 'cv' }
+  /** WAVE6 X5: Work on a shelf, at its first card */
+  | { kind: 'work'; era: 'ai' | 'hand' }
   | { kind: 'ask-name' }
   | { kind: 'become'; shape: ShapeSpec; text: string };
 
@@ -133,6 +149,7 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
   // a build chip asks the brain for a build; the visitor's line is the chip they tapped
   const build: ChipCommand = { kind: 'say', text: 'Build me something', ...(l === 'build me something' ? {} : { echo: label.trim() }) };
   if (l.startsWith('open my ')) return st.hasStoredBuild ? { kind: 'open-build' } : build;
+  if (l.startsWith('back to ') && st.project) return { kind: 'back' };
   switch (l) {
     case 'play the game':
     case 'play his game':
@@ -154,6 +171,10 @@ export function resolveChip(label: string, st: ChipState): ChipCommand {
     case 'another build':
     case 'another example':
       return build;
+    case 'view my cv':
+      return { kind: 'cv' };
+    case 'show my hand-written work':
+      return { kind: 'work', era: 'hand' };
     case 'next story':
     case 'tell me a story':
       return { kind: 'story-next' };
@@ -192,8 +213,8 @@ export function rocketChips(chips: string[], ctx: { spelled: boolean; offered: b
   return ok ? chips : chips.filter((c) => c.trim().toLowerCase() !== ROCKET_CHIP.toLowerCase());
 }
 
-/** Keep 3–5 chips (SPEC §3.3); dedupe, trim. */
-export function clampChips(chips: string[]): string[] {
+/** Keep 3–5 chips (SPEC §3.3); dedupe, trim. `pad: false` (a project's row, WAVE6 X1): fewer stay fewer. */
+export function clampChips(chips: string[], opts: { pad?: boolean } = {}): string[] {
   if (!chips.length) return [];
   const seen = new Set<string>();
   const out: string[] = [];
@@ -203,7 +224,7 @@ export function clampChips(chips: string[]): string[] {
     seen.add(t.toLowerCase());
     out.push(t);
   }
-  if (out.length < 3) {
+  if (out.length < 3 && opts.pad !== false) {
     for (const c of ENTRY_CHIPS) {
       if (out.length >= 3) break;
       if (!seen.has(c.toLowerCase())) {

@@ -90,7 +90,7 @@ export interface State {
   settling: Settling;
   entryName: string | null; // the quiet mono line under the entry letters
   reducedMotion: boolean;
-  /** what the visitor has asked this session, by meaning (WAVE4 U5: chips never go backwards) */
+  /** what the visitor had answered this session, by meaning (WAVE4 U5; WAVE6 X1: counted once the answer completed) */
   answered: string[];
   /** the Work overlay's active shelf (WAVE4 U8) */
   era: Era;
@@ -113,7 +113,7 @@ export interface Actions {
   setStreaming(on: boolean): void;
   setSettling(s: Settling): void;
   agentLine(text: string, opts?: { quiet?: boolean; show?: boolean }): number;
-  /** `opts.project`: the card the row is about, when it is no longer open (WAVE5 U3) */
+  /** `opts.project`: the card the row is about, when it is no longer open (WAVE5 U3); a project's row is never filtered (WAVE6 X1) */
   setChips(chips: string[], opts?: { project?: ProjectId | null }): void;
   openOverlay(o: Overlay): void;
   closeOverlay(): void;
@@ -217,13 +217,13 @@ export const useStore = create<State & Actions>()((set, get) => ({
     return id;
   },
   setChips: (chips, opts = {}) =>
-    set((s) => ({
-      chips: moveChipsOn(clampChips(chips), s.answered, {
-        contactOpen: s.overlay === 'contact',
-        project: opts.project !== undefined ? opts.project : s.overlay === 'card' ? s.project : null,
-      }),
-      chipsKey: s.chipsKey + 1,
-    })),
+    set((s) => {
+      const project = opts.project !== undefined ? opts.project : s.overlay === 'card' ? s.project : null;
+      // a project's row stays as curated (WAVE6 X1): never filtered by what was answered, never refilled
+      // or padded from the general lists ("What have you built?" never joins a project journey)
+      if (project) return { chips: clampChips(chips, { pad: false }), chipsKey: s.chipsKey + 1 };
+      return { chips: moveChipsOn(clampChips(chips), s.answered, { contactOpen: s.overlay === 'contact' }), chipsKey: s.chipsKey + 1 };
+    }),
   openOverlay: (overlay) => set({ overlay }),
   closeOverlay: () => set((s) => ({ overlay: 'none', project: s.overlay === 'card' ? null : s.project, barMode: s.overlay === 'build' ? 'chat' : s.barMode })),
   showProject: (project) => set({ project, overlay: 'card' }),
