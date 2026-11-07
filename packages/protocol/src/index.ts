@@ -154,10 +154,10 @@ export type SwarmHandle = SwarmApi & Partial<SwarmEntry> & Partial<SwarmStage> &
 // Id lists (the single source the guards and pickers use)
 // ---------------------------------------------------------------------------
 
-/** In the Work overlay's order (WAVE4 C1): the AI-assisted era, then the hand-written one. */
+/** In the Work overlay's order (WAVE6 L3): the AI-assisted era, then the hand-written one. */
 export const PROJECT_IDS = [
-  'unfiltered', 'prompt-racers', 'yoyo-loop', 'runi-connector', 'availability-monitor', 'polybot',
-  'sentiment-gauge', 'pnl-bot', 'vortex', 'yoyo-network',
+  'unfiltered', 'prompt-racers', 'yoyo-loop', 'runi-connector', 'polybot', 'availability-monitor',
+  'yoyo-network', 'pnl-bot', 'sentiment-gauge', 'vortex',
 ] as const satisfies readonly ProjectId[];
 
 export const WORK_ERAS = ['ai', 'hand'] as const satisfies readonly WorkEra[];
