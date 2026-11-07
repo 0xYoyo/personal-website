@@ -13,7 +13,7 @@ export const SHOW_LINES = [
   "Unfiltered. Type what you want the way you'd say it. It finds the product.",
   'Prompt Racers. A kart racer that teaches kids how to talk to AI.',
   'yoyo-loop. I write the spec. Agents build. Another agent reviews. I merge.',
-  'Crypto since 2021. Self-taught since 2022. Reichman since 2025.',
+  'Crypto since 2021. Self-taught dev since 2022. Reichman since 2025.',
   'Ask me anything.',
 ] as const;
 
@@ -23,7 +23,7 @@ export const SHOW_LINES = [
  */
 export const SCENE_MS = [3500, 6000, 6500, 6000, 7000, 6500, 4000] as const;
 /** Scene 6's three short captions, one a shape (btc, the yoyo wordmark, the cap), in sync (FIX4 W6). */
-export const SCENE6_LINES = ['Crypto since 2021.', 'Self-taught since 2022.', 'Reichman since 2025.'] as const;
+export const SCENE6_LINES = ['Crypto since 2021.', 'Self-taught dev since 2022.', 'Reichman since 2025.'] as const;
 const SCENE6_GLYPHS = ['btc', 'yoyo', 'cap'] as const;
 /** How long each of scene 6's shapes stays (sum = SCENE_MS[5]). */
 export const SCENE6_MS = [2150, 2150, 2200] as const;

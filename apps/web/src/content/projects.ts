@@ -109,7 +109,7 @@ export const projects: Project[] = [
     cardFacts: [
       'Kids build better kart parts by writing better prompts, then race with what they built.',
       'A full game: seven AI rivals, upgrades and races that get harder.',
-      'Made for an AI-education contest for Israeli schools. Runs in the browser, even offline.',
+      'Made for an AI-education contest for Israeli schools.',
     ],
     facts: [
       'One HTML file, zero network calls, no asset files. Graphics are procedural; audio is synthesized. Runs offline.',

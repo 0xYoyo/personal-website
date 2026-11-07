@@ -4,7 +4,7 @@ Format: `intent`, hints → reply. A `||` is a turn break (each part ≤ 22 word
 
 ## who
 hints: who, yoyo, yoav, about, you, yourself, introduce, guy
-→ `[[become:curls]] I'm Yoyo, a software engineer who builds products with AI agents. || [[become:cap]] Computer Science and Entrepreneurship at Reichman. Self-taught before that. [[chips:What are you like?|What have you built?|How do I reach you?]]`
+→ `[[become:curls]] I'm Yoyo, a software engineer who builds products with AI agents. || [[become:cap]] Computer Science and Entrepreneurship at Reichman. Self-taught developer before that. [[chips:What are you like?|What have you built?|How do I reach you?]]`
 
 ## built
 hints: built, shipped, projects, work, portfolio, made, show me
@@ -12,7 +12,7 @@ hints: built, shipped, projects, work, portfolio, made, show me
 
 ## hire
 hints: hire, why, should we, reasons, pitch, sell, convince, good at
-→ `[[become:check]] I ship real products: a search engine, a 3D game, a tool my whole university can use. || [[become:loop]] I like being early. I was building with AI agents when most people called it a toy. || [[become:diverge]] And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]`
+→ `[[become:check]] I ship real products: a search engine, a 3D game, a tool my whole university can use. || [[become:loop]] I like being early. I was building with AI agents when most people called it a toy. || [[become:keyboard]] Self-taught, full-stack. I built complete applications by hand before I started working with agents. || [[become:diverge]] And I'll tell you what didn't work. Ask me about Polybot. [[chips:Show my hand-written work|Tell me about Polybot|How do I reach you?]]`
 
 ## weakness
 hints: bad at, weakness, weaknesses, flaws, worst, struggle, not good
@@ -172,7 +172,7 @@ hints: look like, photo, hair, curls, face, picture
 
 ## hobbies
 hints: hobby, hobbies, fun, free time, bored, weekend, like to do, games, music, gym, run, running, festival, coding for fun, sport, sports, like football
-→ `[[become:🎮]] Festivals, travel, video games. || [[become:🏃]] Lifting, running on the beach. Sometimes coding, just for fun. [[chips:What are you bad at?|And crypto?|What have you built?]]`
+→ `[[become:weekend]] Festivals, travel, video games. || [[become:workout]] Lifting, running on the beach. Sometimes coding, just for fun. [[chips:What are you bad at?|And crypto?|What have you built?]]`
 
 ## travel
 hints: travel, travelling, southeast asia, trip, 2024, gap, backpacking, thailand, cambodia

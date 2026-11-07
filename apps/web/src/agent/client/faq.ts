@@ -27,7 +27,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "introduce",
       "guy"
     ],
-    "reply": "[[become:curls]] I'm Yoyo, a software engineer who builds products with AI agents. || [[become:cap]] Computer Science and Entrepreneurship at Reichman. Self-taught before that. [[chips:What are you like?|What have you built?|How do I reach you?]]"
+    "reply": "[[become:curls]] I'm Yoyo, a software engineer who builds products with AI agents. || [[become:cap]] Computer Science and Entrepreneurship at Reichman. Self-taught developer before that. [[chips:What are you like?|What have you built?|How do I reach you?]]"
   },
   {
     "id": "built",
@@ -54,7 +54,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "convince",
       "good at"
     ],
-    "reply": "[[become:check]] I ship real products: a search engine, a 3D game, a tool my whole university can use. || [[become:loop]] I like being early. I was building with AI agents when most people called it a toy. || [[become:diverge]] And I'll tell you what didn't work. Ask me about Polybot. [[chips:Tell me about Polybot|What have you built?|How do I reach you?]]"
+    "reply": "[[become:check]] I ship real products: a search engine, a 3D game, a tool my whole university can use. || [[become:loop]] I like being early. I was building with AI agents when most people called it a toy. || [[become:keyboard]] Self-taught, full-stack. I built complete applications by hand before I started working with agents. || [[become:diverge]] And I'll tell you what didn't work. Ask me about Polybot. [[chips:Show my hand-written work|Tell me about Polybot|How do I reach you?]]"
   },
   {
     "id": "weakness",
@@ -537,7 +537,7 @@ export const FAQ_INTENTS: readonly FaqIntent[] = [
       "sports",
       "like football"
     ],
-    "reply": "[[become:🎮]] Festivals, travel, video games. || [[become:🏃]] Lifting, running on the beach. Sometimes coding, just for fun. [[chips:What are you bad at?|And crypto?|What have you built?]]"
+    "reply": "[[become:weekend]] Festivals, travel, video games. || [[become:workout]] Lifting, running on the beach. Sometimes coding, just for fun. [[chips:What are you bad at?|And crypto?|What have you built?]]"
   },
   {
     "id": "travel",

@@ -10,6 +10,7 @@ import {
   poseToWorld, reassign, sceneFor, writeGroup, type Pose,
 } from '../perform';
 import { sceneShapeTargets, stageFrame, type LocalTargets } from '../sceneShapes';
+import { compositeScene } from '../composites';
 
 export type Rect = { x: number; y: number; w: number; h: number };
 
@@ -346,6 +347,9 @@ export class Controller {
   /** Resolves true once the shape has knitted in (targets ready + the staggered knit), false if superseded. */
   become(spec: ShapeSpec, opts?: { hold?: number; depth?: number }): Promise<boolean> {
     if (spec.kind === 'none') { this.release(); return Promise.resolve(false); }
+    // a composite glyph (a few glyphs side by side, WAVE6 C4) is performed as a small multi-group scene
+    const comp = spec.kind === 'glyph' ? compositeScene(spec.id, this.stageBox) : null;
+    if (comp) return this.perform(comp);
     const tok = ++this.token;
     this.clearHold();
     this.ringActive = false; this.p.ringOn = 0;

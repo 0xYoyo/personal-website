@@ -107,7 +107,7 @@ describe('fallback state machine', () => {
     expect(rec.events.at(-1)).toMatchObject({ type: 'end', mode: 'scripted' });
     const turns = rec.turns();
     expect(turns[0]).toBe("I'm Yoyo, a software engineer who builds products with AI agents.");
-    expect(turns[1]).toBe('Computer Science and Entrepreneurship at Reichman. Self-taught before that.');
+    expect(turns[1]).toBe('Computer Science and Entrepreneurship at Reichman. Self-taught developer before that.');
     expect(turns).toHaveLength(2);
     expect(rec.text()).not.toContain(RESTING_LINE);
     expect(rec.actions().slice(0, 3)).toEqual([LISTEN.action, SETTLE, { type: 'become', shape: { kind: 'glyph', id: 'curls' } }]);

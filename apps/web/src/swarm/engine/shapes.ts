@@ -1,6 +1,7 @@
 import type { GlyphId, ShapeSpec } from '@yoyo/protocol';
 import { hashString, knitDelay, rng } from './hash';
 import { loadGlyphSvg } from './glyphs';
+import { COMPOSITES, isComposite } from './composites';
 
 /** Exactly n targets. pos = [x, y, z, knitDelay] per particle (world px, origin = viewport centre, y up). */
 export interface Targets {
@@ -359,6 +360,8 @@ export function smallStage(n: number, vp: Viewport): boolean {
 
 export async function glyphTargets(id: GlyphId | string, n: number, vp: Viewport, depthMul = 1): Promise<Targets> {
   if (id === 'yoyo') return yoyo3dTargets(n, vp);
+  // a composite outside a scene (the controller performs it as one): its first member stands in
+  if (isComposite(id)) id = COMPOSITES[id]![0]!;
   if (SMALL_VARIANTS[id] && smallStage(n, vp)) id = SMALL_VARIANTS[id]!;
   const svg = await loadGlyphSvg(id);
   if (!svg) return textTargets('?', n, vp, depthMul);

@@ -180,7 +180,7 @@ describe('the show and the stories', () => {
       "Unfiltered. Type what you want the way you'd say it. It finds the product.",
       'Prompt Racers. A kart racer that teaches kids how to talk to AI.',
       'yoyo-loop. I write the spec. Agents build. Another agent reviews. I merge.',
-      'Crypto since 2021. Self-taught since 2022. Reichman since 2025.',
+      'Crypto since 2021. Self-taught dev since 2022. Reichman since 2025.',
       'Ask me anything.',
     ]);
     for (const s of captioned) expect(s.sayAt ?? 0).toBe(0);

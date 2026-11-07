@@ -23,7 +23,7 @@ describe('adapter: turns', () => {
     const reply = await brain.send('who is yoyo?', r.h);
     expect(reply.turns).toEqual([
       "I'm Yoyo, a software engineer who builds products with AI agents.",
-      'Computer Science and Entrepreneurship at Reichman. Self-taught before that.',
+      'Computer Science and Entrepreneurship at Reichman. Self-taught developer before that.',
     ]);
     expect(r.turns()).toEqual(reply.turns);
     expect(r.log[0]).not.toBe('|');

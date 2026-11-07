@@ -20,6 +20,8 @@
 //    yoyo-loop showcase); "since 2021" only in the crypto reply (and the show's scene 6).
 // 5. Questions (WAVE4 C4): typed questions → the intent they must land on, with words their reply
 //    must not say.
+// 6. Wave 6 copy (WAVE6 C5): the hire reply's words, shapes and chips; the who wording; the show's scene 6
+//    caption; the hobbies reply's monochrome glyphs (no emoji anywhere in it); the Prompt Racers card facts.
 
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
@@ -106,6 +108,8 @@ export const CHIP_EXPECT = {
   'Next one': { ui: 'next-project' },
   'Play it': { ui: 'play' },
   'sound on': { ui: 'sound-on' },
+  // the hire reply's first chip (WAVE6 X5): Work on the Hand-written era, in the UI
+  'Show my hand-written work': { ui: 'work' },
   'Tell me about Polybot': { intent: 'polybot', actions: ['become:glyph:diverge', 'show:polybot'] },
   'How fast is it?': { intent: 'fast', actions: [] },
   gm: { intent: 'gm', actions: ['become:glyph:btc'] },
@@ -366,6 +370,86 @@ export function evalDashes(replies) {
   });
 }
 
+/** The site's content modules (projects, the show), bundled like the brain (tools/lib/agent-bundle.mjs). */
+async function loadContent() {
+  const { build } = await import('esbuild');
+  const web = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'web', 'src');
+  const out = await build({
+    stdin: {
+      contents: `export { projects } from './content/projects';\nexport { SHOW_LINES, SCENE6_LINES, SHOW_CAPTIONS } from './content/show';`,
+      resolveDir: web, loader: 'ts', sourcefile: 'content-entry.ts',
+    },
+    bundle: true, write: false, format: 'esm', platform: 'node', target: 'node22', logLevel: 'silent',
+  });
+  return import(`data:text/javascript;base64,${Buffer.from(out.outputFiles[0].text).toString('base64')}`);
+}
+
+/** WAVE6 C1–C4, verbatim. */
+export const WAVE6 = {
+  hire: [
+    'I ship real products: a search engine, a 3D game, a tool my whole university can use.',
+    'I like being early. I was building with AI agents when most people called it a toy.',
+    'Self-taught, full-stack. I built complete applications by hand before I started working with agents.',
+    "And I'll tell you what didn't work. Ask me about Polybot.",
+  ],
+  hireBecomes: ['become:glyph:check', 'become:glyph:loop', 'become:glyph:keyboard', 'become:glyph:diverge'],
+  hireChips: ['Show my hand-written work', 'Tell me about Polybot', 'How do I reach you?'],
+  who: 'Computer Science and Entrepreneurship at Reichman. Self-taught developer before that.',
+  scene6: 'Self-taught dev since 2022.',
+  hobbies: ['Festivals, travel, video games.', 'Lifting, running on the beach. Sometimes coding, just for fun.'],
+  hobbiesBecomes: ['become:glyph:weekend', 'become:glyph:workout'],
+  racersFacts: [
+    'Kids build better kart parts by writing better prompts, then race with what they built.',
+    'A full game: seven AI rivals, upgrades and races that get harder.',
+    'Made for an AI-education contest for Israeli schools.',
+  ],
+};
+const EMOJI = /\p{Extended_Pictographic}/u;
+
+/** Wave 6 copy checks (C5); returns rows. `replyFn(text)` → the raw reply (scripted brain or mock). */
+export async function evalWave6(replyFn, label = 'scripted') {
+  const rows = [];
+  const row = (input, want, problems) => rows.push({ kind: `wave6/${label}`, input, want, got: problems.join(', ') || 'ok', ok: !problems.length });
+  const parts = (raw) => A.extractActions(raw, { glyphs: A.GLYPH_IDS }).text.split('||').map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const chipsOf = (raw) => A.extractActions(raw, { glyphs: A.GLYPH_IDS }).actions.filter((a) => a.type === 'chips').map((a) => a.chips);
+  {
+    const raw = replyFn('Why should we hire you?');
+    const p = [];
+    if (JSON.stringify(parts(raw)) !== JSON.stringify(WAVE6.hire)) p.push(`text ${JSON.stringify(parts(raw))}`);
+    const becomes = actionsOf(raw).filter((k) => k.startsWith('become:'));
+    if (JSON.stringify(becomes) !== JSON.stringify(WAVE6.hireBecomes)) p.push(`shapes ${becomes.join(' ')}`);
+    if (JSON.stringify(chipsOf(raw)) !== JSON.stringify([WAVE6.hireChips])) p.push(`chips ${JSON.stringify(chipsOf(raw))}`);
+    row('hire', 'four beats, keyboard on beat 3, the hire chips', p);
+  }
+  {
+    const raw = replyFn('Who are you?');
+    const t = parts(raw);
+    row('who', WAVE6.who, [...(t[1] === WAVE6.who ? [] : [`said ${JSON.stringify(t[1])}`]), ...(/Self-taught before/.test(raw) ? ['still "Self-taught before"'] : [])]);
+  }
+  {
+    const raw = replyFn('What do you do for fun?');
+    const p = [];
+    if (JSON.stringify(parts(raw)) !== JSON.stringify(WAVE6.hobbies)) p.push(`text ${JSON.stringify(parts(raw))}`);
+    const acts = A.extractActions(raw, { glyphs: A.GLYPH_IDS }).actions;
+    const becomes = acts.filter((a) => a.type === 'become').map(actionKey);
+    if (JSON.stringify(becomes) !== JSON.stringify(WAVE6.hobbiesBecomes)) p.push(`shapes ${becomes.join(' ')}`);
+    if (acts.some((a) => a.type === 'become' && a.shape.kind === 'emoji') || EMOJI.test(raw)) p.push('an emoji');
+    row('hobbies', 'weekend + workout glyphs, no emoji', p);
+  }
+  if (label === 'scripted') {
+    const C = await loadContent();
+    const p = [];
+    if (C.SCENE6_LINES[1] !== WAVE6.scene6) p.push(`scene 6 beat "${C.SCENE6_LINES[1]}"`);
+    if (!C.SHOW_LINES[5].includes(WAVE6.scene6)) p.push(`scene 6 line "${C.SHOW_LINES[5]}"`);
+    if (!C.SHOW_CAPTIONS.includes(WAVE6.scene6)) p.push('not among the captions');
+    if (C.SHOW_CAPTIONS.some((c) => /Self-taught (since|before)/.test(c)) || /Self-taught (since|before)/.test(C.SHOW_LINES.join(' '))) p.push('old wording left');
+    row('show:scene6', WAVE6.scene6, p);
+    const racers = C.projects.find((x) => x.id === 'prompt-racers');
+    row('card:prompt-racers', 'the three card facts', JSON.stringify(racers?.cardFacts) === JSON.stringify(WAVE6.racersFacts) ? [] : [`facts ${JSON.stringify(racers?.cardFacts)}`]);
+  }
+  return rows;
+}
+
 /** Every reply the scripted brain can give, plain and behind the resting line. */
 export function scriptedReplies() {
   const base = [
@@ -395,6 +479,8 @@ export async function runEval({ quiet = false } = {}) {
     ...evalQuestions((t, project) => mockReply(t, {}, [], { project }), 'mock'),
     ...evalDashes(scriptedReplies()),
     ...evalBanned([...scriptedReplies(), ...allChipLabels().map((c) => [`mock:${c}`, mockReply(c, {}, [])])]),
+    ...(await evalWave6((t) => A.scriptedReply(t, CTX).raw, 'scripted')),
+    ...(await evalWave6((t) => mockReply(t, {}, []), 'mock')),
   ];
   const fails = rows.filter((r) => !r.ok);
   const by = (k) => rows.filter((r) => r.kind === k);
@@ -420,6 +506,8 @@ export async function runEval({ quiet = false } = {}) {
       line('ask/mock'),
       line('copy/dash'),
       line('copy/banned'),
+      line('wave6/scripted'),
+      line('wave6/mock'),
       fails.length ? `${fails.length} FAILED` : 'all passed',
     ].join('\n'),
   );

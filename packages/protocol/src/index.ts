@@ -5,7 +5,7 @@
 // inline action-tag parser, and the wire schema for /chat and /build.
 
 export type ProjectId = 'prompt-racers'|'unfiltered'|'yoyo-loop'|'runi-connector'|'availability-monitor'|'pnl-bot'|'polybot'|'yoyo-network'|'vortex'|'sentiment-gauge';
-export type GlyphId = 'kart'|'magnifier'|'loop'|'cap'|'tent'|'chart'|'diverge'|'envelope'|'envelope-open'|'keyboard'|'cursor'|'wave'|'frame'|'question'|'shield'|'route'|'btc'|'piano'|'ramp'|'curls'|'heart'|'star'|'check'|'yoyo';
+export type GlyphId = 'kart'|'magnifier'|'loop'|'cap'|'tent'|'chart'|'diverge'|'envelope'|'envelope-open'|'keyboard'|'cursor'|'wave'|'frame'|'question'|'shield'|'route'|'btc'|'piano'|'ramp'|'curls'|'heart'|'star'|'check'|'yoyo'|'ticket'|'plane'|'gamepad'|'dumbbell'|'runner'|'weekend'|'workout';
 export type Mood = 'idle'|'listening'|'thinking'|'speaking'|'excited'|'building'|'celebrate'|'asleep';
 export type ShapeSpec = { kind:'text'; text:string } | { kind:'emoji'; emoji:string } | { kind:'glyph'; id:GlyphId } | { kind:'yoyo3d' } | { kind:'frame'; rect:{x:number;y:number;w:number;h:number} } | { kind:'none' };
 export type StoryId = 'factory'|'road';
@@ -166,6 +166,8 @@ export const GLYPH_IDS = [
   'kart', 'magnifier', 'loop', 'cap', 'tent', 'chart', 'diverge', 'envelope', 'envelope-open', 'keyboard',
   'cursor', 'wave', 'frame', 'question', 'shield', 'route', 'btc', 'piano', 'ramp', 'curls', 'heart', 'star',
   'check', 'yoyo',
+  // monochrome hobbies glyphs (WAVE6 C4), and the two compositions of them the swarm performs as small scenes
+  'ticket', 'plane', 'gamepad', 'dumbbell', 'runner', 'weekend', 'workout',
 ] as const satisfies readonly GlyphId[];
 
 export const MOODS = [
