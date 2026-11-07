@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import type { Rect } from '@yoyo/protocol';
 import { createBrain, readSharedFromHash } from './agent';
 import { ENTRY_CHIPS, buildName, returningChips } from './content/chips';
-import { SHOW_AFTER_GREETING_MS } from './content/show';
 import { copy } from './content/copy';
 import { ctl } from './controller';
 import { isMobileViewport, prefersReducedMotion } from './design';
@@ -21,6 +20,7 @@ import { GameModal } from './ui/GameModal';
 import { SHORT_VH } from './ui/fit';
 import { History, LiveRegion } from './ui/History';
 import { createSound } from './ui/sound';
+import { armHandoff } from './ui/runner/handoff';
 import { runnerKey } from './ui/runner/keys';
 import { TopBar } from './ui/TopBar';
 import { createVoice } from './ui/voice';
@@ -164,6 +164,9 @@ export function App() {
     const voice = createVoice();
     let cancelled = false;
     let swarm: Awaited<ReturnType<typeof createSwarm>> | null = null;
+    // the show plays by itself once a tab session (FIX4 W10), straight out of the entrance (WAVE6 T1); armed before
+    // the entrance, so a click, key or wheel during it calls the show off (?skipEntry=1, QA: no entrance, no show)
+    const handoff = armHandoff({ eligible: !showSeen() && params.get('skipEntry') !== '1' });
 
     void (async () => {
       swarm = await createSwarm(container, { scene, reducedMotion: reduced, ...(tier !== undefined ? { tier, adaptive: false } : {}) });
@@ -216,6 +219,18 @@ export function App() {
         history.replaceState(null, '', location.pathname + location.search);
       }
 
+      // WAVE6 T1: untouched, the entrance's release flows straight into the show's first scene (the scene opens
+      // from the idle wave the letters dissolved into): no greeting, no chip row before it, no wait. The show
+      // brings the chips and the bar up with its first caption.
+      if (handoff.take(useStore.getState())) {
+        useStore.getState().spendIdle();
+        ctl.startTour();
+        return;
+      }
+      // otherwise (the visitor got there first, the show was seen in this tab, a shared build): the greeting, and
+      // the show never starts by itself later
+      useStore.getState().spendIdle();
+
       let line: string = copy.entry.greeting;
       let chips = ENTRY_CHIPS;
       if (returning) {
@@ -243,6 +258,7 @@ export function App() {
     const stopSeen = keepSeen();
     return () => {
       cancelled = true;
+      handoff.disarm();
       stopSeen();
       swarm?.destroy();
     };
@@ -337,35 +353,14 @@ export function App() {
     else ctl.swarm?.resume?.();
   }, [overlay]);
 
-  // ---- the show starts by itself 2.5 s after the greeting has landed (wave 3 SHOW); any input before then
-  // cancels it
+  // ---- the idle clock: any input touches it (the show itself starts from the boot, WAVE6 T1)
   useEffect(() => {
     if (phase !== 'ready') return;
-    let greetAt = 0;
-    const iv = setInterval(() => {
-      const s = useStore.getState();
-      if (s.idleSpent) return;
-      // it plays on every new visit, returning visitors too (WAVE4 U4); only a tab session that already saw it
-      // (a reload, FIX4 W10) gets "watch again" instead
-      if (showSeen()) return s.spendIdle();
-      if (!greetAt) {
-        // the greeting has landed once its line is on screen and done streaming (the boot touches the clock then)
-        if (s.streaming || !s.lines.some((l) => l.role === 'agent')) return;
-        greetAt = Date.now();
-        return;
-      }
-      // (the boot touches the clock as the greeting lands: that is not the visitor)
-      if (s.lastInput > greetAt + 250 || s.overlay !== 'none') return s.spendIdle(); // the visitor got there first
-      if (Date.now() - greetAt < SHOW_AFTER_GREETING_MS) return;
-      s.spendIdle();
-      ctl.startTour();
-    }, 100);
     const touch = () => useStore.getState().touch();
     addEventListener('keydown', touch, true);
     addEventListener('pointerdown', touch, true);
     addEventListener('wheel', touch, { passive: true, capture: true });
     return () => {
-      clearInterval(iv);
       removeEventListener('keydown', touch, true);
       removeEventListener('pointerdown', touch, true);
       removeEventListener('wheel', touch, true);

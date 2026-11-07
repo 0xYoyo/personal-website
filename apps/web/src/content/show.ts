@@ -1,5 +1,5 @@
 // The show (wave 3 SHOW, FIX4 W4–W7): ~39 s, seven scenes, one line of mine each, the swarm acting each one out. It replaces
-// the passive tour as the main path: it starts on its own 2.5 s after the greeting (once a visit); typing does not stop it,
+// the passive tour as the main path: it starts on its own straight out of the entrance (once a tab session, WAVE6 T1); typing does not stop it,
 // sending a message or a chip does (the scene freezes and the reply morphs from it).
 // Scenes are laid out in the free stage (stage units: ±1 = its half width / height, +y down) and fitted to its
 // shape, so a phone's wide top stage and the desktop's tall right column both get a scene that reads.
@@ -29,8 +29,6 @@ const SCENE6_GLYPHS = ['btc', 'yoyo', 'cap'] as const;
 export const SCENE6_MS = [2150, 2150, 2200] as const;
 /** Every caption the show types, in order. */
 export const SHOW_CAPTIONS: readonly string[] = [...SHOW_LINES.slice(0, 5), ...SCENE6_LINES, SHOW_LINES[6]];
-/** The show starts this long after the greeting has landed (unless anything is touched first). */
-export const SHOW_AFTER_GREETING_MS = 2500;
 export const WATCH_AGAIN = 'watch again';
 
 /** The free stage a scene is laid out in (CSS px). */
