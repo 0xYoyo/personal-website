@@ -10,9 +10,17 @@ export function focusables(root: HTMLElement): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.offsetParent !== null || el === document.activeElement);
 }
 
-export function useDialog(ref: RefObject<HTMLElement>, opts: { initial?: RefObject<HTMLElement>; active?: boolean } = {}): void {
+/**
+ * `include` (WAVE6 L1): selectors of controls that work beside the dialog (contact's chips and the bar); Tab
+ * goes round the dialog and then them, in that order, instead of stopping at the dialog's edge.
+ */
+export function useDialog(
+  ref: RefObject<HTMLElement>,
+  opts: { initial?: RefObject<HTMLElement>; active?: boolean; include?: readonly string[] } = {},
+): void {
   const active = opts.active ?? true;
   const initial = opts.initial;
+  const include = opts.include?.join(',') ?? '';
   useEffect(() => {
     if (!active) return;
     const start = ref.current;
@@ -24,6 +32,16 @@ export function useDialog(ref: RefObject<HTMLElement>, opts: { initial?: RefObje
     const onKey = (e: KeyboardEvent) => {
       const root = ref.current;
       if (e.key !== 'Tab' || !root) return;
+      if (include) {
+        const beside = [...document.querySelectorAll<HTMLElement>(include)].flatMap((el) => focusables(el));
+        const ring = [...focusables(root), ...beside];
+        if (!ring.length) return;
+        const i = ring.indexOf(document.activeElement as HTMLElement);
+        const n = ring.length;
+        e.preventDefault();
+        ring[i < 0 ? (e.shiftKey ? n - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + n) % n]!.focus();
+        return;
+      }
       const els = focusables(root);
       if (!els.length) {
         e.preventDefault();
@@ -47,5 +65,5 @@ export function useDialog(ref: RefObject<HTMLElement>, opts: { initial?: RefObje
       if (opener && document.contains(opener) && opener.id !== 'y-input') opener.focus({ preventScroll: true });
       else document.getElementById('y-input')?.focus({ preventScroll: true });
     };
-  }, [ref, initial, active]);
+  }, [ref, initial, active, include]);
 }

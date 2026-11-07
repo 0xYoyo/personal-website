@@ -4,13 +4,16 @@ import { copy } from '../content/copy';
 import { ctl } from '../controller';
 import { useDialog } from './useDialog';
 
+const BESIDE = ['.y-chips[data-hidden="false"]', '.y-bar-wrap[data-ready="true"]'] as const;
+
 export function Contact() {
   const ref = useRef<HTMLElement>(null);
-  useDialog(ref, { initial: ref });
+  // the chips and the bar work beside the panel (its actions: Copy my email, View my CV): Tab reaches them too
+  useDialog(ref, { initial: ref, include: BESIDE });
   const c = copy.contact;
   return (
     <div className="y-contact-wrap">
-      <section ref={ref} className="y-contact" role="dialog" aria-modal="true" aria-labelledby="y-contact-line" tabIndex={-1}>
+      <section ref={ref} className="y-contact" role="dialog" aria-modal="false" aria-labelledby="y-contact-line" tabIndex={-1}>
         <p className="y-contact-line" id="y-contact-line">
           {c.line}
         </p>

@@ -5,6 +5,13 @@ import { useStore } from '../state/store';
 import { WatchAgain } from './WatchAgain';
 
 /**
+ * Whether a phone shows the whole row wrapped (never scrolled sideways): three chips or fewer, or a project
+ * row with its `Back to <Project>` chip (four), so that chip is never the one off the edge (WAVE6).
+ */
+export const wrapsWhole = (chips: readonly string[]): boolean =>
+  chips.length <= 3 || (chips.length <= 4 && chips.some((c) => c.startsWith('Back to ')));
+
+/**
  * Contextual chips above the bar. On mobile the row scrolls sideways: it fades
  * at the right edge while more chips are hidden there, and it takes keyboard
  * focus while it can scroll (so arrow keys reach the hidden ones).
@@ -27,7 +34,8 @@ export function Chips() {
     // a short row (three chips or fewer) wraps centred on a phone (WAVE3 S5); decided once per row, so it
     // can't flip-flop. Only over the conversation: a build frame (and its controls) is laid out for a one-line row.
     // contact too (WAVE4 U6): its three chips wrap on a phone instead of one scrolling off the edge
-    const few = chips.length <= 3 && (overlay === 'none' || overlay === 'tour' || overlay === 'contact');
+    // WAVE6: a project row after its card closed carries the card's chips plus `Back to <name>`: four, all in view
+    const few = wrapsWhole(chips) && (overlay === 'none' || overlay === 'tour' || overlay === 'contact');
     el.dataset.few = String(few);
     el.dataset.compact = 'false';
     const first = el.firstElementChild as HTMLElement | null;

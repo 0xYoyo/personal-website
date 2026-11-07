@@ -35,6 +35,23 @@ function useOutline(ref: React.RefObject<HTMLElement>, key: string) {
   }, [ref, key]);
 }
 
+/** WAVE6 L5: while the description has more below (it scrolls above the actions), its lower edge fades as the cue. */
+function useMoreBelow(ref: React.RefObject<HTMLElement>, key: string) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => (el.dataset.more = String(el.scrollTop + el.clientHeight < el.scrollHeight - 4));
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+    };
+  }, [ref, key]);
+}
+
 export function Card() {
   const id = useStore((s) => s.project);
   const reducedMotion = useStore((s) => s.reducedMotion);
@@ -43,6 +60,8 @@ export function Card() {
   const swipe = useRef<{ x: number; y: number; t: number } | null>(null);
   useDialog(ref, { initial: ref });
   useOutline(ref, id ?? '');
+  const body = useRef<HTMLDivElement>(null);
+  useMoreBelow(body, id ?? '');
 
   // after ←/→ the section remounts: keep focus inside the dialog
   useEffect(() => {
@@ -105,7 +124,7 @@ export function Card() {
         <div className="y-card-show">
           <Showcase reducedMotion={reducedMotion} />
         </div>
-        <div className="y-card-body">
+        <div className="y-card-body" ref={body}>
           <div className="y-card-head">
             <h2 className="y-card-name" id="y-card-name">
               {p.name}
@@ -128,23 +147,24 @@ export function Card() {
             ))}
           </ul>
           <p className="y-card-stack y-mono">{p.stack.map((s) => s.replace(/ /g, '\u00a0')).join(' · ')}</p>
-          <div className="y-card-links">
-            {p.play && (
-              <button className="y-play" onClick={() => ctl.play()}>
-                {copy.card.play}
-              </button>
-            )}
-            {p.links.map((l) => (
-              <a key={l.href} className="y-link y-mono" href={l.href} target="_blank" rel="noreferrer">
-                {l.label}
-              </a>
-            ))}
-            {last && (
-              <a className="y-link y-mono y-card-more" href={MORE_ON_GITHUB} target="_blank" rel="noreferrer">
-                {copy.card.more}
-              </a>
-            )}
-          </div>
+        </div>
+        {/* WAVE6 L5: the actions sit outside the scrolling description, always in view above the nav */}
+        <div className="y-card-links">
+          {p.play && (
+            <button className="y-play" onClick={() => ctl.play()}>
+              {copy.card.play}
+            </button>
+          )}
+          {p.links.map((l) => (
+            <a key={l.href} className="y-link y-mono" href={l.href} target="_blank" rel="noreferrer">
+              {l.label}
+            </a>
+          ))}
+          {last && (
+            <a className="y-link y-mono y-card-more" href={MORE_ON_GITHUB} target="_blank" rel="noreferrer">
+              {copy.card.more}
+            </a>
+          )}
         </div>
         <nav className="y-card-nav" aria-label="Projects">
           <button className="y-textbtn" onClick={() => ctl.nextProject(-1)}>
