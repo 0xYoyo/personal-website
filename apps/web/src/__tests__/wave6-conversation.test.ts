@@ -84,12 +84,12 @@ describe('X1: project rows stay whole and are scoped', () => {
     expect(S().answered).toContain(meaningOf('Who are you?'));
   });
 
-  it('"What have you built?" never joins a project journey: a general question from a card keeps the card\'s row', async () => {
+  it('a general question from a card gets its own reply\'s row and ends the project context (QA F1)', async () => {
     ctl.openProject('unfiltered');
-    ctl.chip('Who are you?'); // its reply carries a chips tag with "What have you built?"
+    ctl.chip('Who are you?');
     await flush();
-    expect(S().chips).toEqual([...projectChips('unfiltered'), 'Back to Unfiltered']);
-    expect(S().chips).not.toContain('What have you built?');
+    expect(S().chips).toEqual(['What are you like?', 'What have you built?', 'How do I reach you?']);
+    expect(S().chips.some((c) => c.startsWith('Back to'))).toBe(false);
   });
 
   it('the game played from Prompt Racers gives back that project\'s row when it closes', async () => {
@@ -322,4 +322,80 @@ describe('X5: the hire chips', () => {
     await flush();
     expect(S()).toMatchObject({ overlay: 'card', project: 'polybot' });
   });
+});
+
+describe('QA F1/F2: the project row only for answers about that project', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setup();
+  });
+  afterEach(() => {
+    ctl.closeOverlay();
+    vi.useRealTimers();
+  });
+  const UNF_ROW = [...projectChips('unfiltered'), 'Back to Unfiltered'];
+  const noBack = () => expect(S().chips.some((c) => c.startsWith('Back to'))).toBe(false);
+
+  for (const [how, ask, row] of [
+    ['the "Who are you?" chip', () => ctl.chip('Who are you?'), ['What are you like?', 'What have you built?', 'How do I reach you?']],
+    ['typed "What are you bad at?"', () => void ctl.say('What are you bad at?'), ['Why should we hire you?', 'And crypto?', 'What have you built?']],
+  ] as const) {
+    it(`after a project answer, ${how} gets its own row; the project context is over`, async () => {
+      ctl.openProject('unfiltered');
+      ctl.chip('What was the hardest part?');
+      await flush();
+      expect(S().chips).toEqual(UNF_ROW);
+      ask();
+      await flush();
+      expect(S().chips).toEqual(row);
+      noBack();
+      // and "Next one" no longer goes on from Unfiltered (no stale context)
+      expect(resolveChip('Next one', { project: null, hasBuild: false })).toEqual({ kind: 'say', text: 'What have you built?' });
+    });
+
+    it(`${how} interrupting the project answer: its own row, and Back never comes back later`, async () => {
+      ctl.openProject('unfiltered');
+      ctl.chip('What was the hardest part?');
+      await firstWord();
+      const rows: string[][] = [];
+      const unsub = useStore.subscribe((st, prev) => {
+        if (st.chipsKey !== prev.chipsKey) rows.push(st.chips);
+      });
+      ask();
+      await flush();
+      await vi.advanceTimersByTimeAsync(10_000);
+      unsub();
+      expect(S().chips).toEqual(row);
+      expect(rows.some((r) => r.some((c) => c.startsWith('Back to')))).toBe(false);
+    });
+  }
+
+  it('a project follow-up still keeps its row, Back included', async () => {
+    ctl.openProject('prompt-racers');
+    ctl.chip('How does it teach prompting?');
+    await flush();
+    expect(S().chips).toEqual([...projectChips('prompt-racers'), 'Back to Prompt Racers']);
+  });
+
+  for (const how of ['typed', 'the hire chip'] as const) {
+    it(`"Tell me about Polybot" (${how}) after "Who are you?": Polybot's own row, never "What have you built?"`, async () => {
+      void ctl.say('Who are you?');
+      await flush();
+      const rows: string[][] = [];
+      const unsub = useStore.subscribe((st, prev) => {
+        if (st.chipsKey !== prev.chipsKey) rows.push(st.chips);
+      });
+      if (how === 'typed') void ctl.say('Tell me about Polybot');
+      else {
+        S().setChips([HAND_WORK_CHIP, 'Tell me about Polybot', 'How do I reach you?']);
+        ctl.chip('Tell me about Polybot');
+      }
+      await flush();
+      unsub();
+      expect(S()).toMatchObject({ overlay: 'card', project: 'polybot' });
+      expect(S().chips).toEqual(projectChips('polybot'));
+      expect(rows.filter((r) => r.includes('Next one')).every((r) => !r.includes('What have you built?'))).toBe(true);
+      expect(rows.filter((r) => r.includes('Next one')).every((r) => r.join('|') === projectChips('polybot').join('|'))).toBe(true);
+    });
+  }
 });

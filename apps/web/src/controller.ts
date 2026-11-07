@@ -13,6 +13,7 @@ import type { SwarmHandle } from './swarm';
 import { createRunner, type Runner, type Step } from './ui/runner/engine';
 import { markShowSeen } from './state/visit';
 import { moveChipsOn } from './state/answered';
+import { classify, MY_PART, PROJECT_INTRO, specificTo } from './agent/client/intents';
 import type { Scene } from '@yoyo/protocol';
 import type { Sound } from './ui/sound';
 import { createChannel, createPacer, readLeft, stripMarks, TURN_WORD_MS, type Pacer, type TurnFit } from './ui/turns';
@@ -64,6 +65,14 @@ function contextProject(): ProjectId | null {
 function projectRow(id: ProjectId) {
   S().setChips(projectRowAfter(id, projectById(id).name), { project: id });
   cardRow = { project: id, key: S().chipsKey };
+}
+/** Whether a reply's intent was about `p` (WAVE6 X1): its intro, a follow-up of its own, or what I did on it. */
+const aboutProject = (intent: string | null | undefined, p: ProjectId): boolean =>
+  !!intent && (intent === PROJECT_INTRO[p] || intent === MY_PART || specificTo(intent, p));
+/** The intent the local classifier reads in `text` asked about `project` (a live reply that names none). */
+function localIntent(text: string, project: ProjectId): string | null {
+  const c = classify(text, { project });
+  return c.kind === 'intent' ? c.id : null;
 }
 /** The project the game was opened from (Prompt Racers' "Play it"): its row comes back when the game closes. */
 let gameFrom: ProjectId | null = null;
@@ -509,6 +518,8 @@ export const ctl = {
     });
     ac.signal.addEventListener('abort', () => pacer.cancel(), { once: true });
     let chipsSet = false;
+    /** a chips tag of a reply asked from a project's row, held until it is known what the answer was about */
+    let heldChips: string[] | null = null;
     let opened: ProjectId | null = null;
     // the rocket chip follows a spelled name, once, and never the rocket itself (FIX4 U6)
     let spelled = false;
@@ -529,8 +540,11 @@ export const ctl = {
           if (a.shape.kind === 'emoji' && a.shape.emoji === '🚀') rocket = true;
         }
         if (a.type === 'chips') {
-          // asked from a project's row: the answer keeps that project's row (set at the end, WAVE6 X1)
-          if (open) return;
+          // asked from a project's row: whether the answer was about that project decides at the end (WAVE6 X1)
+          if (open) {
+            heldChips = a.chips;
+            return;
+          }
           chipsSet = true;
           // a card opened while the reply streams keeps its own row (as at the reply's end, below)
           if (cardSeq !== cardsAtAsk) return;
@@ -589,12 +603,30 @@ export const ctl = {
       // a card opened while this reply was still being said ("Next one", ←/→, Work) has put up its own row:
       // the reply's end row (the previous card's follow-ups, or Who's) must not replace it
       const movedOn = cardSeq !== cardsAtAsk;
+      // asked from a project's row: only an answer about that project (its intro, its own follow-ups, what I
+      // did on it) keeps the project the context; a general one (who, hire, bad at …) ends it (WAVE6 X1/X2)
+      const scoped = !!open && aboutProject(reply.intent ?? localIntent(clean, open), open);
+      if (open && !scoped) {
+        if (cardRow?.project === open) cardRow = null;
+        if (heldChips && !movedOn) {
+          chipsSet = true;
+          const chips = rocketChips(heldChips, { spelled, rocket, offered: rocketOffered });
+          if (chips.includes(ROCKET_CHIP)) rocketOffered = true;
+          S().setChips(chips);
+        }
+      }
       if (!chipsSet && !movedOn) {
-        if (opened) S().setChips(projectChips(opened));
+        if (opened) {
+          // the project the reply shows is the context before its card opens: its own row, never refilled
+          S().setChips(projectChips(opened), { project: opened });
+          cardRow = { project: opened, key: S().chipsKey };
+        }
         // a follow-up from a card (or from its row): that project's row stays, every chip of it, with the way
         // back to the card; it stays about that card (WAVE6 X1/X2)
-        else if (open && !deferred.length) projectRow(open);
+        else if (scoped && !deferred.length) projectRow(open!);
         else if (/who/i.test(clean) && !deferred.length) S().setChips(WHO_CHIPS);
+        // a general answer with no row of its own: never the project's row it was asked from
+        else if (open && !deferred.length) S().setChips(ENTRY_CHIPS);
       }
       const queue = deferred;
       deferred = [];
