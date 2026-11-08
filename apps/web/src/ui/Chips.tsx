@@ -17,9 +17,9 @@ export const blurAfterTap = (e: React.MouseEvent): void => {
 };
 
 /**
- * Contextual chips above the bar. On mobile the row scrolls sideways: it fades
- * at the right edge while more chips are hidden there, and it takes keyboard
- * focus while it can scroll (so arrow keys reach the hidden ones).
+ * Contextual chips above the bar. On mobile a short row (the entry, a card's, contact's: wrapsWhole) wraps
+ * whole and centred; a longer one (or a build's) scrolls sideways: it fades at the right edge while more chips
+ * are hidden there, and it takes keyboard focus while it can scroll (so arrow keys reach the hidden ones).
  */
 export function Chips() {
   const chips = useStore((s) => s.chips);
@@ -40,14 +40,20 @@ export function Chips() {
     // can't flip-flop. Only over the conversation: a build frame (and its controls) is laid out for a one-line row.
     // contact too (WAVE4 U6): its three chips wrap on a phone instead of one scrolling off the edge
     // WAVE6: a project row after its card closed carries the card's chips plus `Back to <name>`: four, all in view
-    const few = wrapsWhole(chips) && (overlay === 'none' || overlay === 'tour' || overlay === 'contact');
+    // WAVE7 W: a card's row too (its three chips, "How does it teach prompting?" among them), so no chip is cut off
+    // at the edge behind the open sheet; the sheet stops above the row however many lines it takes (--chips-h)
+    const few = wrapsWhole(chips) && (overlay === 'none' || overlay === 'tour' || overlay === 'contact' || overlay === 'card');
     el.dataset.few = String(few);
     el.dataset.compact = 'false';
     const first = el.firstElementChild as HTMLElement | null;
     const tall = () => !!first && el.offsetHeight > first.offsetHeight * 2 + 24;
     // three long chips ("Tell me about Polybot", …) take three lines at 390 px: a tighter chip puts two on
     // a line; if even that runs to three lines they still wrap: a row of three is never scrolled off (FIX4 U5)
-    if (few && tall()) el.dataset.compact = 'true';
+    // (checked again once the mono face is in, which widens the chips; only ever towards compact, so no flip-flop)
+    const fit = () => {
+      if (few && el.dataset.compact !== 'true' && tall()) el.dataset.compact = 'true';
+    };
+    fit();
     const update = () => {
       // the row's height, for what stacks above it on a phone (the card sheet, contact, the words: FIX4 U2)
       const app = el.closest<HTMLElement>('.y-app');
@@ -59,7 +65,11 @@ export function Chips() {
     update();
     // the mono face loading changes the chips' widths (not the row's box): measure again then
     let live = true;
-    void document.fonts?.ready.then(() => live && update());
+    void document.fonts?.ready.then(() => {
+      if (!live) return;
+      fit();
+      update();
+    });
     el.addEventListener('scroll', update, { passive: true });
     const ro = new ResizeObserver(update);
     ro.observe(el);
