@@ -12,7 +12,7 @@ import { emptyBuild, useStore, type Overlay } from './state/store';
 import type { SwarmHandle } from './swarm';
 import { createRunner, type Runner, type Step } from './ui/runner/engine';
 import { markShowSeen } from './state/visit';
-import { moveChipsOn } from './state/answered';
+import { meaningOf, moveChipsOn } from './state/answered';
 import { classify, MY_PART, PROJECT_INTRO, specificTo } from './agent/client/intents';
 import type { Scene } from '@yoyo/protocol';
 import type { Sound } from './ui/sound';
@@ -62,9 +62,25 @@ function contextProject(): ProjectId | null {
  * The row a project's answer leaves once its card has closed (WAVE6 X1/X2): the card's own chips and
  * `Back to <name>`; the project stays the context ("Next one" goes on from it) while the row is up.
  */
-function projectRow(id: ProjectId) {
-  S().setChips(projectRowAfter(id, projectById(id).name), { project: id });
+function projectRow(id: ProjectId, asked: readonly string[] = []) {
+  S().setChips(projectRowAfter(id, projectById(id).name, asked), { project: id });
   cardRow = { project: id, key: S().chipsKey };
+}
+const normQ = (s: string) => s.trim().toLowerCase().replace(/[?.!…]+$/, '');
+/**
+ * The chips of `chips` that ask what `text` asks about `project` (WAVE6 X7): the same label, or the same
+ * meaning (a typed "what was hardest about it?" is the "What was the hardest part?" chip). `intent`: what
+ * the reply played, for words only the router understood. Moves ("Next one", "Play it", Back) never match.
+ */
+function sameQuestion(chips: readonly string[], text: string, project: ProjectId, intent?: string | null): string[] {
+  const k = meaningOf(text, project);
+  return chips.filter((c) => {
+    if (normQ(c) === normQ(text)) return true;
+    const m = meaningOf(c, project);
+    // the router's plain `my_part` on a card is that card's `my_part_<project>`
+    const played = intent ? [`i:${intent}`, ...(intent === MY_PART ? [`i:${MY_PART}_${project}`] : [])] : [];
+    return !!m && (m === k || played.includes(m));
+  });
 }
 /** Whether a reply's intent was about `p` (WAVE6 X1): its intro, a follow-up of its own, or what I did on it. */
 const aboutProject = (intent: string | null | undefined, p: ProjectId): boolean =>
@@ -484,6 +500,16 @@ export const ctl = {
     const open = contextProject();
     // typed with a card or contact open (the bar stays up over them, FIX4 U2): the answer needs the words
     if (st.overlay === 'card' || st.overlay === 'contact') closeAll();
+    // a question from a project's row leaves that row the moment it is asked (WAVE6 X7): never shown
+    // during or after its own answer (the card's whole row comes back when the visitor goes back to it)
+    if (open) {
+      const row = S().chips;
+      const asked = sameQuestion(row, clean, open);
+      if (asked.length) {
+        S().setChips(row.filter((c) => !asked.includes(c)), { project: open });
+        cardRow = { project: open, key: S().chipsKey };
+      }
+    }
     skipForAnswer();
     turn?.abort();
     for (const p of pacers) p.cancel();
@@ -623,7 +649,7 @@ export const ctl = {
         }
         // a follow-up from a card (or from its row): that project's row stays, every chip of it, with the way
         // back to the card; it stays about that card (WAVE6 X1/X2)
-        else if (scoped && !deferred.length) projectRow(open!);
+        else if (scoped && !deferred.length) projectRow(open!, sameQuestion(projectChips(open!), clean, open!, reply.intent));
         else if (/who/i.test(clean) && !deferred.length) S().setChips(WHO_CHIPS);
         // a general answer with no row of its own: never the project's row it was asked from
         else if (open && !deferred.length) S().setChips(ENTRY_CHIPS);
@@ -804,7 +830,7 @@ export const ctl = {
       gameFrom = null;
       const chips = was === 'card' ? ENTRY_CHIPS : was === 'game' ? ['Next one', 'Who are you?', 'What have you built?'] : AFTER_BUILD_CHIPS;
       S().setChips([]);
-      settleBody(covered, () => (from ? projectRow(from) : S().setChips(chips)));
+      settleBody(covered, () => (from ? projectRow(from, ['Play it']) : S().setChips(chips)));
     } else {
       swarm()?.release();
     }

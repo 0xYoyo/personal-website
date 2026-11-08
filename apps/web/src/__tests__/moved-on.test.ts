@@ -73,12 +73,13 @@ describe("a reply's end row never replaces a card opened while it was said", () 
     expect(tagged).toBe(false);
   });
 
-  it('no card opened meanwhile: the follow-up row comes back, the whole project row with the way back (WAVE6 X1/X2)', async () => {
+  it('no card opened meanwhile: the follow-up row comes back, the way back first, without the question asked (WAVE6 X2/X7)', async () => {
     await midReply();
     await flush();
     const s = useStore.getState();
     expect(s.overlay).toBe('none');
-    expect(s.chips[0]).toBe('Next one');
-    expect(s.chips).toEqual(['Next one', MY_PART_CHIP, 'Who are you?', 'Back to Polybot']);
+    expect(s.chips[0]).toBe('Back to Polybot');
+    expect(s.chips).toEqual(['Back to Polybot', 'Next one', 'Who are you?']);
+    expect(s.chips).not.toContain(MY_PART_CHIP);
   });
 });

@@ -54,13 +54,15 @@ describe('X1: project rows stay whole and are scoped', () => {
     expect(S().chips).not.toContain('Who are you?');
   });
 
-  it('"What did you do on this?" stays on its card after its answer, on revisits, and replays; Polybot never touches Vortex', async () => {
+  it('"What did you do on this?" comes back with its card (Back), and replays from there; Polybot never touches Vortex', async () => {
     ctl.openProject('polybot');
     ctl.chip(MY_PART_CHIP);
     await flush();
-    expect(S().chips).toContain(MY_PART_CHIP);
+    expect(S().chips).not.toContain(MY_PART_CHIP); // WAVE6 X7: not on the row its own answer left
+    ctl.chip('Back to Polybot');
+    expect(S().chips).toEqual(projectChips('polybot'));
     const said = agentTexts().length;
-    // clicked again from the row the answer left: it replays
+    // clicked again from the card's row: it replays
     ctl.chip(MY_PART_CHIP);
     await flush();
     expect(agentTexts().length).toBeGreaterThan(said);
@@ -98,7 +100,8 @@ describe('X1: project rows stay whole and are scoped', () => {
     expect(S().overlay).toBe('game');
     ctl.closeOverlay();
     await vi.advanceTimersByTimeAsync(2000);
-    expect(S().chips).toEqual([...projectChips('prompt-racers'), 'Back to Prompt Racers']);
+    // WAVE6 X7: the way back first, then Next one, then what was not just done (Play it)
+    expect(S().chips).toEqual(['Back to Prompt Racers', 'Next one', 'How does it teach prompting?']);
     expect(S().chips).not.toContain('What have you built?');
   });
 });
@@ -333,7 +336,7 @@ describe('QA F1/F2: the project row only for answers about that project', () => 
     ctl.closeOverlay();
     vi.useRealTimers();
   });
-  const UNF_ROW = [...projectChips('unfiltered'), 'Back to Unfiltered'];
+  const UNF_ROW = ['Back to Unfiltered', 'Next one', 'Who are you?'];
   const noBack = () => expect(S().chips.some((c) => c.startsWith('Back to'))).toBe(false);
 
   for (const [how, ask, row] of [
@@ -374,7 +377,7 @@ describe('QA F1/F2: the project row only for answers about that project', () => 
     ctl.openProject('prompt-racers');
     ctl.chip('How does it teach prompting?');
     await flush();
-    expect(S().chips).toEqual([...projectChips('prompt-racers'), 'Back to Prompt Racers']);
+    expect(S().chips).toEqual(['Back to Prompt Racers', 'Next one', 'Play it']);
   });
 
   for (const how of ['typed', 'the hire chip'] as const) {

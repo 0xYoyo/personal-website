@@ -5,7 +5,7 @@ import { ctl } from '../controller';
 import { useStore } from '../state/store';
 
 // A typed question counts exactly as tapping its chip does (WAVE5 QA): by the intent the reply played, so words
-// only the router understands count too. On a project's row nothing is retired (WAVE6 X1): the row stays whole.
+// only the router understands count too. On a project's row the question asked leaves the row (WAVE6 X7), typed or tapped.
 const flush = async () => {
   for (let i = 0; i < 200 && ctl.pacing(); i++) await vi.advanceTimersByTimeAsync(250);
   await vi.advanceTimersByTimeAsync(4000);
@@ -39,7 +39,7 @@ describe('a typed question counts as its chip', () => {
   it('typed "what did you do on this?" over a card leaves the same row as tapping the chip', async () => {
     const tapped = await rowAfter('tap', MY_PART_CHIP);
     const typed = await rowAfter('type', 'what did you do on this?');
-    expect(tapped).toContain(MY_PART_CHIP);
+    expect(tapped).toEqual(['Back to Polybot', 'Next one', 'Who are you?']);
     expect(typed).toEqual(tapped);
   });
 
@@ -52,7 +52,7 @@ describe('a typed question counts as its chip', () => {
     );
     const row = await rowAfter('type', words, createBrain({ speed: 0.001, agentUrl: 'https://agent.example' }));
     expect(useStore.getState().answered).toContain('i:my_part_polybot');
-    expect(row).toContain(MY_PART_CHIP);
+    expect(row).not.toContain(MY_PART_CHIP);
     expect(row).toEqual(await rowAfter('tap', MY_PART_CHIP));
     expect(projectChips('polybot')).toContain(MY_PART_CHIP);
   });

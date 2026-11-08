@@ -78,8 +78,16 @@ export function projectChips(id: ProjectId): string[] {
 }
 /** WAVE6 X2: a card closed for its answer; this chip (the project's own name) reopens it. */
 export const backChip = (name: string): string => `Back to ${name}`;
-/** The row a project's answer leaves once its card has closed (WAVE6 X1/X2): its own chips, then the way back. */
-export const projectRowAfter = (id: ProjectId, name: string): string[] => [...projectChips(id), backChip(name)];
+/**
+ * The row a project's answer leaves once its card has closed (WAVE6 X1/X2, X7): the way back first, then
+ * "Next one", then the card's other chips, never the ones just `asked`; three at most. Back on the card,
+ * its whole row returns (projectChips), the asked one too.
+ */
+export const projectRowAfter = (id: ProjectId, name: string, asked: readonly string[] = []): string[] => {
+  const gone = new Set(asked.map(norm));
+  const rest = projectChips(id).filter((c) => norm(c) !== 'next one' && !gone.has(norm(c)));
+  return [backChip(name), 'Next one', ...rest].slice(0, 3);
+};
 
 export function defaultChips(ctx: ChipContext, project?: ProjectId | null): string[] {
   switch (ctx) {
