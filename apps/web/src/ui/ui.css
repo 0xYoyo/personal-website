@@ -1307,13 +1307,15 @@
     -webkit-mask-image: none;
     mask-image: none;
   }
-  /* three long ones: a tighter chip, two to a line (FIX4 U5) */
+  /* three long ones: a tighter chip, two to a line (FIX4 U5); WAVE7 W: tight enough that the hire row's
+     "Tell me about Polybot" and "How do I reach you?" share a line at 360 px (two lines, not three) */
   .y-chips-row[data-compact='true'] {
-    gap: 8px 6px;
+    gap: 8px 4px;
   }
   .y-chips-row[data-compact='true'] .y-chip {
     font-size: 12px;
-    padding: 10px 9px;
+    letter-spacing: -0.02em;
+    padding: 10px 8px;
   }
 
   .y-bar-wrap {
