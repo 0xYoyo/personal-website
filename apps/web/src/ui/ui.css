@@ -313,8 +313,10 @@
   animation: y-chip-pop 320ms var(--ease-out) both;
   transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
-.y-chip:hover {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .y-chip:hover {
+    border-color: var(--accent);
+  }
 }
 .y-chip:active {
   transform: scale(0.97);
@@ -328,10 +330,12 @@
   text-decoration-color: var(--hairline-strong);
   text-underline-offset: 3px;
 }
-.y-chip.y-chip-text:hover {
-  border-color: transparent;
-  color: var(--ink);
-  text-decoration-color: var(--accent);
+@media (hover: hover) {
+  .y-chip.y-chip-text:hover {
+    border-color: transparent;
+    color: var(--ink);
+    text-decoration-color: var(--accent);
+  }
 }
 @keyframes y-chip-pop {
   from {
@@ -447,6 +451,14 @@
   /* the ring is drawn on the bar around it (.y-bar:has(...)) */
   outline: none;
 }
+/* WAVE7 M1: iOS zooms the page into any text field under 16 px when it takes focus (and doesn't zoom back).
+   On a phone or any touch screen the field's text is 16 px; the placeholder line beside it stays as it was.
+   Pinch-zoom stays on: the viewport sets no maximum-scale / user-scalable. */
+@media (max-width: 720px), (pointer: coarse) {
+  .y-bar-input {
+    font-size: 16px;
+  }
+}
 .y-bar-ph {
   position: absolute;
   left: 0;
@@ -494,9 +506,13 @@
   color: var(--muted);
   transition: color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease);
 }
-.y-bar-mic:hover,
 .y-bar-send[data-live='true'] {
   color: var(--ink);
+}
+@media (hover: hover) {
+  .y-bar-mic:hover {
+    color: var(--ink);
+  }
 }
 .y-bar-mic[data-on='true'] {
   color: var(--accent-ink);
@@ -509,8 +525,10 @@
 .y-bar-send:disabled {
   cursor: default;
 }
-.y-bar-send[data-live='true']:hover {
-  background: var(--wash);
+@media (hover: hover) {
+  .y-bar-send[data-live='true']:hover {
+    background: var(--wash);
+  }
 }
 
 /* --------------------------------------------------------------- card */
@@ -591,8 +609,10 @@
   white-space: nowrap;
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
-.y-card-era-btn:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .y-card-era-btn:hover {
+    color: var(--ink);
+  }
 }
 .y-card-era-btn[aria-pressed='true'] {
   background: var(--ink);
@@ -721,8 +741,10 @@
   color: var(--scene);
   transition: transform var(--dur-1) var(--ease);
 }
-.y-play:hover {
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .y-play:hover {
+    transform: translateY(-1px);
+  }
 }
 .y-play:focus-visible {
   outline-offset: 3px;
@@ -951,8 +973,10 @@
   text-decoration-color: var(--hairline-strong);
   border-radius: 4px;
 }
-.y-build-controls .y-textbtn:hover {
-  text-decoration-color: var(--accent);
+@media (hover: hover) {
+  .y-build-controls .y-textbtn:hover {
+    text-decoration-color: var(--accent);
+  }
 }
 .y-build-controls .y-textbtn:focus-visible {
   outline: 2px solid var(--accent-ink);
@@ -1025,8 +1049,10 @@
   text-decoration-thickness: 2px;
   text-underline-offset: 0.12em;
 }
-.y-contact-big:hover {
-  text-decoration-thickness: 3px;
+@media (hover: hover) {
+  .y-contact-big:hover {
+    text-decoration-thickness: 3px;
+  }
 }
 .y-contact-foot {
   margin-top: 36px;
@@ -1073,8 +1099,10 @@
   font-size: var(--t-mono-s);
   border: 1px solid rgba(244, 239, 230, 0.24);
 }
-.y-game-close:hover {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .y-game-close:hover {
+    border-color: var(--accent);
+  }
 }
 /* touch devices: one line on how it plays (FIX4 U10); it fades at the first tap in the game */
 .y-game-hint {
@@ -1304,13 +1332,15 @@
 
   /* the sheet stops above the chips and the bar (FIX4 U2): "Next one", "Build me something like this"
      and typing all work with a card open; the card scrolls inside it */
+  /* WAVE7 M2: the sheet sits inside the site's 16 px gutter (left, right, under the top bar), with the desktop
+     card's 14 px corners, and 16 px clear above the chips row (which is 12 px above the bar) */
   .y-card-wrap {
-    inset: var(--top-h) 0 calc(var(--bar-bottom) + var(--bar-h) + 12px + var(--chips-h, 40px) + 12px) 0;
+    inset: calc(var(--top-h) + 8px) 16px calc(var(--bar-bottom) + var(--bar-h) + 12px + var(--chips-h, 40px) + 16px) 16px;
     z-index: var(--z-modal);
     place-items: stretch;
   }
   .y-card {
-    width: 100vw;
+    width: auto;
     max-width: none;
     height: auto;
     max-height: none;

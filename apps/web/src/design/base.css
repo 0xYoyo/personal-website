@@ -114,8 +114,10 @@ a {
   text-underline-offset: 0.18em;
   transition: text-decoration-thickness var(--dur-2) var(--ease), color var(--dur-1) var(--ease);
 }
-.y-link:hover {
-  text-decoration-thickness: 2px;
+@media (hover: hover) {
+  .y-link:hover {
+    text-decoration-thickness: 2px;
+  }
 }
 
 /* Text buttons in mono with hover underline (menu, card controls). */
@@ -129,12 +131,19 @@ a {
   text-decoration-thickness: 1px;
   transition: color var(--dur-1) var(--ease);
 }
-.y-textbtn:hover,
 .y-textbtn[aria-pressed='true'],
 .y-textbtn[aria-current='true'] {
   color: var(--ink);
   text-decoration: underline;
   text-decoration-color: var(--accent);
+}
+/* hover only where there is a hover (WAVE7 M3): a tap on a phone leaves no sticky hover behind */
+@media (hover: hover) {
+  .y-textbtn:hover {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -11,6 +11,11 @@ import { WatchAgain } from './WatchAgain';
 export const wrapsWhole = (chips: readonly string[]): boolean =>
   chips.length <= 3 || (chips.length <= 4 && chips.some((c) => c.startsWith('Back to ')));
 
+/** WAVE7 M3: after a pointer/touch tap on a chip, its button lets go of focus (a keyboard click has detail 0). */
+export const blurAfterTap = (e: React.MouseEvent): void => {
+  if (e.detail > 0) (e.target as Element).closest<HTMLElement>('button')?.blur();
+};
+
 /**
  * Contextual chips above the bar. On mobile the row scrolls sideways: it fades
  * at the right edge while more chips are hidden there, and it takes keyboard
@@ -66,7 +71,9 @@ export function Chips() {
   }, [key, chips.length, overlay]);
 
   return (
-    <nav className="y-chips" data-hidden={hide || !chips.length} aria-label="suggestions">
+    // WAVE7 M3: a tap (pointer click, detail ≥ 1) leaves no focus on the chip, so no ring stays on it (or on the
+    // chip that takes its place) through the answer; Enter/Space on a focused chip (detail 0) keep the keyboard's focus
+    <nav className="y-chips" data-hidden={hide || !chips.length} aria-label="suggestions" onClickCapture={blurAfterTap}>
       {/* the row is a stop of its own only when it scrolls (arrow keys reach the hidden chips), and then it says so */}
       <div
         className="y-chips-row"
